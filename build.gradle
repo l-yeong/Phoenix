@@ -1,0 +1,52 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.5.5'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+description = 'Demo project for Spring Boot'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // [1] 스프링 우베
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    // [2] 룸북
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    // [3] mysal jdbc
+    runtimeOnly 'com.mysql:mysql-connector-j'
+    // [4] websocket
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    // [5] Jsoup
+    implementation("org.jsoup:jsoup:1.21.2")
+    // [6] selenium
+    implementation("org.seleniumhq.selenium:selenium-java:4.35.0")
+    // [7] WebDriverManager 셀리니움 웹 브라우저 매니저(크롬)
+    implementation("io.github.bonigarcia:webdrivermanager:6.3.1")
+    // [8] Mybatis
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.5'
+    // [9] AOP
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
