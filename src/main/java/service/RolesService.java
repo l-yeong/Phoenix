@@ -1,12 +1,12 @@
 package service;
 
 import lombok.RequiredArgsConstructor;
-import model.mapper.PlayersMapper;
+import model.mapper.RolesMapper;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class PlayersService {
-    private final PlayersMapper playersMapper;
+public class RolesService {
+    private final RolesMapper rolesMapper;
 
 }//func end
