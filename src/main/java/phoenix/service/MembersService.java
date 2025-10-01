@@ -1,7 +1,8 @@
-package service;
+package phoenix.service;
 
 import lombok.RequiredArgsConstructor;
-import model.mapper.MembersMapper;
+import phoenix.model.dto.MembersDto;
+import phoenix.model.mapper.MembersMapper;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -11,7 +12,8 @@ public class MembersService {
 
     // 회원가입
     public boolean signUp(MembersDto member) {
-        if (membersMapper.signUp(member.getMid()) > 0) {
+        // 아이디 중복 체크
+        if (membersMapper.checkDuplicateId(member.getMid()) > 0) {
             return false; // 이미 존재하는 아이디
         }
         return membersMapper.signUp(member) > 0;
