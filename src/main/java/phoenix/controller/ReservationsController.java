@@ -3,10 +3,7 @@ package phoenix.controller;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import phoenix.model.dto.ReservationsDto;
 import phoenix.service.ReservationsService;
 
@@ -44,4 +41,19 @@ public class ReservationsController {
         ReservationsDto dto = reservationsService.reserveInfo(mno,rno);
         return ResponseEntity.ok().body(dto);
     }// func end
-}//func end
+
+    /**
+     * 예매내역 수정
+     *
+     * @param rno
+     * @param sno
+     * @param session
+     * @return boolean
+     */
+    @PutMapping("/update")
+    public ResponseEntity<Boolean> reserveUpdate(@RequestParam int rno , @RequestParam int sno , HttpSession session){
+        int mno = (int) session.getAttribute("logMno");
+        boolean result = reservationsService.reserveUpdate(rno,sno,mno);
+        return ResponseEntity.ok().body(result);
+    }// func end
+}//class end

@@ -33,4 +33,16 @@ public class ReservationsService {
     public ReservationsDto reserveInfo(int mno , int rno){
         return reservationMapper.reserveInfo(mno,rno);
     }// func end
+
+    /**
+     * 예매내역 수정
+     *
+     * @param sno
+     * @param rno
+     * @param mno
+     * @return boolean
+     */
+    public boolean reserveUpdate(int sno , int rno , int mno){
+        return reservationMapper.reserveUpdate(sno, rno , mno);
+    }// func end
 }//func end
