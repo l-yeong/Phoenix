@@ -48,7 +48,6 @@ create table seats(
     zno int not null,                         -- 구역 번호
     seat_no int not null,                     -- 좌석 번호
     senior boolean default false,             -- 시니어 전용 여부
-    gno int not null,                         -- 경기 번호 (외부 CSV/크롤링 데이터와 매칭)
     foreign key(zno) references zones(zno)
 );
 
@@ -59,6 +58,7 @@ create table reservations(
     rno int auto_increment primary key,       -- 예매 고유번호(PK)
     mno int not null,                         -- 회원 번호
     sno int not null,                         -- 좌석 번호
+    gno int not null,                         -- 경기 번호 (외부 CSV/크롤링 데이터와 매칭)
     reserved_at timestamp default current_timestamp,
     status enum('reserved','cancelled') default 'reserved',
     foreign key(mno) references members(mno),
@@ -138,30 +138,30 @@ insert into members(mid, password_hash, mname, mphone, birthdate, email, provide
 ('user10','hash10','장영실','010-1111-1120','1999-01-10','user10@test.com',null,null, 19);
 
 -- 좌석
-insert into seats(zno, seat_no, senior , gno) values
-(10001,101,false,101),
-(10001,102,false,102),
-(10002,201,false,103),
-(10002,202,false,104),
-(10003,301,false,104),
-(10004,401,false,105),
-(10005,501,false,105),
-(10006,601,true,106),
-(10007,701,false,106),
-(10008,801,false,107);
+insert into seats(zno, seat_no, senior ) values
+(10001,101,false),
+(10001,102,false),
+(10002,201,false),
+(10002,202,false),
+(10003,301,false),
+(10004,401,false),
+(10005,501,false),
+(10006,601,true),
+(10007,701,false),
+(10008,801,false);
 
 -- 예매
-insert into reservations(mno,  sno, status) values
-(20001,30001,'reserved'),
-(20002,30002,'reserved'),
-(20003,30003,'reserved'),
-(20004,30004,'reserved'),
-(20005,30005,'reserved'),
-(20006,30006,'reserved'),
-(20007,30007,'reserved'),
-(20008,30008,'reserved'),
-(20009,30009,'reserved'),
-(20010,30010,'cancelled');
+insert into reservations(mno, gno,  sno, status) values
+(20001,101,30001,'reserved'),
+(20002,102,30002,'reserved'),
+(20003,103,30003,'reserved'),
+(20004,104,30004,'reserved'),
+(20005,104,30005,'reserved'),
+(20006,105,30006,'reserved'),
+(20007,105,30007,'reserved'),
+(20008,106,30008,'reserved'),
+(20009,106,30009,'reserved'),
+(20010,107,30010,'cancelled');
 
 -- 티켓
 insert into tickets(rno, ticket_code, valid, price) values
