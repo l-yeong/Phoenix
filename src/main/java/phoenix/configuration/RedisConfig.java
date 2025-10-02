@@ -44,7 +44,7 @@ public class RedisConfig {// class start
         RedisTemplate<String,Object> template = new RedisTemplate<>();
         // 템플릿에 redis 서버 연결
         template.setConnectionFactory(redisConnectionFactory());
-
+        // Hash Key,value 는 value를 Map 처럼 사용할때 사용되는 key value
         // key , HashKey 타입을 String 으로 설정
         template.setKeySerializer(new StringRedisSerializer());
         template.setHashKeySerializer(new StringRedisSerializer());
