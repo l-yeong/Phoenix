@@ -44,6 +44,8 @@ dependencies {
     implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.5'
     // [9] AOP
     implementation 'org.springframework.boot:spring-boot-starter-aop'
+    // [10] Redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
 }
 
