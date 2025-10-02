@@ -45,4 +45,15 @@ public class ReservationsService {
     public boolean reserveUpdate(int sno , int rno , int mno){
         return reservationMapper.reserveUpdate(sno, rno , mno);
     }// func end
+
+    /**
+     * 예매취소
+     *
+     * @param rno
+     * @param mno
+     * @return boolean
+     */
+    public boolean reserveCancle(int rno , int mno){
+        return reservationMapper.reserveCancel(rno, mno);
+    }// func end
 }//func end

@@ -56,4 +56,18 @@ public class ReservationsController {
         boolean result = reservationsService.reserveUpdate(rno,sno,mno);
         return ResponseEntity.ok().body(result);
     }// func end
+
+    /**
+     * 예매취소
+     *
+     * @param rno
+     * @param session
+     * @return boolean
+     */
+    @PutMapping("/cancle")
+    public ResponseEntity<Boolean> reserveCancle(@RequestParam int rno , HttpSession session){
+        int mno = (int) session.getAttribute("logMno");
+        boolean result = reservationsService.reserveCancle(rno , mno);
+        return ResponseEntity.ok().body(result);
+    }// func end
 }//class end

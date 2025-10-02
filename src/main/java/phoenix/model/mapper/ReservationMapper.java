@@ -2,6 +2,7 @@ package phoenix.model.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 import org.springframework.web.bind.annotation.PutMapping;
 import phoenix.model.dto.ReservationsDto;
 
@@ -37,6 +38,16 @@ public interface ReservationMapper {
      * @param mno
      * @return boolean
      */
-    @PutMapping("update reservations set sno = #{sno} where rno = #{rno} and mno = #{mno}")
+    @Update("update reservations set sno = #{sno} where rno = #{rno} and mno = #{mno}")
     public boolean reserveUpdate(int sno , int rno , int mno);
+
+    /**
+     * 예매 취소
+     *
+     * @param rno
+     * @param mno
+     * @return boolean
+     */
+    @Update("update reservations set status = cancelled where rno = #{rno} and mno = #{mno} ")
+    public boolean reserveCancel(int rno , int mno);
 }//inter end
