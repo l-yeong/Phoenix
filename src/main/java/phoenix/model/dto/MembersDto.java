@@ -20,6 +20,7 @@ public class MembersDto {
     private String provider;        // 소셜제공자
     private String provider_id;     // 소설제공자내부고유ID
     private String status;          // 회원상태
-    private String exchange;        // 교환 신청 가능
+    private Boolean exchange;        // 교환 신청 가능
+    private Boolean email_verified; // 이메일 인증 여부
 
 }//func end
