@@ -1,8 +1,0 @@
-25-10-01 17:44:54 c.z.h.HikariDataSource HikariPool-1 - Starting... 
-25-10-01 17:44:54 i.o.a.GlobalOpenTelemetry AutoConfiguredOpenTelemetrySdk found on classpath but automatic configuration is disabled. To enable, run your JVM with -Dotel.java.global-autoconfigure.enabled=true 
-25-10-01 17:44:55 c.z.h.p.HikariPool HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@16d7ea25 
-25-10-01 17:44:55 c.z.h.HikariDataSource HikariPool-1 - Start completed. 
-25-10-01 17:48:59 c.z.h.HikariDataSource HikariPool-1 - Starting... 
-25-10-01 17:48:59 i.o.a.GlobalOpenTelemetry AutoConfiguredOpenTelemetrySdk found on classpath but automatic configuration is disabled. To enable, run your JVM with -Dotel.java.global-autoconfigure.enabled=true 
-25-10-01 17:48:59 c.z.h.p.HikariPool HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@4663e944 
-25-10-01 17:48:59 c.z.h.HikariDataSource HikariPool-1 - Start completed. 
