@@ -8,4 +8,5 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class ReservationExchangesService {
     private final ReservationExchangesMapper reservationexchangeMapper;
+    private final ThreadPoolConfig threadPoolConfing;
 }//func end

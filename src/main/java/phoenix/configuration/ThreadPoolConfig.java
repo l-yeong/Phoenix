@@ -1,5 +1,6 @@
 package phoenix.configuration; // 패키지명
 
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
@@ -15,6 +16,7 @@ public class ThreadPoolConfig { // class start
      *
      * @return executor
      */
+    @Bean
     public Executor changeExecutor(){
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(2);                // 기본 쓰레드수 2
