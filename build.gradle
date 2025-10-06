@@ -45,8 +45,8 @@ dependencies {
     // [9] AOP
     implementation 'org.springframework.boot:spring-boot-starter-aop'
 
-    // [10] 비밀번호 해시 (Spring Security 전체 말고 crypto 모듈만)
-    implementation 'org.springframework.security:spring-security-crypto'
+    // [10] 비밀번호 해시 (Spring Security 전체 )
+    implementation 'org.springframework.boot:spring-boot-starter-security'
 
     // [11] JWT 발급/검증 (io.jsonwebtoken)
     implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
