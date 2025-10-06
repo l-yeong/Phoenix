@@ -21,40 +21,6 @@ public class MembersController {
 
     private final MembersService membersService;
 
-//    // 테스트용 회원가입
-//    @PostMapping("/signup")
-//    public ResponseEntity<String> signUp(@RequestBody MembersDto member) {
-//        boolean result = membersService.signUp(member);
-//        return result ? ResponseEntity.ok("회원가입 성공")
-//                : ResponseEntity.badRequest().body("이미 존재하는 아이디입니다.");
-//    }
-    /*
-    탈랜드 body 테스트 폼
-        {
-      "mid": "user01",
-      "password_hash": "1234",
-      "mname": "홍길동",
-      "mphone": "010-1234-5678",
-      "birthdate": "1970-01-01",
-      "email": "user01@example.com"
-        }
-    */
-
-//    // 테스트용 로그인
-//    @PostMapping("/login")
-//    public String login(@RequestBody MembersDto member) {
-//        MembersDto loginUser = membersService.login(member.getMid(), member.getPassword_hash());
-//        return (loginUser != null) ?
-//                "로그인 성공: " + loginUser.getMname() :
-//                "로그인 실패";
-//    }
-    /*
-    탈랜드 body 테스트 폼
-     {
-      "mid": "user01",
-      "password_hash": "1234"
-    }
-    */
 
     /**
      *  회원가입 메소드
@@ -116,14 +82,21 @@ public class MembersController {
         } // if e
     } // func e
 
+    /**
+     * 이메일 인증 API (코드 검증)
+     * @param request { "email": "user@test.com", "code": "123456" }
+     */
     @PostMapping("/verify-email")
-    public ResponseEntity<ApiResponseUtil<?>> verifyEmail(@RequestParam Map<String , String> request ){
+    public ResponseEntity<ApiResponseUtil<?>> verifyEmail(@RequestBody Map<String , String> request ){
         String email = request.get("email");
-        boolean verified = membersService.verityEmail(email);
+        String code = request.get("code");
+
+        boolean verified = membersService.verityEmail(email , code);
+
         return verified
                 ? ResponseEntity.ok(new ApiResponseUtil<>(true , "이메일 인증 완료" , null))
                 : ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ApiResponseUtil<>(false, "이메일 인증 실패" , null));
+                .body(new ApiResponseUtil<>(false, "인증 코드가 올바르지 않거나 만료되었습니다." , null));
     } // func e
 
 } // class e
