@@ -7,6 +7,5 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class ReservationExchangesService {
-    private final ReservationExchangeMapper reservationexchangeMapper;
-
+    private final ReservationExchangesMapper reservationexchangeMapper;
 }//func end
