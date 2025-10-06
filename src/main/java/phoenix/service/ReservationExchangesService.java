@@ -8,6 +8,8 @@ import phoenix.model.mapper.ReservationExchangeMapper;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.Executor;
 
 @Service
@@ -15,22 +17,60 @@ import java.util.concurrent.Executor;
 public class ReservationExchangesService {
     private final ReservationExchangeMapper reservationExchangeMapper;
     private final ThreadPoolConfig threadPoolConfing;
-    private final RedisConfig redisConfig;
+    private final RedisService redisService;
 
+    /**
+     * 교환요청 접수
+     *
+     * @param dto 요청 Dto
+     * @return true : 성공 , false : 중복요청
+     */
     public boolean requestChange(ReservationExchangesDto dto){
-        String rediskey = "exchange:request" + dto.getExno();
-        Boolean check = redisConfig.redisTemplate().hasKey(rediskey);
-        if (check != null && check){    // 이미 존재하는 요청인지 확인
-            return false;
-        }// if end
-        // redis에 저장 , 유효시간 24시간
-        redisConfig.redisTemplate().opsForValue().set(rediskey,dto, Duration.ofHours(24));
+        dto.setStatus("PENDING"); // 상태 : 대기
+        String nowTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        dto.setRequested_at(nowTime); // 요청시간 저장
+        // redis 에 저장
+        boolean saved = redisService.saveRequest(dto);
+        if (!saved) return false;
         Executor executor = threadPoolConfing.changeExecutor();
-        executor.execute( () -> taskThread(dto) );
+        // 쓰레드풀에서 후속처리
+        executor.execute( () -> {
+            System.out.println("ThreadPool 처리 시작 : " + dto.getFrom_rno());
+        });
         return true;
     }// func end
 
-    public void taskThread(ReservationExchangesDto dto){
-        // 처리 로직
+    /**
+     * 응답자 요청 수락시 처리
+     *
+     * @param from_rno 요청 예매번호
+     * @return true : 수락처리 , false : 요청 없음
+     */
+    public boolean acceptChange(int from_rno){
+        ReservationExchangesDto dto = redisService.getRequest(from_rno);
+        if (dto == null) return false;
+        dto.setStatus("ACCEPTED");
+        String nowTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        dto.setResponded_at(nowTime);
+        // db에저장
+
+        // redis 삭제
+        redisService.deleteRequest(from_rno);
+        return true;
+    }// func end
+
+    /**
+     * 응답자 요청 거절시 처리
+     *
+     * @param from_rno 요청 예매번호
+     * @return true : 거절처리 , false : 요청 없음
+     */
+    public boolean rejectChange(int from_rno){
+        ReservationExchangesDto dto = redisService.getRequest(from_rno);
+        if (dto == null) return false;
+        String nowTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        dto.setResponded_at(nowTime);
+        redisService.deleteRequest(from_rno); // redis 삭제
+        return true;
     }// func end
 }//func end
