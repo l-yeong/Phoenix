@@ -53,6 +53,12 @@ dependencies {
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
 
+    // [12] 이메일 발송용(JavaMailSender 자동 구성)
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+    // [13] Redis 연결/사용용(RedisTemplate 자동 구성)
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
 }
 
 tasks.named('test') {
