@@ -149,7 +149,8 @@ insert into members (
 ('user7','hash7','정몽주','010-1111-1117','1995-12-01','user7@test.com','github','gh777',16,false,null,null),
 ('user8','hash8','신사임당','010-1111-1118','1988-06-25','user8@test.com','facebook','fb888',17,false,null,null),
 ('user9','hash9','세종대왕','010-1111-1119','1955-08-30','user9@test.com','google','g555',18,false,null,null),
-('user10','hash10','장영실','010-1111-1120','1999-01-10','user10@test.com',null,null,19,false,null,null);
+('user10','hash10','장영실','010-1111-1120','1999-01-10','user10@test.com',null,null,19,false,null,null),
+('test1234' , '$2a$12$CcdUdQc9iDE162NMTefen.YinTca5gKP63.708QS.w1wWPGAMDOYW' , 'test' , '010-1234-1234' , '1999-12-12' , 'rufp9891@gmail.com' , null , null , null , true , null , null);
 
 
 -- 좌석
