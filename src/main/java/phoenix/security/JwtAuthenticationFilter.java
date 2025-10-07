@@ -4,9 +4,14 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 
 
 /**
@@ -40,8 +45,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String token = authHeader.substring(7); // "Bearer " 이후의 실제 토큰만 추출
 
             // [3] JWT 유효성 검증
+            if(jwtUtil.validateToken(token)){
+                String username = jwtUtil.getMid(token);
 
-        }
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(username , null , List.of(new SimpleGrantedAuthority("ROLE_USER")));
+
+                // SecurityContext에 인증 정보 등록
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
+
+        } // if e
 
         // [4] 다음 필터로 요청 전달
         filterChain.doFilter(request , response);

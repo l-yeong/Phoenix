@@ -9,6 +9,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import phoenix.security.JwtAuthenticationFilter;
 import phoenix.security.JwtUtil;
 
 /**
@@ -42,9 +44,10 @@ public class SecurityConfig {
                         .requestMatchers("/members/signup" , "/members/login" , "/email/**").permitAll() // 인증 불필요
                         .requestMatchers("/admin//**").hasRole("ADMIN")  // ADMIN만 접근 가능
                         .anyRequest().authenticated() // 그 외 모든 요청은 인증 필요
-                );
+                )
 
                 // JWT 필터 연결
+                .addFilterBefore(new JwtAuthenticationFilter(jwtUtil) , UsernamePasswordAuthenticationFilter.class);
 
         return security.build();
 

@@ -63,7 +63,7 @@ public class JwtUtil {
      *  @param token JWT 문자열
      *  @return boolean (true : 유효 , false : 만료 / 위조 )
      */
-    public boolean vaildateToken(String token ){
+    public boolean validateToken(String token ){
         try{
             Jwts.parser()       // parser() : JWT 파서 빌더 객체 생성
                     .verifyWith(Keys.hmacShaKeyFor(secret.getBytes())) // secret 키를 사용해 서명 검증 준비
