@@ -2,6 +2,7 @@ package phoenix.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.PostMapping;
 import phoenix.model.dto.MembersDto;
 import phoenix.model.mapper.MembersMapper;
 import org.springframework.stereotype.Service;
@@ -65,6 +66,12 @@ public class MembersService {
     @Transactional
     public String login( String mid , String rawPassword ){
         MembersDto member = membersMapper.findByMid(mid);
+        System.out.println("[LOGIN-DEBUG] member = " + member);
+
+        if (member != null) {
+            System.out.println("[LOGIN-DEBUG] email_verified = " + member.getEmail_verified());
+            System.out.println("[LOGIN-DEBUG] password matches = " + PasswordUtil.matches(rawPassword, member.getPassword_hash()));
+        }
 
         if( member != null
                 && PasswordUtil.matches(rawPassword , member.getPassword_hash())
@@ -98,5 +105,25 @@ public class MembersService {
 
         return verified;
     } // func e
+
+    /**
+     *  이메일 인증 코드 요청 메소드
+     * */
+    public boolean emailSend(String mid){
+        MembersDto member = membersMapper.findByMid(mid);
+        if(member == null ) return false;
+
+        emailService.sendAuthCode(member.getEmail());
+        return true;
+    } // func e
+
+
+    public boolean emailSendByEmail(String email) {
+        MembersDto member = membersMapper.findByEmail(email);
+        if (member == null) return false;
+
+        emailService.sendAuthCode(email);
+        return true;
+    }
 
 }//func end

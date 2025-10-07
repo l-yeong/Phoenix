@@ -3,6 +3,7 @@ package phoenix.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import phoenix.model.dto.MembersDto;
 import phoenix.service.MembersService;
@@ -98,5 +99,11 @@ public class MembersController {
                 : ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ApiResponseUtil<>(false, "인증 코드가 올바르지 않거나 만료되었습니다." , null));
     } // func e
+
+    @PostMapping("/email/send")
+    public boolean sendEmailCode(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        return membersService.emailSendByEmail(email);
+    }
 
 } // class e

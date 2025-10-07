@@ -41,7 +41,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String authHeader = request.getHeader("Authorization");
 
         // [2] "Bearer " 로 시작하는지 확인
-        if(authHeader != null && authHeader.startsWith("Bearer")){
+        if(authHeader != null && authHeader.startsWith("Bearer ")){
             String token = authHeader.substring(7); // "Bearer " 이후의 실제 토큰만 추출
 
             // [3] JWT 유효성 검증
@@ -54,8 +54,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // SecurityContext에 인증 정보 등록
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
+            System.out.println("Authorization 헤더: " + authHeader);
+            System.out.println("토큰 추출: " + token);
+            System.out.println("토큰 유효성: " + jwtUtil.validateToken(token));
+            System.out.println("토큰 주체(mid): " + jwtUtil.getMid(token));
 
         } // if e
+        System.out.println("Authorization 헤더 = " + request.getHeader("Authorization"));
+        System.out.println("SecurityContext 인증 객체 = " + SecurityContextHolder.getContext().getAuthentication());
 
         // [4] 다음 필터로 요청 전달
         filterChain.doFilter(request , response);

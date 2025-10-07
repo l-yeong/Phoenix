@@ -50,6 +50,13 @@ public interface MembersMapper {
     @Update("update members set email_verified = true where email = #{email}")
     int verifyEmail(String email);
 
+    /**
+     *  이메일로 회원 조회
+     *  @param email
+     *  @return MembersDto
+     */
+    @Select("select * from members where email = #{email}")
+    MembersDto findByEmail(String email);
 
 
 

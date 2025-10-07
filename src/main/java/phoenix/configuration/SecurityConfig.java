@@ -40,10 +40,24 @@ public class SecurityConfig {
                 .httpBasic(basic -> basic.disable()) // 기본 인증창 비활성화 (REST API 사용을 위함)
 
                 // 접근 제한 설정
+                // 테스트용 , 이메일 인증 없이 가능
+//                .authorizeHttpRequests(auth -> auth
+//                        .requestMatchers(
+//                                "/members/signup",
+//                                "/members/login",
+//                                "/members/email/send",
+//                                "/members/verify-email"
+//                        ).permitAll()
+//                        .anyRequest().authenticated()
+
+                // 접근 제한 설정
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/members/signup" , "/members/login" , "/email/**").permitAll() // 인증 불필요
-                        .requestMatchers("/admin//**").hasRole("ADMIN")  // ADMIN만 접근 가능
-                        .anyRequest().authenticated() // 그 외 모든 요청은 인증 필요
+                        .requestMatchers(
+                                "/members/signup",
+                                "/members/login",
+                                "/members/verify-email"
+                        ).permitAll()
+                        .anyRequest().authenticated()
                 )
 
                 // JWT 필터 연결
