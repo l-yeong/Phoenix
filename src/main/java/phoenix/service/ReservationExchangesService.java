@@ -55,7 +55,7 @@ public class ReservationExchangesService {
         // db에저장
 
         // redis 삭제
-        redisService.deleteRequest(from_rno);
+        redisService.deleteAllRequest(dto);
         return true;
     }// func end
 

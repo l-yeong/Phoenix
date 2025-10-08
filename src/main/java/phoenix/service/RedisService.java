@@ -1,15 +1,17 @@
 package phoenix.service; // 패키지명
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import phoenix.configuration.RedisConfig;
 import phoenix.model.dto.ReservationExchangesDto;
 
 import java.time.Duration;
+import java.util.Set;
 
 @Service @RequiredArgsConstructor
 public class RedisService { // class start
-    private final RedisConfig redisConfig;
+    private final RedisTemplate<String,Object> redisTemplate;
 
     /**
      * redis에 요청데이터 저장
@@ -18,8 +20,13 @@ public class RedisService { // class start
      * @return ture : 저장성공 , false : 이미 존재
      */
     public boolean saveRequest(ReservationExchangesDto dto){
-        String key = "change:request:" + dto.getFrom_rno();
-        Boolean success = redisConfig.redisTemplate().opsForValue().setIfAbsent(key , dto , Duration.ofHours(24));
+        String requestKey = "change:request:" + dto.getFrom_rno();  // 요청자 기준
+        String seatKey = "change:seat:" + dto.getTo_rno();          // 응답좌석 기준 (index용)
+        Boolean success = redisTemplate.opsForValue().setIfAbsent(requestKey , dto , Duration.ofHours(24));
+        if (success != null && success){
+            redisTemplate.opsForSet().add(seatKey,String.valueOf(dto.getTo_rno()));
+            redisTemplate.expire(seatKey,Duration.ofHours(24));
+        }//if end
         return success != null && success;
     }// func end
 
@@ -31,7 +38,7 @@ public class RedisService { // class start
      */
     public ReservationExchangesDto getRequest(int from_rno){
         String key = "change:request:" + from_rno;
-        return (ReservationExchangesDto) redisConfig.redisTemplate().opsForValue().get(key);
+        return (ReservationExchangesDto) redisTemplate.opsForValue().get(key);
     }// func end
 
     /**
@@ -41,6 +48,18 @@ public class RedisService { // class start
      */
     public void deleteRequest(int from_rno){
         String key = "change:request:" + from_rno;
-        redisConfig.redisTemplate().delete(key);
+        redisTemplate.delete(key);
+    }// func end
+
+    public void deleteAllRequest(ReservationExchangesDto dto){
+        String seatKey = "change:seat:" + dto.getTo_rno();
+        Set<Object> fromRnos = redisTemplate.opsForSet().members(seatKey);
+        if (fromRnos != null && !fromRnos.isEmpty()) {
+            for (Object fromRno : fromRnos) {
+                String from_rno = String.valueOf(fromRno);
+                redisTemplate.delete("change:request:" + from_rno);
+            }// for end
+            redisTemplate.delete(seatKey);
+        }//if end
     }// func end
 }// class end
