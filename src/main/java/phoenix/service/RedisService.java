@@ -51,6 +51,11 @@ public class RedisService { // class start
         redisTemplate.delete(key);
     }// func end
 
+    /**
+     * redis에서 응답예매번호에 대한 요청데이터 전체삭제
+     *
+     * @param dto
+     */
     public void deleteAllRequest(ReservationExchangesDto dto){
         String seatKey = "change:seat:" + dto.getTo_rno();
         Set<Object> fromRnos = redisTemplate.opsForSet().members(seatKey);

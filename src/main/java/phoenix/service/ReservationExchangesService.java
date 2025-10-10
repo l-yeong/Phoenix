@@ -1,13 +1,11 @@
 package phoenix.service;
 
 import lombok.RequiredArgsConstructor;
-import phoenix.configuration.RedisConfig;
 import phoenix.configuration.ThreadPoolConfig;
 import phoenix.model.dto.ReservationExchangesDto;
 import phoenix.model.mapper.ReservationExchangeMapper;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.Executor;
