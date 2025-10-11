@@ -151,7 +151,7 @@ insert into seats(zno, seat_no, senior , gno) values
 (10008,801,false,107);
 
 -- 예매
-insert into reservations(mno, gno, sno, status) values
+insert into reservations(mno,  sno, status) values
 (20001,30001,'reserved'),
 (20002,30002,'reserved'),
 (20003,30003,'reserved'),
