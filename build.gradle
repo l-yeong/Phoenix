@@ -44,6 +44,9 @@ dependencies {
     implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.5'
     // [9] AOP
     implementation 'org.springframework.boot:spring-boot-starter-aop'
+    // [10] zxing QR
+    implementation 'com.google.zxing:core:3.5.3'
+    implementation 'com.google.zxing:javase:3.5.3'
 
 }
 
