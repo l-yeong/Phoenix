@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import phoenix.model.dto.MembersDto;
 import phoenix.model.mapper.MembersMapper;
 import phoenix.security.JwtUtil;
+import phoenix.util.SocialUtil;
 
 import java.time.LocalDate;
 
@@ -22,6 +23,7 @@ public class SocialAuthService {
     private final MembersMapper membersMapper;
     private final JwtUtil jwtUtil;
     private final TokenService tokenService;
+    private final SocialUtil socialUtil;
 
     /**
      * 소셜 로그인 처리
@@ -63,8 +65,15 @@ public class SocialAuthService {
         if (membersDto.getBirthdate() == null) {
             membersDto.setBirthdate(String.valueOf(LocalDate.of(1900, 1, 1))); // 기본 생년월일
         }
-        if (membersDto.getMphone() == null) {
-            membersDto.setMphone("000-0000-0000"); // 임시 전화번호
+        if (membersDto.getMphone() == null || membersDto.getMphone().isBlank()) {
+            membersDto.setMphone(SocialUtil.generateTempPhone(membersDto.getProvider_id()));
+        }
+
+        if (membersDto.getMname() == null || membersDto.getMname().isBlank()) {
+            membersDto.setMname("social_user_" + membersDto.getProvider_id());
+        }
+        if (membersDto.getEmail() == null || membersDto.getEmail().isBlank()) {
+            membersDto.setEmail(membersDto.getProvider() + "_" + membersDto.getProvider_id() + "@social.local");
         }
 
         // [2] 필수 초기값 설정
@@ -72,7 +81,18 @@ public class SocialAuthService {
         membersDto.setExchange(true);
         membersDto.setEmail_verified(true); // 소셜 로그인은 이메일 검증 완료 상태로 간주
 
-        // [3] DB 저장
+        // [3] 중복 검사 (email, provider_id)
+        MembersDto existingByEmail = membersMapper.findByEmail(membersDto.getEmail());
+        MembersDto existingByProvider = membersMapper.findByProvider(
+                membersDto.getProvider(), membersDto.getProvider_id()
+        );
+
+        if (existingByEmail != null || existingByProvider != null) {
+            System.out.println(" 이미 가입된 회원입니다. 이메일: " + membersDto.getEmail());
+            return false; // 중복 방지
+        }
+
+        // [4] DB 저장
         return membersMapper.signUp(membersDto) > 0;
     }
 }
