@@ -3,6 +3,7 @@ package phoenix.configuration;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -14,6 +15,7 @@ import phoenix.security.JwtAuthenticationFilter;
 import phoenix.security.JwtUtil;
 import phoenix.handler.OAuth2SuccessHandler;
 import phoenix.service.CustomOAuth2UserService;
+import phoenix.service.MembersService;
 
 /**
  * <h2>SecurityConfig</h2>
@@ -47,6 +49,13 @@ public class SecurityConfig {
     private final AuthenticationConfiguration authenticationConfiguration;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
     private final CustomOAuth2UserService customOAuth2UserService; // 추가된 커스텀 OAuth2UserService
+
+    /** JwtAuthenticationFilter를 Bean으로 등록 */
+    @Bean
+    public JwtAuthenticationFilter jwtAuthenticationFilter(@Lazy MembersService membersService) {
+        // @Lazy 주입으로 순환참조 방지
+        return new JwtAuthenticationFilter(jwtUtil, membersService);
+    }
 
     /**
      * <h3>보안 필터 체인 설정</h3>
@@ -100,7 +109,7 @@ public class SecurityConfig {
                 // =============================
                 // JWT 인증 필터 등록
                 // =============================
-                .addFilterBefore(new JwtAuthenticationFilter(jwtUtil),
+                .addFilterBefore(jwtAuthenticationFilter(null),
                         UsernamePasswordAuthenticationFilter.class);
 
         return security.build();
