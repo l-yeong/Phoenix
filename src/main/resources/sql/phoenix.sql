@@ -230,3 +230,4 @@ select * from reservations;
 select * from tickets;
 select * from reservation_exchanges;
 select * from auto_assign_log;
+DESC members;
