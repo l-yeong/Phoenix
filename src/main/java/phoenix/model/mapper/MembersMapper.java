@@ -54,6 +54,58 @@ public interface MembersMapper {
     @Select("SELECT * FROM members WHERE provider = #{provider} AND provider_id = #{provider_id}")
     MembersDto findByProvider(@Param("provider") String provider, @Param("provider_id") String provider_id);
 
+    /**
+     * 회원 정보 수정
+     * */
+    @Update("""
+        UPDATE members
+        SET mname = #{dto.mname},
+            mphone = #{dto.mphone},
+            email = #{dto.email},
+            email_verified = #{dto.email_verified},
+            pno = #{dto.pno},
+            exchange = #{dto.exchange}
+        WHERE mid = #{mid}
+    """)
+    int infoUpdate(@Param("mid") String mid, @Param("dto") MembersDto dto);
+
+    /**
+     * 비밀번호 변경
+     * */
+    @Update("UPDATE members SET password_hash = #{newPwd} WHERE mid = #{mid}")
+    int pwdUpdate(@Param("mid") String mid, @Param("newPwd") String newPwd);
+
+    /**
+     * 회원 탈퇴
+     * */
+    @Update("UPDATE members SET status = 'withdrawn' WHERE mid = #{mid}")
+    int memberDelete(String mid);
+
+    /**
+     * 아이디 찾기
+     * */
+    @Select("SELECT mid FROM members WHERE email = #{email} AND status != 'withdrawn'")
+    String findId(String email);
+
+    /** 이름 + 연락처 + 이메일로 회원 조회 (아이디 찾기용) */
+    @Select("""
+        SELECT * FROM members 
+        WHERE mname = #{mname} AND mphone = #{mphone} AND email = #{email}
+          AND status != 'withdrawn'
+    """)
+    MembersDto findByNamePhoneEmail(@Param("mname") String mname,
+                                    @Param("mphone") String mphone,
+                                    @Param("email") String email);
+
+    /** 아이디 + 이름 + 이메일로 회원 조회 (비밀번호 재설정용) */
+    @Select("""
+        SELECT * FROM members 
+        WHERE mid = #{mid} AND mname = #{mname} AND email = #{email}
+          AND status != 'withdrawn'
+    """)
+    MembersDto findByMidNameEmail(@Param("mid") String mid,
+                                  @Param("mname") String mname,
+                                  @Param("email") String email);
 
 
 } // class e

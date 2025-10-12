@@ -92,4 +92,20 @@ public class EmailService {
     } // func e
 
 
+    /**
+     * 일반 메일 발송 (임시 비밀번호, 공지 등)
+     *
+     * @param to 수신자 이메일
+     * @param subject 제목
+     * @param text 본문 내용
+     */
+    public void sendSimpleMail(String to, String subject, String text) {
+        SimpleMailMessage msg = new SimpleMailMessage();
+        msg.setTo(to);
+        msg.setSubject(subject);
+        msg.setText(text);
+        mailSender.send(msg);
+    } // func e
+
+
 } // class e

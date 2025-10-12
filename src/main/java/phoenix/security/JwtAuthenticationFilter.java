@@ -9,6 +9,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.filter.OncePerRequestFilter;
+import phoenix.model.dto.MembersDto;
+import phoenix.service.MembersService;
 
 import java.io.IOException;
 import java.util.List;
@@ -22,9 +24,11 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil; // JWT 검증/파싱용 유틸
+    private final MembersService membersService; // DB에서 회원정보 조회용
 
-    public JwtAuthenticationFilter(JwtUtil jwtUtil){
+    public JwtAuthenticationFilter(JwtUtil jwtUtil, MembersService membersService) {
         this.jwtUtil = jwtUtil;
+        this.membersService = membersService;
     }
 
     /**
@@ -46,13 +50,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             // [3] JWT 유효성 검증
             if(jwtUtil.validateToken(token)){
-                String username = jwtUtil.getMid(token);
+                String mid = jwtUtil.getMid(token);
 
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(username , null , List.of(new SimpleGrantedAuthority("ROLE_USER")));
+                // [4] DB에서 회원 객체 조회
+                MembersDto member = membersService.findByMid(mid);
 
-                // SecurityContext에 인증 정보 등록
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                if( member != null ) {
+                    // [5] 인증 객체 생성 (Principal에 MembersDto 저장)
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(member, null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+
+                    // [6] SecurityContext에 인증 정보 등록
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+
+                }
             }
             System.out.println("Authorization 헤더: " + authHeader);
             System.out.println("토큰 추출: " + token);
