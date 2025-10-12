@@ -15,7 +15,7 @@ create table members (
     mid varchar(50) unique null,               -- 회원 아이디
     password_hash varchar(255) null,           -- 비밀번호 해시값
     mname varchar(50) not null,                    -- 회원 이름
-    mphone varchar(13) unique not null,            -- 회원 번호
+    mphone varchar(13) unique null,            -- 회원 번호
     birthdate date not null,                       -- 생년월일
     email varchar(100) unique not null,            -- 이메일
     create_at timestamp default current_timestamp, -- 가입일(로그 추적용)
@@ -45,6 +45,9 @@ create table members (
     refresh_token_expire timestamp null  -- JWT 리프레시 토큰 만료시간
     
 );
+
+-- 소셜 회원 unique 유지하면서 null 허용
+ALTER TABLE members MODIFY COLUMN mphone VARCHAR(13) NULL UNIQUE;
 
 -- ---------------------- 시니어 회원 뷰 ---------------------- 
 create or replace view member_view as
