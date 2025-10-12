@@ -42,6 +42,7 @@ public class MembersController {
      *   "exchange": true,
      *   "email_verified": false
      * }
+     * 회원가입 시 받아야하는 값 많아서 실제로 해야함
      */
     @PostMapping("signup")
     public ResponseEntity<ApiResponseUtil<?>> signUp(@RequestBody MembersDto membersDto){
@@ -62,8 +63,8 @@ public class MembersController {
      *  로그인( JWT 발급) 메소드
      *  탈랜드 테스트용
      *  {
-     * "mid": "test10",
-     * "password_hash": "abcd1234"
+     * "mid": "test1234",
+     * "password_hash": "1234"
      * }
      * */
     @PostMapping("login")

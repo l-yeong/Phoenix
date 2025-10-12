@@ -33,14 +33,6 @@ public interface MembersMapper {
     @Select("select * from members where mid = #{mid}")
     MembersDto findByMid(String mid);
 
-    /**
-     *  리프레시 토큰 저장(토큰 재발급용)
-     * @param membersDto
-     * @return int
-     */
-    @Update("update members set refresh_token = #{refresh_token} , refresh_token_expire = #{refresh_token_expire}" +
-            "where mno = #{mno}")
-    int saveRefreshToken(MembersDto membersDto);
 
     /**
      *  이메일 인증 완료 업데이트
