@@ -12,6 +12,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import phoenix.security.JwtAuthenticationFilter;
 import phoenix.security.JwtUtil;
+import phoenix.handler.OAuth2SuccessHandler;
 
 /**
  *   Spring Security 핵심 설정 클래스
@@ -24,6 +25,7 @@ public class SecurityConfig {
 
     private final JwtUtil jwtUtil;
     private final AuthenticationConfiguration authenticationConfiguration;
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
 
     /**
@@ -58,9 +60,15 @@ public class SecurityConfig {
                                 "/members/email/send",
                                 "/members/verify-email",
                                 "/members/token/refresh",
-                                "/members/logout"
+                                "/members/logout",
+                                "/oauth/**"
                         ).permitAll()
                         .anyRequest().authenticated()
+                )
+                .oauth2Login(oauth2 -> oauth2
+                        .successHandler(oAuth2SuccessHandler) // 로그인 성공 처리 커스텀
+                        .defaultSuccessUrl("/oauth/success", true)
+                        .failureUrl("/oauth/failure")
                 )
 
                 // JWT 필터 연결
