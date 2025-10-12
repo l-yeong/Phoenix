@@ -50,6 +50,10 @@ public interface MembersMapper {
     @Select("select * from members where email = #{email}")
     MembersDto findByEmail(String email);
 
+    /** 소셜 계정으로 회원 조회 */
+    @Select("SELECT * FROM members WHERE provider = #{provider} AND provider_id = #{provider_id}")
+    MembersDto findByProvider(@Param("provider") String provider, @Param("provider_id") String provider_id);
+
 
 
 } // class e
