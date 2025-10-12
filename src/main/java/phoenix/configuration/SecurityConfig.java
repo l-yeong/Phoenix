@@ -13,11 +13,31 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import phoenix.security.JwtAuthenticationFilter;
 import phoenix.security.JwtUtil;
 import phoenix.handler.OAuth2SuccessHandler;
+import phoenix.service.CustomOAuth2UserService;
 
 /**
- *   Spring Security 핵심 설정 클래스
- * - 모든 HTTP 요청의 접근 권한, 인증 방식, 필터 체인 등을 설정
- * - Controller 이전 단계에서 동작하는 보안 관문 역할
+ * <h2>SecurityConfig</h2>
+ * <p>
+ * Spring Security 전역 보안 설정 클래스.<br>
+ * JWT 기반 인증과 OAuth2(Google, GitHub, Facebook) 로그인을 통합 관리.
+ * </p>
+ *
+ * <h3>주요 기능</h3>
+ * <ul>
+ *   <li>모든 HTTP 요청의 인증·인가 정책 정의</li>
+ *   <li>JWT 인증 필터 등록 및 커스텀 OAuth2 로그인 로직 적용</li>
+ *   <li>OAuth2 로그인 성공 시 {@link OAuth2SuccessHandler} 실행</li>
+ * </ul>
+ *
+ * <h3>보안 정책 요약</h3>
+ * <ul>
+ *   <li>회원가입, 로그인, 이메일 인증, 토큰 갱신, 소셜 로그인 URL 등은 비인증 접근 허용</li>
+ *   <li>그 외 모든 요청은 JWT 또는 OAuth2 인증 필요</li>
+ *   <li>CSRF, 기본 로그인폼, HTTP Basic 인증 비활성화</li>
+ * </ul>
+ *
+ * @author Phoenix
+ * @since 2025-10
  */
 @Configuration
 @RequiredArgsConstructor
@@ -26,33 +46,34 @@ public class SecurityConfig {
     private final JwtUtil jwtUtil;
     private final AuthenticationConfiguration authenticationConfiguration;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
-
+    private final CustomOAuth2UserService customOAuth2UserService; // 추가된 커스텀 OAuth2UserService
 
     /**
-     *   모든 요청에 대해 동작하는 “보안 필터 체인” 설정
-     * - 로그인/회원가입 등은 누구나 접근 가능 (permitAll)
-     * - 그 외 요청은 인증 필요 (authenticated)
+     * <h3>보안 필터 체인 설정</h3>
+     * <p>
+     * - URL별 접근 권한 설정<br>
+     * - JWT 인증 필터 등록<br>
+     * - OAuth2 로그인 설정
+     * </p>
+     *
+     * @param security HttpSecurity 설정 객체
+     * @return SecurityFilterChain 완성된 보안 필터 체인
+     * @throws Exception 구성 중 발생한 예외
      */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity security) throws Exception {
 
         security
-                .csrf(csrf -> csrf.disable()) // CSRF(사이트 간 요청 위조) 보호 비활성화
-                .formLogin(form -> form.disable()) // 기본 로그인 폼 비활성화
-                .httpBasic(basic -> basic.disable()) // 기본 인증창 비활성화 (REST API 사용을 위함)
+                // =============================
+                // 기본 보안 설정 비활성화 (REST용)
+                // =============================
+                .csrf(csrf -> csrf.disable())
+                .formLogin(form -> form.disable())
+                .httpBasic(basic -> basic.disable())
 
-                // 접근 제한 설정
-                // 테스트용 , 이메일 인증 없이 가능
-//                .authorizeHttpRequests(auth -> auth
-//                        .requestMatchers(
-//                                "/members/signup",
-//                                "/members/login",
-//                                "/members/email/send",
-//                                "/members/verify-email"
-//                        ).permitAll()
-//                        .anyRequest().authenticated()
-
-                // 접근 제한 설정
+                // =============================
+                // URL 접근 제어
+                // =============================
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/members/signup",
@@ -61,45 +82,57 @@ public class SecurityConfig {
                                 "/members/verify-email",
                                 "/members/token/refresh",
                                 "/members/logout",
-                                "/oauth/**"
+                                "/oauth/**" // 소셜 로그인 허용
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
+
+                // =============================
+                // OAuth2 로그인 설정
+                // =============================
                 .oauth2Login(oauth2 -> oauth2
-                        .successHandler(oAuth2SuccessHandler) // 로그인 성공 처리 커스텀
-                        .defaultSuccessUrl("/oauth/success", true)
-                        .failureUrl("/oauth/failure")
+                        .userInfoEndpoint(user -> user.userService(customOAuth2UserService)) // 커스텀 서비스 등록
+                        .successHandler(oAuth2SuccessHandler) // 로그인 성공 후 후처리
+                        .defaultSuccessUrl("/oauth/success", true) // 성공 시 이동
+                        .failureUrl("/oauth/failure") // 실패 시 이동
                 )
 
-                // JWT 필터 연결
-                .addFilterBefore(new JwtAuthenticationFilter(jwtUtil) , UsernamePasswordAuthenticationFilter.class);
+                // =============================
+                // JWT 인증 필터 등록
+                // =============================
+                .addFilterBefore(new JwtAuthenticationFilter(jwtUtil),
+                        UsernamePasswordAuthenticationFilter.class);
 
         return security.build();
-
-    } // func e
-
+    }
 
     /**
-     *   로그인 시 인증을 처리하는 핵심 매니저
-     * - UserDetailsService를 통해 사용자 정보를 가져오고
-     * - 비밀번호 일치 여부를 확인하는 역할
+     * <h3>AuthenticationManager 빈 등록</h3>
+     * <p>
+     * - 로그인 시 인증 객체를 생성하는 핵심 매니저<br>
+     * - 내부적으로 UserDetailsService를 통해 사용자 정보를 검증
+     * </p>
+     *
+     * @param configuration 인증 설정 객체
+     * @return AuthenticationManager 인스턴스
+     * @throws Exception 생성 실패 시 예외
      */
-    // authenticationManager 등록 (로그인 시 인증 객체 생성용)
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception{
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
-    } // func e
+    }
 
     /**
-     *   비밀번호 암호화기 (BCrypt 사용)
-     * - 회원가입 시 비밀번호 해시화
-     * - 로그인 시 비밀번호 검증
+     * <h3>비밀번호 암호화기 등록</h3>
+     * <p>
+     * - BCrypt 알고리즘을 사용하여 비밀번호를 안전하게 해시화.<br>
+     * - 회원가입 시 해시화, 로그인 시 비교 검증에 사용.
+     * </p>
+     *
+     * @return PasswordEncoder (BCryptPasswordEncoder)
      */
-    // 비밀번호 암호화(BCrypt)
     @Bean
-    public PasswordEncoder passwordEncoder(){
+    public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
-    } // func e
-
-
-} // class e
+    }
+}
