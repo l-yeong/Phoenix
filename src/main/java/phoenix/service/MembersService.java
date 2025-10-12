@@ -9,12 +9,13 @@ import org.springframework.stereotype.Service;
 import phoenix.security.JwtUtil;
 import phoenix.util.PasswordUtil;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 
-/*
-*   회원 비지니스 로직 담당
-*   - 회원가입 , 로그인 , 비밀번호 암호화 , JWT 발급
-* */
+/**
+ * 회원 비즈니스 로직: 회원가입/자격검증/이메일 인증 처리.
+ * <p><b>토큰 생성/저장 분리.</b></p>
+ */
 @Service
 @RequiredArgsConstructor
 public class MembersService {
@@ -22,6 +23,9 @@ public class MembersService {
     private final MembersMapper membersMapper;
     private final JwtUtil jwtUtil;
     private final EmailService emailService;
+    private final TokenService tokenService; // Redis 기반 TokenService 추가
+
+    // signUp(), emailSend(), verifyEmail() 등 기존 그대로 유지 (토큰 관련 제거)
 
 
     /**
@@ -81,10 +85,8 @@ public class MembersService {
             String accessToken = jwtUtil.generateToken(mid);
             String refreshToken = jwtUtil.generateRefreshToken(mid);
 
-            // DB에 리프레시 토큰 저장
-            member.setRefresh_token(refreshToken);
-            member.setRefresh_token_expire(LocalDateTime.now().plusDays(7).toString());
-            membersMapper.saveRefreshToken(member);
+            // Redis에 Refresh Token 저장 (7일 TTL)
+            tokenService.saveRefreshToken(mid, refreshToken, Duration.ofDays(7).toMinutes());
 
             return accessToken;
         }
