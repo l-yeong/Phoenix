@@ -59,6 +59,9 @@ dependencies {
     // [13] Redis 연결/사용용(RedisTemplate 자동 구성)
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
+    // [14] Oauth2 추가
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+
 }
 
 tasks.named('test') {
