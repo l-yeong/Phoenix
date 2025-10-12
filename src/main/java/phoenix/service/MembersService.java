@@ -10,6 +10,7 @@ import phoenix.security.JwtUtil;
 import phoenix.util.PasswordUtil;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -75,6 +76,14 @@ public class MembersService {
         if (member != null) {
             System.out.println("[LOGIN-DEBUG] email_verified = " + member.getEmail_verified());
             System.out.println("[LOGIN-DEBUG] password matches = " + PasswordUtil.matches(rawPassword, member.getPassword_hash()));
+        }
+
+        if (member.getBirthdate() == null) {
+            member.setBirthdate(String.valueOf(LocalDate.of(1900, 1, 1))); // 기본 생일
+        }
+
+        if (member.getMphone() == null) {
+            member.setMphone("000-0000-0000"); // 임시 전화번호
         }
 
         if( member != null
