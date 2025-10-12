@@ -55,7 +55,10 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/members/signup",
                                 "/members/login",
-                                "/members/verify-email"
+                                "/members/email/send",
+                                "/members/verify-email",
+                                "/members/token/refresh",
+                                "/members/logout"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
