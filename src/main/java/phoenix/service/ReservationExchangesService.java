@@ -32,7 +32,7 @@ public class ReservationExchangesService {
         if (!saved) return false;
         Executor executor = threadPoolConfing.changeExecutor();
         // 쓰레드풀에서 후속처리
-        executor.execute( () -> {
+        executor.execute( () -> { // 여기에 푸시알림 보낼메시지 작성해서 웹소켓에 보내기
             System.out.println("ThreadPool 처리 시작 : " + dto.getFrom_rno());
         });
         return true;
@@ -51,7 +51,7 @@ public class ReservationExchangesService {
         String nowTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         dto.setResponded_at(nowTime);
         // db에저장
-
+        reservationExchangeMapper.changeAdd(dto);
         // redis 삭제
         redisService.deleteAllRequest(dto);
         return true;
