@@ -3,6 +3,8 @@ package phoenix.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
+import phoenix.model.dto.TicketsDto;
 import phoenix.model.mapper.TicketsMapper;
 import org.springframework.stereotype.Service;
 import phoenix.util.TicketsQR;
@@ -13,42 +15,42 @@ import java.util.*;
 @RequiredArgsConstructor
 public class TicketsService {
     private final TicketsMapper ticketsMapper;
+    private final TicketsQR ticketsQR; // @Component 로 등록되어 있다고 가정
 
-    public List<byte[]> ticketPrint(int mno) {
-        List<Map<String, Object>> result = ticketsMapper.ticketPrint(mno);
 
-        // Map 한글 변환
-        List<Map<String, Object>> nameChange = result.stream()
-                .filter(map->"reserved".equals(map.get("reservation_status"))) // 예약상태 "reserved" 인것들만 QR이미지생성
-                .map(map -> {Map<String, Object> newMap = new LinkedHashMap<>(); //순서보장 HashMap
-                    newMap.put("티켓코드", map.get("ticket_code"));
-                    newMap.put("이름", map.get("mname"));
-                    newMap.put("연락처", map.get("mphone"));
-                    newMap.put("이메일", map.get("email"));
-                    //사용여부
-                    Boolean valid = (Boolean)map.get("valid");
-                    newMap.put("사용여부", valid!=null&& valid? "미사용" : "사용불가");
-                    newMap.put("예약상태", map.get("reservation_status"));
-                    newMap.put("가격", map.get("ticket_price"));
-                    newMap.put("구역", map.get("zname"));
-                    newMap.put("좌석", map.get("seat_no"));
-                    return newMap;
-                }).toList(); //List end
+     //예약 rno가 'reserved' 일 때만 QR을 생성하여 tickets에 INSERT
+        @Transactional
+        public boolean issueIfReserved(int rno) {
+        // 예약확인
+        Map<String, Object> info = ticketsMapper.ticketPrint(rno);
+        if (info == null) return false;
 
-        // 정리된 JSON 출력
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.enable(SerializationFeature.INDENT_OUTPUT); // 정리 출력 옵션
-        nameChange.forEach(map -> {
-            try {
-                System.out.println(mapper.writeValueAsString(map));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }//catch end
-        }); //forEach end
+        String status = String.valueOf(info.get("reservation_status"));
+        if (!"reserved".equalsIgnoreCase(status)) return false; // 예약상태가 reserved가 아닐 경우 종료
 
-        return nameChange.stream()
-                .map(TicketsQR::TicketQrCode)
-                .toList();
-    }//func end
+
+        // 가격조회
+        Number seatPrice = (Number) info.get("seat_price");
+        int price = seatPrice != null ? seatPrice.intValue() : 0;
+
+        // 이미지생성 (QR → Base64)
+        String base64 = qrBase64(String.valueOf(rno));
+
+        // DB저장
+        TicketsDto dto = new TicketsDto();
+        dto.setRno(rno);
+        dto.setTicket_code(base64);
+        dto.setPrice(price);
+        dto.setValid(true);
+
+        ticketsMapper.insertTicket(dto);
+        return true;
+    }
+
+    // QR PNG 바이트 생성 후 Base64로 반환
+    private String qrBase64(String payloadText) {
+        byte[] png = ticketsQR.TicketQrCode(Map.of("text", payloadText));
+        return java.util.Base64.getEncoder().encodeToString(png);
+    }
 
 }//func end
