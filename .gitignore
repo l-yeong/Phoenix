@@ -40,3 +40,8 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+# Logs 폴더 전체 무시
+logs/
+*.log
+*.gz
