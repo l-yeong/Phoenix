@@ -40,4 +40,28 @@ public class ReservationExchangesController {
         return ResponseEntity.ok(list);
     }// func end
 
+    /**
+     * 교환요청 거절
+     *
+     * @param from_rno 요청자 예매번호
+     * @return boolean 성공 : true , 실패 : false
+     */
+    @DeleteMapping("")
+    public ResponseEntity<?> rejectChange(@RequestParam int from_rno){
+        boolean result = reservationexchangesService.rejectChange(from_rno);
+        return ResponseEntity.ok(result);
+    }// func end
+
+    /**
+     * 교환요청 수락
+     *
+     * @param from_rno 요청자 예매번호
+     * @return boolean 성공 : true , 실패 : false
+     */
+    @PostMapping("/accept")
+    public ResponseEntity<?> acceptChange(@RequestParam int from_rno){
+        boolean result = reservationexchangesService.acceptChange(from_rno);
+        return ResponseEntity.ok(result);
+    }// func end
+
 }//func end
