@@ -3,6 +3,9 @@ package phoenix.model.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -15,5 +18,9 @@ public class TicketsDto {
     private String issued_at;       // 발급일
     private String valid;           // 유효여부
     private int price;              // 가격
+
+    private List<MultipartFile> uploads;
+    private List<String>images;
+    private String mid;
 
 }//func end
