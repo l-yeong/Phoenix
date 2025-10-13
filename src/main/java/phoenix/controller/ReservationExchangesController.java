@@ -1,5 +1,6 @@
 package phoenix.controller;
 
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -9,7 +10,7 @@ import phoenix.service.ReservationExchangesService;
 
 import java.util.List;
 
-@RequestMapping("/exchange")
+@RequestMapping("/seat")
 @RestController
 @RequiredArgsConstructor
 public class ReservationExchangesController {
@@ -22,8 +23,10 @@ public class ReservationExchangesController {
      * @param dto 요청 dto
      * @return boolean 성공 : true , 실패 : false
      */
-    @PostMapping("")
-    public ResponseEntity<?> saveRequest(ReservationExchangesDto dto){
+    @PostMapping("/change")
+    public ResponseEntity<?> saveRequest(ReservationExchangesDto dto , HttpSession session){
+        int mno = (int) session.getAttribute("logMno");
+        dto.setFrom_mno(mno);
         boolean result = reservationexchangesService.requestChange(dto);
         return ResponseEntity.ok(result);
     }// func end
@@ -34,7 +37,7 @@ public class ReservationExchangesController {
      * @param to_rno 로그인한 회원 얘매번호
      * @return List<ReservationExchangesDto> 요청목록
      */
-    @GetMapping("/findAll")
+    @GetMapping("/find")
     public ResponseEntity<List<ReservationExchangesDto>> getAllRequest(@RequestParam int to_rno){
         List<ReservationExchangesDto> list = redisService.getAllRequest(to_rno);
         return ResponseEntity.ok(list);
@@ -56,11 +59,12 @@ public class ReservationExchangesController {
      * 교환요청 수락
      *
      * @param from_rno 요청자 예매번호
-     * @return boolean 성공 : true , 실패 : false
+     * @return boolean 성공 : true , 실패 : false0
      */
     @PostMapping("/accept")
-    public ResponseEntity<?> acceptChange(@RequestParam int from_rno){
-        boolean result = reservationexchangesService.acceptChange(from_rno);
+    public ResponseEntity<?> acceptChange(@RequestParam int from_rno , HttpSession session){
+        int mno = (int) session.getAttribute("logMno");
+        boolean result = reservationexchangesService.acceptChange(mno, from_rno);
         return ResponseEntity.ok(result);
     }// func end
 

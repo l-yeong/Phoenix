@@ -3,6 +3,7 @@ package phoenix.service;
 import lombok.RequiredArgsConstructor;
 import phoenix.configuration.ThreadPoolConfig;
 import phoenix.model.dto.ReservationExchangesDto;
+import phoenix.model.dto.ReservationsDto;
 import phoenix.model.mapper.ReservationExchangeMapper;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +17,7 @@ public class ReservationExchangesService {
     private final ReservationExchangeMapper reservationExchangeMapper;
     private final ThreadPoolConfig threadPoolConfing;
     private final RedisService redisService;
+    private final ReservationsService reservationsService;
 
     /**
      * 교환요청 접수
@@ -44,14 +46,20 @@ public class ReservationExchangesService {
      * @param from_rno 요청 예매번호
      * @return true : 수락처리 , false : 요청 없음
      */
-    public boolean acceptChange(int from_rno){
+    public boolean acceptChange(int mno ,int from_rno){
         ReservationExchangesDto dto = redisService.getRequest(from_rno);
         if (dto == null) return false;
         dto.setStatus("ACCEPTED");
         String nowTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         dto.setResponded_at(nowTime);
+        // 예매정보 조회
+        ReservationsDto toDto = reservationsService.reserveInfo(mno , dto.getTo_rno()); // 응답자 예매정보
+        ReservationsDto fromDto = reservationsService.reserveInfo(dto.getFrom_mno() ,from_rno); // 요청자 예매정보
         // db에저장
         reservationExchangeMapper.changeAdd(dto);
+        // 예매좌석 교체
+        reservationsService.reserveUpdate(fromDto.getSno(),toDto.getRno(),mno);         // 응답자 요청자 좌석으로 변경
+        reservationsService.reserveUpdate(toDto.getSno(),from_rno,dto.getFrom_mno());   // 요청자 응답자 좌석으로 변경  *** 트랜잭션해야됨
         // redis 삭제
         redisService.deleteAllRequest(dto);
         return true;
