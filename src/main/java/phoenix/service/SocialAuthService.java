@@ -40,9 +40,12 @@ public class SocialAuthService {
             return null;
         }
 
+        // mid가 null 인 경우 이메일로 대체
+        String identifier = (member.getMid() != null) ? member.getMid() : member.getEmail();
+
         // JWT 토큰 생성
-        String accessToken = jwtUtil.generateToken(member.getMid());
-        String refreshToken = jwtUtil.generateRefreshToken(member.getMid());
+        String accessToken = jwtUtil.generateToken(identifier);
+        String refreshToken = jwtUtil.generateRefreshToken(identifier);
 
         // Redis 저장 (7일 TTL)
         tokenService.saveRefreshToken(member.getMid(), refreshToken, 7 * 24 * 60);
@@ -75,6 +78,9 @@ public class SocialAuthService {
         if (membersDto.getEmail() == null || membersDto.getEmail().isBlank()) {
             membersDto.setEmail(membersDto.getProvider() + "_" + membersDto.getProvider_id() + "@social.local");
         }
+
+        // mid를 email로 통일 설정
+        membersDto.setMid(membersDto.getEmail());
 
         // [2] 필수 초기값 설정
         membersDto.setStatus("active");

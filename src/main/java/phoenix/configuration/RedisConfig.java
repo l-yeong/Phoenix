@@ -23,11 +23,11 @@ public class RedisConfig {
      * @return String-String 타입의 RedisTemplate 빈
      */
     @Bean
-    public RedisTemplate<String , String> redisTemplate(RedisConnectionFactory connectionFactory){
+    public RedisTemplate<String , Object> redisTemplate(RedisConnectionFactory connectionFactory){
 
         // RedisTemplate 객체 생성
         // → Redis 서버와 데이터를 주고받을 수 있는 핵심 도구
-        RedisTemplate<String , String> tpl = new RedisTemplate<>();
+        RedisTemplate<String , Object> tpl = new RedisTemplate<>();
 
         // Redis 서버와의 실제 연결(커넥션)을 담당하는 객체 주입
         // → Spring Boot가 자동으로 RedisConnectionFactory를 구성해준다.

@@ -275,7 +275,9 @@ public class MembersService {
         return false;
     } // func e
 
-    /** [3] 인증 완료 후 임시 비밀번호 발급 */
+    /** [3] 인증 완료 후 임시 비밀번호 발급
+     * @param email
+     * @return*/
     public boolean resetPassword(String email) {
         Boolean verified = redisTemplate.hasKey("findpwd:verified:" + email);
         if (verified == null || !verified) return false;
@@ -296,5 +298,6 @@ public class MembersService {
         redisTemplate.delete("findpwd:verified:" + email);
         return true;
     } // func e
+
 
 }//func end

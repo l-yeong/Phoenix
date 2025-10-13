@@ -27,7 +27,7 @@ public class TokenService {
      */
     public void saveRefreshToken(String mid, String token, long minutes) {
         redisTemplate.opsForValue().set(REFRESH_PREFIX + mid, token, minutes, TimeUnit.MINUTES);
-    }
+    } // func e
 
     /**
      * 저장된 Refresh Token 검증
@@ -38,7 +38,7 @@ public class TokenService {
     public boolean validateRefreshToken(String mid, String token) {
         String saved = redisTemplate.opsForValue().get(REFRESH_PREFIX + mid);
         return saved != null && saved.equals(token);
-    }
+    } // func e
 
     /**
      * Refresh Token 삭제 (로그아웃 시)
@@ -47,4 +47,13 @@ public class TokenService {
     public void deleteRefreshToken(String mid) {
         redisTemplate.delete(REFRESH_PREFIX + mid);
     }
-}
+
+    /**
+     * Access Token 블랙리스트 등록
+     * @param accessToken
+     */
+    public void addBlacklist(String accessToken){
+        redisTemplate.opsForValue().set("blacklist:" + accessToken , "logout" , 10 , TimeUnit.MINUTES);
+    } // func e
+
+} // class e

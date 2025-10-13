@@ -40,15 +40,39 @@ public class AuthController {
                 .body(new ApiResponseUtil<>(false, "Refresh Token이 유효하지 않습니다.", null));
     }
 
+
     /**
-     * 로그아웃 API.
-     * <p>Redis에서 Refresh Token을 삭제한다.</p>
-     * @param request { "mid": "user123" }
+     * 로그아웃 API
+     * @param authHeader
+     * @return
      */
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponseUtil<?>> logout(@RequestBody Map<String, String> request) {
-        String mid = request.get("mid");
-        tokenService.deleteRefreshToken(mid);
-        return ResponseEntity.ok(new ApiResponseUtil<>(true, "로그아웃 완료", null));
-    }
-}
+    public ResponseEntity<ApiResponseUtil<?>> logout(@RequestHeader(value = "Authorization" , required = false) String authHeader ) {
+        if(authHeader == null || !authHeader.startsWith("Bearer")){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponseUtil<>(false , "Authorization 헤더가 없습니다." , null));
+        }
+
+        String accessToken = authHeader.substring(7);
+        if(!jwtUtil.validateToken(accessToken)){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponseUtil<>(false , "유효하지 않은 Access Token입니다.", null));
+        }
+
+        // JWT에서 subject 추출 (mid 또는 email)
+        String identifier = jwtUtil.getMid(accessToken);
+
+        if (identifier == null || identifier.isBlank()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponseUtil<>(false, "토큰에 회원 식별 정보가 없습니다.", null));
+        }
+
+        // Redis RefreshToken 삭제 + AccessToken 블랙리스트 추가
+        tokenService.deleteRefreshToken(identifier);
+        tokenService.addBlacklist(accessToken);
+
+        return ResponseEntity.ok(new ApiResponseUtil<>(true , "로그아웃 완료" , null));
+
+    } // func e
+
+} // class e
