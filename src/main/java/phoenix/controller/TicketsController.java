@@ -4,10 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import phoenix.model.dto.MembersDto;
 import phoenix.model.dto.TicketsDto;
 import phoenix.service.TicketsService;
@@ -23,20 +20,12 @@ import java.util.Objects;
 public class TicketsController {
     private final TicketsService ticketsService;
 
-    @GetMapping("/print")
-    public ResponseEntity<List<String>> ticketPrint(@AuthenticationPrincipal MembersDto membersDto, @RequestParam int mno){
-        if(membersDto==null){
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        List<byte[]> qrList = ticketsService.ticketPrint(mno);
-
-        // byte[] → Base64 문자열로 변환
-        List<String> base64List = qrList.stream()
-                .map(bytes -> Base64.getEncoder().encodeToString(bytes))
-                .toList();
-
-        return ResponseEntity.ok(base64List);
-
-    }//func end
+    // 예약이 reserved일 때만 발급(SELECT+INSERT를 서비스 한 메서드에서 처리)
+    @PostMapping("/issue")
+    public ResponseEntity<Void> issue(@RequestParam int rno) {
+        boolean created = ticketsService.issueIfReserved(rno);
+        return created ? ResponseEntity.ok().build()
+                : ResponseEntity.noContent().build(); // reserved 아님
+    }
 
 }//func end
