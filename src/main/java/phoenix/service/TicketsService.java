@@ -19,7 +19,7 @@ public class TicketsService {
 
         // Map 한글 변환
         List<Map<String, Object>> nameChange = result.stream()
-                .filter(map->"reserved".equals(map.get("reservation_status")))
+                .filter(map->"reserved".equals(map.get("reservation_status"))) // 예약상태 "reserved" 인것들만 QR이미지생성
                 .map(map -> {Map<String, Object> newMap = new LinkedHashMap<>(); //순서보장 HashMap
                     newMap.put("티켓코드", map.get("ticket_code"));
                     newMap.put("이름", map.get("mname"));
