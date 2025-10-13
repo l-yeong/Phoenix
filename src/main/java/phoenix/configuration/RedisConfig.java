@@ -1,5 +1,8 @@
 package phoenix.configuration;// 패키지명
 
+import org.redisson.Redisson;
+import org.redisson.api.RedissonClient;
+import org.redisson.config.Config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,44 +19,65 @@ public class RedisConfig {// class start
     private String host;
     @Value("${spring.redis.port}")
     private int port;
-    @Value("${spring.redis.password}")
-    private String password;
 
     /**
-     * Redis 연결 Factory 빈 등록
+     * 분산 lock 을 위한 설정
      *
-     * @return RedisConnectionFactory
+     * @return RedissonClient
      */
     @Bean
-    public RedisConnectionFactory redisConnectionFactory(){
-        RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
-        config.setHostName(host);       // Redis 서버 주소
-        config.setPort(port);           // Redis 서버 포트
-        config.setPassword(password);   // Redis 비밀번호
-        return new LettuceConnectionFactory(config);
+    public RedissonClient redissonClient(){
+        Config config = new Config();
+        // 단일 redis 서버 설정
+        config.useSingleServer().setAddress("redis://"+host+":"+port);
+        // RedissonClient 생성
+        return Redisson.create(config);
     }// func end
 
     /**
-     * Redis 데이터 처리 템플릿 설정
+     * 메소드명: redisTemplate
+     * 설명: 키/값/해시 모두 String 직렬화를 적용한 RedisTemplate 빈을 제공한다.
      *
-     * @return RedisTemplate<String,Object>
+     * @param connectionFactory RedisConnectionFactory (스프링이 자동 주입)
+     * @return String-String 타입의 RedisTemplate 빈
      */
     @Bean
-    public RedisTemplate<String,Object> redisTemplate(){
-        // 템플릿 생성
-        RedisTemplate<String,Object> template = new RedisTemplate<>();
-        // 템플릿에 redis 서버 연결
-        template.setConnectionFactory(redisConnectionFactory());
-        // Hash Key,value 는 value를 Map 처럼 사용할때 사용되는 key value
-        // key , HashKey 타입을 String 으로 설정
-        template.setKeySerializer(new StringRedisSerializer());
-        template.setHashKeySerializer(new StringRedisSerializer());
-        // value , HashValue 타입을 Object 으로 설정(JSON)
-        Jackson2JsonRedisSerializer<Object> serializer = new Jackson2JsonRedisSerializer<>(Object.class);
-        template.setValueSerializer(serializer);
-        template.setHashValueSerializer(serializer);
-        return template;
-    }// func end
+    public RedisTemplate<? , ?> redisTemplate(RedisConnectionFactory connectionFactory){
+
+        // RedisTemplate 객체 생성
+        // → Redis 서버와 데이터를 주고받을 수 있는 핵심 도구
+        RedisTemplate<String , String> tpl = new RedisTemplate<>();
+
+        // Redis 서버와의 실제 연결(커넥션)을 담당하는 객체 주입
+        // → Spring Boot가 자동으로 RedisConnectionFactory를 구성해준다.
+        tpl.setConnectionFactory(connectionFactory);
+
+        // StringRedisSerializer 생성
+        // → Redis에 데이터를 "문자열" 형태로 저장/조회할 수 있도록 직렬화 도구를 지정
+        StringRedisSerializer stringSer = new StringRedisSerializer();
+
+        // Redis에 저장되는 모든 key를 문자열로 직렬화 (예: "hong@test.com")
+        tpl.setKeySerializer(stringSer);
+
+        // Redis에 저장되는 모든 value를 문자열로 직렬화 (예: "123456")
+        tpl.setValueSerializer(stringSer);
+
+        // Hash 구조의 key (Map의 key 역할) 도 문자열로 직렬화
+        tpl.setHashKeySerializer(stringSer);
+
+        // Hash 구조의 value (Map의 value 역할) 도 문자열로 직렬화
+        tpl.setHashValueSerializer(stringSer);
+
+        // 설정이 모두 끝난 뒤 초기화
+        // → 내부 프로퍼티를 세팅한 후 Bean 등록 준비 완료
+        tpl.afterPropertiesSet();
+
+
+        // 최종적으로 완성된 RedisTemplate을 스프링 컨테이너에 Bean으로 등록
+        // → 이후 다른 클래스(예: EmailService)에서 @Autowired 또는 생성자 주입으로 사용 가능
+        return tpl;
+
+    } // func e
 
 
 }// class end
