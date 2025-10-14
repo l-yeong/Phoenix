@@ -1,6 +1,9 @@
 package phoenix.service;
 
+import jakarta.websocket.Session;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.socket.TextMessage;
+import org.springframework.web.socket.WebSocketSession;
 import phoenix.configuration.ThreadPoolConfig;
 import phoenix.model.dto.ReservationExchangesDto;
 import phoenix.model.dto.ReservationsDto;
@@ -18,6 +21,7 @@ public class ReservationExchangesService {
     private final ThreadPoolConfig threadPoolConfing;
     private final RedisService redisService;
     private final ReservationsService reservationsService;
+    private final SessionService sessionService;
 
     /**
      * 교환요청 접수
@@ -33,9 +37,21 @@ public class ReservationExchangesService {
         boolean saved = redisService.saveRequest(dto);
         if (!saved) return false;
         Executor executor = threadPoolConfing.changeExecutor();
+        int fromSeat = reservationsService.reserveInfo(dto.getFrom_mno(),dto.getFrom_rno()).getSno();
         // 쓰레드풀에서 후속처리
         executor.execute( () -> { // 여기에 푸시알림 보낼메시지 작성해서 웹소켓에 보내기
-            System.out.println("ThreadPool 처리 시작 : " + dto.getFrom_rno());
+            WebSocketSession session = sessionService.getSession(dto.getTo_rno());
+            if(session != null && session.isOpen()){
+                try{
+                    String msg = fromSeat + "번 좌석에서 좌석 교환 요청을 보냈습니다.";
+                    session.sendMessage(new TextMessage(msg));
+                    System.out.println("msg = " + msg);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }// try end
+            }else { // 응답자가 서버에 접속이 안되있으면 redis에 저장
+
+            }
         });
         return true;
     }// func end
