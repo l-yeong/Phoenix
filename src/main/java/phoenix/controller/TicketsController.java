@@ -21,9 +21,9 @@ public class TicketsController {
     private final TicketsService ticketsService;
 
     // 예약이 reserved일 때만 발급(SELECT+INSERT를 서비스 한 메서드에서 처리)
-    @PostMapping("/issue")
-    public ResponseEntity<Void> issue(@RequestParam int rno) {
-        boolean created = ticketsService.issueIfReserved(rno);
+    @PostMapping("/write")
+    public ResponseEntity<Void> issue(@AuthenticationPrincipal @RequestParam int rno) {
+        boolean created = ticketsService.ticketWrite(rno);
         return created ? ResponseEntity.ok().build()
                 : ResponseEntity.noContent().build(); // reserved 아님
     }
