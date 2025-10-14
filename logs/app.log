@@ -1096,3 +1096,25 @@ java.lang.NullPointerException: Cannot invoke "java.lang.Integer.intValue()" bec
 25-10-14 17:40:33 i.o.a.GlobalOpenTelemetry AutoConfiguredOpenTelemetrySdk found on classpath but automatic configuration is disabled. To enable, run your JVM with -Dotel.java.global-autoconfigure.enabled=true 
 25-10-14 17:40:33 c.z.h.p.HikariPool HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@5e8fc84c 
 25-10-14 17:40:33 c.z.h.HikariDataSource HikariPool-1 - Start completed. 
+25-10-14 18:01:48 o.s.d.r.c.RepositoryConfigurationDelegate Multiple Spring Data modules found, entering strict repository configuration mode 
+25-10-14 18:01:48 o.s.d.r.c.RepositoryConfigurationDelegate Bootstrapping Spring Data Redis repositories in DEFAULT mode. 
+25-10-14 18:01:48 o.s.d.r.c.RepositoryConfigurationDelegate Finished Spring Data repository scanning in 9 ms. Found 0 Redis repository interfaces. 
+25-10-14 18:01:49 o.r.Version Redisson 3.25.2 
+25-10-14 18:01:50 o.r.c.p.MasterPubSubConnectionPool 1 connections initialized for localhost/127.0.0.1:6379 
+25-10-14 18:01:50 o.r.c.p.MasterConnectionPool 24 connections initialized for localhost/127.0.0.1:6379 
+25-10-14 18:01:51 o.s.b.a.e.w.EndpointLinksResolver Exposing 1 endpoint beneath base path '/actuator' 
+25-10-14 18:02:19 c.z.h.HikariDataSource HikariPool-1 - Starting... 
+25-10-14 18:02:19 i.o.a.GlobalOpenTelemetry AutoConfiguredOpenTelemetrySdk found on classpath but automatic configuration is disabled. To enable, run your JVM with -Dotel.java.global-autoconfigure.enabled=true 
+25-10-14 18:02:19 c.z.h.p.HikariPool HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@4adc3560 
+25-10-14 18:02:19 c.z.h.HikariDataSource HikariPool-1 - Start completed. 
+25-10-14 18:08:39 o.s.d.r.c.RepositoryConfigurationDelegate Multiple Spring Data modules found, entering strict repository configuration mode 
+25-10-14 18:08:39 o.s.d.r.c.RepositoryConfigurationDelegate Bootstrapping Spring Data Redis repositories in DEFAULT mode. 
+25-10-14 18:08:39 o.s.d.r.c.RepositoryConfigurationDelegate Finished Spring Data repository scanning in 10 ms. Found 0 Redis repository interfaces. 
+25-10-14 18:08:40 o.r.Version Redisson 3.25.2 
+25-10-14 18:08:40 o.r.c.p.MasterPubSubConnectionPool 1 connections initialized for localhost/127.0.0.1:6379 
+25-10-14 18:08:40 o.r.c.p.MasterConnectionPool 24 connections initialized for localhost/127.0.0.1:6379 
+25-10-14 18:08:42 o.s.b.a.e.w.EndpointLinksResolver Exposing 1 endpoint beneath base path '/actuator' 
+25-10-14 18:09:10 c.z.h.HikariDataSource HikariPool-1 - Starting... 
+25-10-14 18:09:10 i.o.a.GlobalOpenTelemetry AutoConfiguredOpenTelemetrySdk found on classpath but automatic configuration is disabled. To enable, run your JVM with -Dotel.java.global-autoconfigure.enabled=true 
+25-10-14 18:09:10 c.z.h.p.HikariPool HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@31061688 
+25-10-14 18:09:10 c.z.h.HikariDataSource HikariPool-1 - Start completed. 

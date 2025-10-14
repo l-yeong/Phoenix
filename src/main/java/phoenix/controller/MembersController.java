@@ -48,7 +48,7 @@ public class MembersController {
     /*
     탈랜드 body 테스트 폼
      {
-      "mid": "user01",
+      "mid": "user1",
       "password_hash": "hash1"
     }
     */
