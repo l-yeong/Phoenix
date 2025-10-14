@@ -1,7 +1,5 @@
 package phoenix.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 import phoenix.model.dto.TicketsDto;
@@ -15,13 +13,12 @@ import java.util.*;
 @RequiredArgsConstructor
 public class TicketsService {
     private final TicketsMapper ticketsMapper;
-    private final TicketsQR ticketsQR; // @Component 로 등록되어 있다고 가정
+    private final TicketsQR ticketsQR;
 
-
-     //예약 rno가 'reserved' 일 때만 QR을 생성하여 tickets에 INSERT
-        @Transactional
-        public boolean issueIfReserved(int rno) {
-        // 예약확인
+    //예약 rno가 'reserved' 일 때만 QR을 생성하여 tickets에 INSERT
+    @Transactional
+    public boolean ticketWrite(int rno) {
+        // 예약정보 조회
         Map<String, Object> info = ticketsMapper.ticketPrint(rno);
         if (info == null) return false;
 
@@ -33,24 +30,30 @@ public class TicketsService {
         Number seatPrice = (Number) info.get("seat_price");
         int price = seatPrice != null ? seatPrice.intValue() : 0;
 
-        // 이미지생성 (QR → Base64)
-        String base64 = qrBase64(String.valueOf(rno));
+        // QR 스캔 정보
+        String name = Objects.toString(info.get("mname"),"");
+        String zone = Objects.toString(info.get("zname"),"");
+        String seat = Objects.toString(info.get("seat_no"),"");
 
-        // DB저장
+        // 사용여부 표기
+        boolean valid = true;
+        String validCheck = valid ? "사용 가능" : "사용 불가능";
+
+        // 한글변환
+        String payload = String.format(
+                "이름 : %s \n 구역 : %s \n 좌석 : %s \n 사용여부: %s",
+                name,zone,seat,validCheck
+        );
+
+        // DB 저장
         TicketsDto dto = new TicketsDto();
         dto.setRno(rno);
-        dto.setTicket_code(base64);
+        dto.setTicket_code(payload);
         dto.setPrice(price);
         dto.setValid(true);
 
-        ticketsMapper.insertTicket(dto);
+        ticketsMapper.ticketWrite(dto);
         return true;
-    }
+    }//func end
 
-    // QR PNG 바이트 생성 후 Base64로 반환
-    private String qrBase64(String payloadText) {
-        byte[] png = ticketsQR.TicketQrCode(Map.of("text", payloadText));
-        return java.util.Base64.getEncoder().encodeToString(png);
-    }
-
-}//func end
+}//class end
