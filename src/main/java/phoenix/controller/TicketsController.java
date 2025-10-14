@@ -20,12 +20,18 @@ import java.util.Objects;
 public class TicketsController {
     private final TicketsService ticketsService;
 
-    // 예약이 reserved일 때만 발급(SELECT+INSERT를 서비스 한 메서드에서 처리)
+    // (기존) 발급: reserved일 때 INSERT
     @PostMapping("/write")
-    public ResponseEntity<Void> issue(@AuthenticationPrincipal @RequestParam int rno) {
-        boolean created = ticketsService.ticketWrite(rno);
-        return created ? ResponseEntity.ok().build()
-                : ResponseEntity.noContent().build(); // reserved 아님
-    }
+    public ResponseEntity<Void> issue(@RequestParam int rno) {
+        boolean ok = ticketsService.ticketWrite(rno);
+        return ok ? ResponseEntity.ok().build() : ResponseEntity.noContent().build();
+    }//func end
+
+    // 프론트가 쓰는 payload 조회 (qrcode.react 렌더링용)
+    @GetMapping("/payloads")
+    public ResponseEntity<List<String>> payloads(@RequestParam int mno) {
+        List<String> list = ticketsService.getPayloadsByMno(mno);
+        return ResponseEntity.ok(list);
+    }//func end
 
 }//func end
