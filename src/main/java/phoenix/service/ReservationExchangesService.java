@@ -2,6 +2,7 @@ package phoenix.service;
 
 import jakarta.websocket.Session;
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import phoenix.configuration.ThreadPoolConfig;
@@ -65,6 +66,7 @@ public class ReservationExchangesService {
      * @param from_rno 요청 예매번호
      * @return true : 수락처리 , false : 요청 없음
      */
+    @Transactional(rollbackFor = Exception.class)
     public boolean acceptChange(int mno ,int from_rno){
         ReservationExchangesDto dto = redisService.getRequest(from_rno);
         if (dto == null) return false;
