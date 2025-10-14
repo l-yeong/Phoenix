@@ -56,4 +56,10 @@ public class TicketsService {
         return true;
     }//func end
 
+    // 회원별 payload 조회
+    @Transactional(readOnly = true)
+    public List<String> getPayloadsByMno(int mno) {
+        return ticketsMapper.findPayloads(mno);
+    }//func end
+
 }//class end
