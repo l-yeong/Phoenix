@@ -1,35 +1,72 @@
-import { useState } from "react";
+import React, { useState } from "react";
 
-export default function TicketQRList() {
+export default function TicketQR() {
+  const [raw, setRaw] = useState(""); // DB에서 가져온 base64 그대로 붙여넣기
+  const [imgSrc, setImgSrc] = useState("");
+  const [error, setError] = useState("");
 
-  const [showQR, setShowQR] = useState(false);
-  const qrCode = "iVBORw0KGgoAAAANSUhEUgAAAMgAAADIAQAAAACFI5MzAAADPElEQVR4Xu2XTY6jMBCFC3nhHbkAkq/hna8ULgDhAnAl73wNS74A7LywqHkmIcqM1IsUu1FbLWTxtVKl+nlVEP906N8X7/NL/kuyEo2sZlKzLuTKHU8yYrJx6TkO1I2+DLprqYx8gfhuDOWW412rXafVwtQlctex1aXP/IAd3V0kg0Uk0oMUnlv4tPM9qTGgxquNu57Trv+OzpcE+elD9/n3kbmvyXFK42MDO8FMwRxvhGSlrmG6+bSS2qm0Ls1WTragHhrPOObSB55Cml52JGSnOFjUMg24uO6GdGkjJw6Oq9Xxls3s0u7i6OWEQ+l9aUIZLOoRvscxyMluzRIQyBoGcvywsTk9EBDYaS3PrpBFisromTNfIGnJacpxqN0WbwGZP+18T/DbZBFXxCChUQaHjD3tSAiH2r5LSJxLw/Hmy5hPD74nq8aLbiA0MURLPfBf/uWBhDg4i/xA/Mzq1JTTdtoREIYGgBCa2GwIZ4DjTzsSsuU0V8FLSNSq1eYVXyDQqrZWH7UUSZfB4SInGyOEUOKjdqA0ENRXJUoIeyIXD60yXHNOTTZisiGQHjmHjqrVwo5Z9QWSIcaIgZoCDQ6y1/WvLhERNsfkqRp/r7WDnMvJagnNQU4dMejQwaRZTDD5Z+KFq8bfbYLv5zSTEESxzn9LPdf8zBrw9OB7gireqcrVBiXwGEHxnBgiwrG1ZncY1wgDf3awhASerVqC4oxl56jKICfYd7BHDBjaOvYh1dXMs5jsGoWcFqwV4C49LFaeK6QWzuKfpQ1NTQ/99FpCVstLoLvFGls1dcUiEORkt6hBgssNmx1DEhvoWaMiglhClSEw0CokBwblBDoKl2/otqyw4o31eYFA17mmCO2LPQV13ftnfkQE3VaXOxRj7DFsM+aGnKBS6iLG8U4YFzwxvbc0AcHwRwDIYmK/tOqt/hICx11sXey5wy42HZIvJnX3z6ZqVaiq0Dpo89OOhGChwN5UtQp7isYXjznVRURQgChGy/hmmpAifquymJgF7VvnGFL0zraQ1Be4ZQw0RJTe+46E4HsumwWDsa4nuKAF39H5mtSec/g04cUnxqpCdOOnHQn54fySX1LPH8SiZOORZSQ1AAAAAElFTkSuQmCC";
+  const handlePreview = () => {
+    setError("");
+    if (!raw || raw.trim().length === 0) {
+      setImgSrc("");
+      setError("Base64 문자열을 입력하세요.");
+      return;
+    }
+    // 공백/개행 제거
+    const b64 = raw.trim().replace(/\s+/g, "");
+    // 만약 'data:image/png;base64,'가 이미 포함되어 있으면 중복으로 붙이지 않기
+    const src = b64.startsWith("data:image")
+      ? b64
+      : `data:image/png;base64,${b64}`;
+    setImgSrc(src);
+  };
+
+  const handleClear = () => {
+    setRaw("");
+    setImgSrc("");
+    setError("");
+  };
 
   return (
-    <div style={{ textAlign: "center", marginTop: "50px" }}>
-      <button
-        onClick={() => setShowQR(!showQR)}
-        style={{
-          padding: "10px 20px",
-          backgroundColor: "#007bff",
-          color: "white",
-          border: "none",
-          borderRadius: "8px",
-          cursor: "pointer",
-        }}
-      >
-        {showQR ? "QR 숨기기" : "QR 보기"}
-      </button>
+    <div style={{ maxWidth: 720, margin: "24px auto", fontFamily: "sans-serif" }}>
+      <h2>Base64 → 이미지 미리보기</h2>
 
-      {showQR && (
-        <div style={{ marginTop: "20px" }}>
-          <img
-            src={`data:image/png;base64,${qrCode}`}
-            alt="QR Code"
-            style={{ width: 200, height: 200 }}
-          />
-        </div>
+      <textarea
+        value={raw}
+        onChange={(e) => setRaw(e.target.value)}
+        placeholder="여기에 DB의 base64 문자열을 그대로 붙여넣으세요 (data:image... 접두어가 있어도/없어도 됩니다)"
+        rows={8}
+        style={{ width: "100%", fontFamily: "monospace" }}
+      />
+
+      <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
+        <button onClick={handlePreview}>미리보기</button>
+        <button onClick={handleClear}>초기화</button>
+        {imgSrc && (
+          <a href={imgSrc} download={"qr.png"}>
+            <button>다운로드</button>
+          </a>
+        )}
+      </div>
+
+      {error && (
+        <div style={{ color: "crimson", marginTop: 8 }}>{error}</div>
       )}
+
+      <div style={{ marginTop: 16 }}>
+        {imgSrc ? (
+          <img
+            src={imgSrc}
+            alt="preview"
+            width={220}
+            height={220}
+            style={{ objectFit: "contain", border: "1px solid #ddd" }}
+            onError={() => setError("이미지 렌더 실패: Base64가 손상되었을 수 있습니다.")}
+          />
+        ) : (
+          <div style={{ color: "#666" }}>이미지가 여기에 표시됩니다.</div>
+        )}
+      </div>
     </div>
   );
 }
