@@ -48,6 +48,9 @@ public class AuthController {
      */
     @PostMapping("/logout")
     public ResponseEntity<ApiResponseUtil<?>> logout(@RequestHeader(value = "Authorization" , required = false) String authHeader ) {
+
+        System.out.println("[LogoutController] 로그아웃 컨트롤러 진입");
+
         if(authHeader == null || !authHeader.startsWith("Bearer")){
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ApiResponseUtil<>(false , "Authorization 헤더가 없습니다." , null));

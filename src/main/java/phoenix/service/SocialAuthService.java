@@ -48,7 +48,7 @@ public class SocialAuthService {
         String refreshToken = jwtUtil.generateRefreshToken(identifier);
 
         // Redis 저장 (7일 TTL)
-        tokenService.saveRefreshToken(member.getMid(), refreshToken, 7 * 24 * 60);
+        tokenService.saveRefreshToken(identifier, refreshToken, 7 * 24 * 60);
 
         return accessToken;
     }
@@ -79,8 +79,20 @@ public class SocialAuthService {
             membersDto.setEmail(membersDto.getProvider() + "_" + membersDto.getProvider_id() + "@social.local");
         }
 
-        // mid를 email로 통일 설정
-        membersDto.setMid(membersDto.getEmail());
+        // 이메일 비어있으면 provider 기반으로 임시 생성
+        if(membersDto.getEmail() == null || membersDto.getEmail().isBlank()){
+            String tempEmail = membersDto.getProvider() + "_" + membersDto.getProvider_id() + "@@social.local";
+            membersDto.setEmail(tempEmail);
+        }
+
+        // mid 생성 (null 방지)
+        if(membersDto.getMid() == null || membersDto.getMid().isBlank()){
+            String midValue = (membersDto.getEmail() != null && !membersDto.getEmail().isBlank())
+                    ? membersDto.getEmail()
+                    : "social_" + membersDto.getProvider() + "_" + membersDto.getProvider_id();
+            membersDto.setMid(midValue);
+        }
+
 
         // [2] 필수 초기값 설정
         membersDto.setStatus("active");

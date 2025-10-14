@@ -18,34 +18,35 @@ public class TokenService {
 
     /** Redis 키 prefix */
     private static final String REFRESH_PREFIX = "refresh:";
+    private static final String BLACKLIST_PREFIX = "blacklist";
 
     /**
      * Refresh Token 저장
-     * @param mid 회원 아이디
+     * @param identifier 회원 아이디
      * @param token 리프레시 토큰
      * @param minutes 만료 시간(분 단위)
      */
-    public void saveRefreshToken(String mid, String token, long minutes) {
-        redisTemplate.opsForValue().set(REFRESH_PREFIX + mid, token, minutes, TimeUnit.MINUTES);
+    public void saveRefreshToken(String identifier, String token, long minutes) {
+        redisTemplate.opsForValue().set(REFRESH_PREFIX + identifier, token, minutes, TimeUnit.MINUTES);
     } // func e
 
     /**
      * 저장된 Refresh Token 검증
-     * @param mid 회원 아이디
+     * @param identifier 회원 아이디
      * @param token 요청에서 받은 토큰
      * @return 유효 여부
      */
-    public boolean validateRefreshToken(String mid, String token) {
-        String saved = redisTemplate.opsForValue().get(REFRESH_PREFIX + mid);
+    public boolean validateRefreshToken(String identifier, String token) {
+        String saved = redisTemplate.opsForValue().get(REFRESH_PREFIX + identifier);
         return saved != null && saved.equals(token);
     } // func e
 
     /**
      * Refresh Token 삭제 (로그아웃 시)
-     * @param mid 회원 아이디
+     * @param identifier 회원 아이디
      */
-    public void deleteRefreshToken(String mid) {
-        redisTemplate.delete(REFRESH_PREFIX + mid);
+    public void deleteRefreshToken(String identifier) {
+        redisTemplate.delete(REFRESH_PREFIX + identifier);
     }
 
     /**
