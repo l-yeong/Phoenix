@@ -19,8 +19,6 @@ public class TicketsDto {
     private boolean valid;           // 유효여부
     private int price;              // 가격
 
-    private List<MultipartFile> uploads;
-    private List<String>images;
     private String mid;
     private String qrImageUrl;
 
