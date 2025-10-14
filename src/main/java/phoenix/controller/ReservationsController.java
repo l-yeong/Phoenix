@@ -32,13 +32,11 @@ public class ReservationsController {
      * 예매내역 상세조회
      *
      * @param rno
-     * @param session
      * @return ReservationsDto
      */
     @GetMapping("/info")
-    public ResponseEntity<ReservationsDto> reserveInfo( @RequestParam int rno , HttpSession session){
-        int mno = (int) session.getAttribute("logMno");
-        ReservationsDto dto = reservationsService.reserveInfo(mno,rno);
+    public ResponseEntity<ReservationsDto> reserveInfo( @RequestParam int rno ){
+        ReservationsDto dto = reservationsService.reserveInfo(rno);
         return ResponseEntity.ok().body(dto);
     }// func end
 

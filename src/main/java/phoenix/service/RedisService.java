@@ -9,11 +9,14 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
 import org.springframework.stereotype.Service;
 import phoenix.model.dto.ReservationExchangesDto;
 
@@ -153,4 +156,40 @@ public class RedisService { // class start
             throw new RuntimeException("DTO 직렬화 실패",e);
         }// try end
     }// func end
+
+    /**
+     * 알림 저장
+     *
+     * @param mno
+     * @param message
+     */
+    public void saveMessage(int mno , String message){
+        String key = "alarm:" + mno;
+        redisTemplate.opsForList().rightPush(key,message);
+        redisTemplate.expire(key , Duration.ofHours(24));
+    }// func end
+
+    /**
+     * 알림 메시지 전체조회
+     *
+     * @param mno
+     * @return List<String> 메시지 목록
+     */
+    public List<String> getMessage(int mno){
+        String key = "alarm:" + mno;
+        List<Object> list = redisTemplate.opsForList().range(key, 0, -1);
+        List<String> messages = list.stream().map(Object::toString).collect(Collectors.toList());
+        return messages;
+    }// func end
+
+    /**
+     * 알림 메시지 삭제
+     *
+     * @param mno
+     */
+    public void deleteMessage(int mno) {
+        String key = "alarm:" + mno;
+        redisTemplate.delete(key);
+    }// func end
+
 }// class end

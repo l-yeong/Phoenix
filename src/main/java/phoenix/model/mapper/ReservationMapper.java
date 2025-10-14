@@ -23,12 +23,11 @@ public interface ReservationMapper {
     /**
      * 예매내역 상세조회
      *
-     * @param mno
      * @param rno
      * @return ReservationsDto
      */
-    @Select("select * from reservations where mno = #{mno} and rno = #{rno}")
-    public ReservationsDto reserveInfo(int mno , int rno);
+    @Select("select * from reservations where rno = #{rno}")
+    public ReservationsDto reserveInfo(int rno);
 
     /**
      * 예매내역 수정
