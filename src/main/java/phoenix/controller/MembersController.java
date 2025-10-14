@@ -1,5 +1,6 @@
 package phoenix.controller;
 
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,8 +36,11 @@ public class MembersController {
 
     // 테스트용 로그인
     @PostMapping("/login")
-    public String login(@RequestBody MembersDto member) {
+    public String login(@RequestBody MembersDto member , HttpSession session) {
         MembersDto loginUser = membersService.login(member.getMid(), member.getPassword_hash());
+        if (loginUser != null) {
+            session.setAttribute("logMno", loginUser.getMno());
+        }// if end
         return (loginUser != null) ?
                 "로그인 성공: " + loginUser.getMname() :
                 "로그인 실패";
@@ -45,7 +49,7 @@ public class MembersController {
     탈랜드 body 테스트 폼
      {
       "mid": "user01",
-      "password_hash": "1234"
+      "password_hash": "hash1"
     }
     */
 

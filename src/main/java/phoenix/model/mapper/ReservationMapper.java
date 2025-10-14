@@ -47,6 +47,6 @@ public interface ReservationMapper {
      * @param mno
      * @return boolean
      */
-    @Update("update reservations set status = cancelled where rno = #{rno} and mno = #{mno} ")
+    @Update("update reservations set status = 'cancelled' where rno = #{rno} and mno = #{mno} ")
     public boolean reserveCancel(int rno , int mno);
 }//inter end
