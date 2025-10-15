@@ -29,15 +29,15 @@ public class ReservationExchangesService {
      * 교환요청 접수
      *
      * @param dto 요청 Dto
-     * @return true : 성공 , false : 중복요청
+     * @return int 성공 : 1 , 요청중인사람존재 : 2 , 요청자가 다른좌석에 요청중 : 0
      */
-    public boolean requestChange(ReservationExchangesDto dto){
+    public int requestChange(ReservationExchangesDto dto){
         dto.setStatus("PENDING"); // 상태 : 대기
         String nowTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         dto.setRequested_at(nowTime); // 요청시간 저장
         // redis 에 저장
-        boolean saved = redisService.saveRequest(dto);
-        if (!saved) return false;
+        int saved = redisService.saveRequest(dto);
+        if (saved == 0 || saved == 2) return saved;
         Executor executor = threadPoolConfing.changeExecutor();
         int fromSeat = reservationsService.reserveInfo(dto.getFrom_rno()).getSno();
         // 쓰레드풀에서 후속처리
@@ -57,7 +57,7 @@ public class ReservationExchangesService {
                 System.out.println("응답자 미접속 Redis에 저장"+msg);
             }// if end
         });
-        return true;
+        return saved;
     }// func end
 
     /**

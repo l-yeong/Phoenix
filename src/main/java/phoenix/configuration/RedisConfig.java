@@ -42,7 +42,7 @@ public class RedisConfig {// class start
      * @return String-String 타입의 RedisTemplate 빈
      */
     @Bean
-    public RedisTemplate<? , ?> redisTemplate(RedisConnectionFactory connectionFactory){
+    public RedisTemplate<String , Object> redisTemplate(RedisConnectionFactory connectionFactory){
 
         // RedisTemplate 객체 생성
         // → Redis 서버와 데이터를 주고받을 수 있는 핵심 도구

@@ -31,28 +31,37 @@ public class RedisService { // class start
      * redis에 요청데이터 저장
      *
      * @param dto 요청Dto
-     * @return ture : 저장성공 , false : 이미 존재 or 실패
+     * @return int 성공 : 1 , 요청중인사람존재 : 2 , 요청자가 다른좌석에 요청중 : 0
      */
-    public boolean saveRequest(ReservationExchangesDto dto){
+    public int saveRequest(ReservationExchangesDto dto) {
         String requestKey = "change:request:" + dto.getFrom_rno();  // 요청자 기준
         String seatKey = "change:seat:" + dto.getTo_rno();          // 응답좌석 기준 (index용)
         RLock lock = redissonClient.getLock(seatKey);               // 응답자 단위 분산 락 생성
-        try{// 2초안에 락 못잡으면 실패 , 5초뒤에는 자동으로 락 해제
-            if (lock.tryLock(2,5, TimeUnit.SECONDS)){
-                /*
-                * lua Script 내용
-                *
-                *   -- KEYS[1] : 요청자 기준 키 (requestKey)
-                    -- KEYS[2] : 좌석 기준 키 (seatKey)
-                    -- ARGV[1] : 직렬화된 DTO 데이터
-                    -- ARGV[2] : TTL(초)
-                    -- ARGV[3] : 좌석번호 (Set에 추가할 값)
-                */
-                String lua = """
+
+        try {
+            // 2초안에 락 못잡으면 2 반환, 5초 뒤 자동 해제
+            if (!lock.tryLock(2, 5, TimeUnit.SECONDS)) {
+                return 2;  // 요청 작업 중인 쓰레드가 있음
+            }
+
+            /*
+             * Lua Script 내용
+             *
+             * KEYS[1] : 요청자 기준 키 (requestKey)
+             * KEYS[2] : 좌석 기준 키 (seatKey)
+             * ARGV[1] : 직렬화된 DTO 데이터
+             * ARGV[2] : TTL(초)
+             * ARGV[3] : 좌석번호 (Set에 추가할 값)
+             */
+            String lua = """
+                            -- 요청자가 이미 다른 좌석에 요청한 데이터가 존재하면 0 반환
+                            if redis.call('EXISTS', KEYS[1]) == 1 then
+                                return 0
+                            end
                             -- 요청자 기준 키가 없으면 새로 저장
-                            if redis.call('SETNX', KEYS[1], ARGV[1] ) == 1 then
+                            if redis.call('SETNX', KEYS[1], ARGV[1]) == 1 then
                                 -- TTL 설정(24시간)
-                                redis.call('EXPIRE' , KEYS[1] , ARGV[2] )
+                                redis.call('EXPIRE', KEYS[1], ARGV[2])
                                 -- 응답자 기준 세트에 응답자 예매번호 추가
                                 redis.call('SADD', KEYS[2], ARGV[3])
                                 -- 응답자 세트에도 TTL 설정
@@ -62,26 +71,30 @@ public class RedisService { // class start
                                 return 0
                             end
                         """;
-                Long result = redisTemplate.execute(
-                        new DefaultRedisScript<>(lua, Long.class),
-                        List.of(requestKey,seatKey),
-                        serialize(dto),                    // ARGV[1] : 요청 데이터(JSON)
-                        String.valueOf(86400),          // ARGV[2] : TTL 24시간
-                        String.valueOf(dto.getTo_rno())   // ARGV[3] : 응답자 예매번호
-                );
-                // 결과반환
-                return result != null && result == 1;
-            }else { return false; }
+
+            Long result = redisTemplate.execute(
+                    new DefaultRedisScript<>(lua, Long.class),
+                    List.of(requestKey, seatKey),
+                    serialize(dto),                    // ARGV[1] : 요청 데이터(JSON)
+                    String.valueOf(86400),             // ARGV[2] : TTL 24시간
+                    String.valueOf(dto.getTo_rno())    // ARGV[3] : 응답자 예매번호
+            );
+
+            // Lua 스크립트 반환값이 null이면 실패
+            if (result == null) return 0;
+
+            return result.intValue();
+
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            return false;
-        }catch (Exception e){
+            return 2;  // 락 실패 또는 스레드 인터럽트
+        } catch (Exception e) {
             e.printStackTrace();
-            return false;
-        }finally {
-            if (lock.isHeldByCurrentThread()){
+            return 0;  // 기타 실패
+        } finally {
+            if (lock.isHeldByCurrentThread()) {
                 lock.unlock();
-            }// inf end
+            }// if end
         }// try end
     }// func end
 

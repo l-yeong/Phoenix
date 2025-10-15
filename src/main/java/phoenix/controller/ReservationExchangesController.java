@@ -21,13 +21,13 @@ public class ReservationExchangesController {
      * 교환요청 등록
      *
      * @param dto 요청 dto
-     * @return boolean 성공 : true , 실패 : false
+     * @return int 성공 : 1 , 요청중인사람존재 : 2 , 요청자가 다른좌석에 요청중 : 0
      */
     @PostMapping("/change")
     public ResponseEntity<?> saveRequest(ReservationExchangesDto dto , HttpSession session){
         int mno = (int) session.getAttribute("logMno");
         dto.setFrom_mno(mno);
-        boolean result = reservationexchangesService.requestChange(dto);
+        int result = reservationexchangesService.requestChange(dto);
         return ResponseEntity.ok(result);
     }// func end
 
