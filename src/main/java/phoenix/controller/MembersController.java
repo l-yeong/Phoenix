@@ -204,7 +204,7 @@ public class MembersController {
                 ? ResponseEntity.ok(new ApiResponseUtil<>(true, "인증 메일이 발송되었습니다.", null))
                 : ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ApiResponseUtil<>(false, "일치하는 회원 정보가 없습니다.", null));
-    }
+    } // func e
 
     /** 아이디 찾기 2단계: 인증 코드 검증 */
     @PostMapping("/findid/verify")
@@ -214,7 +214,7 @@ public class MembersController {
                 ? ResponseEntity.ok(new ApiResponseUtil<>(true, "인증이 완료되었습니다.", null))
                 : ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ApiResponseUtil<>(false, "인증 코드가 올바르지 않거나 만료되었습니다.", null));
-    }
+    } // func e
 
     /** 아이디 찾기 3단계: 아이디 반환 */
     @GetMapping("/findid")
@@ -224,7 +224,7 @@ public class MembersController {
                 ? ResponseEntity.ok(new ApiResponseUtil<>(true, "아이디 찾기 성공", mid))
                 : ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ApiResponseUtil<>(false, "이메일 인증이 완료되지 않았거나 회원이 존재하지 않습니다.", null));
-    }
+    } // func e
 
     /* ============================
              비밀번호 찾기
@@ -238,7 +238,7 @@ public class MembersController {
                 ? ResponseEntity.ok(new ApiResponseUtil<>(true, "비밀번호 재설정 인증 메일이 발송되었습니다.", null))
                 : ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ApiResponseUtil<>(false, "일치하는 회원 정보가 없습니다.", null));
-    }
+    } // func e
 
     /** 비밀번호 찾기 2단계: 인증 코드 검증 */
     @PostMapping("/findpwd/verify")
@@ -248,7 +248,7 @@ public class MembersController {
                 ? ResponseEntity.ok(new ApiResponseUtil<>(true, "인증이 완료되었습니다.", null))
                 : ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ApiResponseUtil<>(false, "인증 코드가 올바르지 않거나 만료되었습니다.", null));
-    }
+    } // func e
 
     /** 비밀번호 찾기 3단계: 임시 비밀번호 발급 */
     @PostMapping("/findpwd/reset")
@@ -258,6 +258,7 @@ public class MembersController {
                 ? ResponseEntity.ok(new ApiResponseUtil<>(true, "임시 비밀번호가 이메일로 발송되었습니다.", null))
                 : ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ApiResponseUtil<>(false, "비밀번호 재설정 실패 (인증 필요 또는 회원 없음).", null));
-    }
+    } // func e
+
 
 } // class e
