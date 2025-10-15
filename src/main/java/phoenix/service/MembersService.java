@@ -97,11 +97,11 @@ public class MembersService {
                 && Boolean.TRUE.equals(member.getEmail_verified())){ // 인증된 회원만 로그인 가능
 
             // JWT 생성
-            String accessToken = jwtUtil.generateToken(mid);
-            String refreshToken = jwtUtil.generateRefreshToken(mid);
+            String accessToken = jwtUtil.generateToken(member);
+            String refreshToken = jwtUtil.generateRefreshToken(member.getMid());
 
             // Redis에 Refresh Token 저장 (7일 TTL)
-            tokenService.saveRefreshToken(mid, refreshToken, Duration.ofDays(7).toMinutes());
+            tokenService.saveRefreshToken(member.getMid(), refreshToken, Duration.ofDays(7).toMinutes());
 
             return accessToken;
         }
