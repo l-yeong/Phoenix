@@ -5,7 +5,6 @@ import org.springframework.transaction.annotation.Transactional;
 import phoenix.model.dto.TicketsDto;
 import phoenix.model.mapper.TicketsMapper;
 import org.springframework.stereotype.Service;
-import phoenix.util.TicketsQR;
 
 import java.util.*;
 
@@ -13,7 +12,6 @@ import java.util.*;
 @RequiredArgsConstructor
 public class TicketsService {
     private final TicketsMapper ticketsMapper;
-    private final TicketsQR ticketsQR;
 
     //예약 rno가 'reserved' 일 때만 QR을 생성하여 tickets에 INSERT
     @Transactional
@@ -30,20 +28,16 @@ public class TicketsService {
         Number seatPrice = (Number) info.get("seat_price");
         int price = seatPrice != null ? seatPrice.intValue() : 0;
 
-        // QR 스캔 정보
-        String name = Objects.toString(info.get("mname"),"");
-        String zone = Objects.toString(info.get("zname"),"");
-        String seat = Objects.toString(info.get("seat_no"),"");
+        // DB 저장용 (날짜/시간/UUID)
+        java.time.ZoneId KST = java.time.ZoneId.of("Asia/Seoul");
+        java.time.LocalDateTime now = java.time.LocalDateTime.now(KST);
 
-        // 사용여부 표기
-        boolean valid = true;
-        String validCheck = valid ? "사용 가능" : "사용 불가능";
+        String date = now.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String time = now.format(java.time.format.DateTimeFormatter.ofPattern("HHmm"));
+        String uuid = java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 8);
 
-        // 한글변환
-        String payload = String.format(
-                "이름 : %s \n 구역 : %s \n 좌석 : %s \n 사용여부: %s",
-                name,zone,seat,validCheck
-        );
+        // ticket_code_DB 저장 문자열
+        String payload = String.format("%s_%s_%s", date, time, uuid);
 
         // DB 저장
         TicketsDto dto = new TicketsDto();
