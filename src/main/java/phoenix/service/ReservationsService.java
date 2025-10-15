@@ -26,12 +26,11 @@ public class ReservationsService {
     /**
      * 예매내역 상세조회
      *
-     * @param mno
      * @param rno
      * @return ReservationsDto
      */
-    public ReservationsDto reserveInfo(int mno , int rno){
-        return reservationMapper.reserveInfo(mno,rno);
+    public ReservationsDto reserveInfo(int rno){
+        return reservationMapper.reserveInfo(rno);
     }// func end
 
     /**

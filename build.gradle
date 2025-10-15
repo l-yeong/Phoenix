@@ -46,6 +46,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-aop'
     // [10] Redis
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    // [11] Redisson
+    implementation 'org.redisson:redisson-spring-boot-starter:3.25.2'
 
     // [10] 비밀번호 해시 (Spring Security 전체 )
     implementation 'org.springframework.boot:spring-boot-starter-security'
