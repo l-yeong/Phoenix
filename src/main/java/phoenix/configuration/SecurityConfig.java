@@ -92,7 +92,8 @@ public class SecurityConfig {
                                 "/members/verify-email",
                                 "/members/token/refresh",
                                 "/members/logout",
-                                "/oauth/**" // 소셜 로그인 허용
+                                "/oauth/**", // 소셜 로그인 허용
+                                "/ticket/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
