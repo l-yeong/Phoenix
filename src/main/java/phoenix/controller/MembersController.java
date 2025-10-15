@@ -45,7 +45,7 @@ public class MembersController {
      * }
      * 회원가입 시 받아야하는 값 많아서 실제로 해야함
      */
-    @PostMapping("signup")
+    @PostMapping("/signup")
     public ResponseEntity<ApiResponseUtil<?>> signUp(@RequestBody MembersDto membersDto){
         boolean result = membersService.signUp(membersDto);
 
@@ -68,7 +68,7 @@ public class MembersController {
      * "password_hash": "1234"
      * }
      * */
-    @PostMapping("login")
+    @PostMapping("/login")
     public ResponseEntity<ApiResponseUtil<?>> login(@RequestBody Map< String , String > request){
         String mid = request.get("mid");
         String password = request.get("password_hash");
