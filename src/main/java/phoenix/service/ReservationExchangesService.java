@@ -100,4 +100,29 @@ public class ReservationExchangesService {
         redisService.deleteRequest(from_rno); // redis 삭제
         return true;
     }// func end
-}//func end
+
+    /**
+     * 알림메시지 발송
+     *
+     * @param mno
+     */
+    public void responseMessage( int mno , String msg ){
+        Executor executor = threadPoolConfing.changeExecutor();
+        executor.execute( () -> {
+            try{
+                WebSocketSession session = baseballSocketHandler.getSession(mno);
+                if (session != null && session.isOpen()){
+                    session.sendMessage(new TextMessage(msg));
+                    System.out.println("접속 = " + msg);
+                }else { // 요청자가 접속 안되어 있을때 redis에 메시지 저장
+                    redisService.saveMessage(mno , msg);
+                    System.out.println("미접속 = " + msg);
+                }// if end
+            } catch (Exception e) {
+                e.printStackTrace();
+            }// try end
+        }); // thread end
+    }// func end
+
+
+}// class end
