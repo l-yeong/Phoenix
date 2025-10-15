@@ -15,7 +15,7 @@ create table members (
     mid varchar(50) unique null,               -- 회원 아이디
     password_hash varchar(255) null,           -- 비밀번호 해시값
     mname varchar(50) not null,                    -- 회원 이름
-    mphone varchar(13) unique not null,            -- 회원 번호
+    mphone varchar(13) unique null,            -- 회원 번호
     birthdate date not null,                       -- 생년월일
     email varchar(100) unique not null,            -- 이메일
     create_at timestamp default current_timestamp, -- 가입일(로그 추적용)
@@ -32,12 +32,25 @@ create table members (
     -- active: 정상회원 / dormant: 휴면회원 / withdrawn: 탈퇴회원
 
     -- 교환 신청 가능 여부
-    exchange_allowed boolean default true not null
+    exchange boolean default true not null,
     -- true: 교환 신청 가능 / false: 교환 신청 불가
+    
+    -- 이메일 인증 여부( 이메일 인증 완료 여부 저장 )
+    email_verified boolean default false not null ,  -- 이메일 인증 여부
+    
+    -- JWT 리프레시 토큰( 재발급용 )
+    refresh_token varchar(255) null , -- JWT 리프레시 토큰
+    
+    -- JWT 리프레시 토큰 만료 일시
+    refresh_token_expire timestamp null  -- JWT 리프레시 토큰 만료시간
+    
 );
 
+-- 소셜 회원 unique 유지하면서 null 허용
+ALTER TABLE members MODIFY COLUMN mphone VARCHAR(13) NULL UNIQUE;
+
 -- ---------------------- 시니어 회원 뷰 ---------------------- 
-create view member_view as
+create or replace view member_view as
 select m.*, 
        (timestampdiff(year, m.birthdate, curdate()) >= 65) as is_senior
 from members m;
@@ -125,17 +138,22 @@ insert into zones(zname, price) values
 ('커플석', 55000);
 
 -- 회원
-insert into members(mid, password_hash, mname, mphone, birthdate, email, provider, provider_id, pno) values
-('user1','hash1','홍길동','010-1111-1111','1960-05-10','user1@test.com','google','g123', 10),
-('user2','hash2','이순신','010-1111-1112','1990-02-20','user2@test.com','github','gh456', 11),
-('user3','hash3','강감찬','010-1111-1113','1985-07-15','user3@test.com','facebook','fb789', 12),
-('user4','hash4','유관순','010-1111-1114','1970-11-05','user4@test.com',null,null, 13),
-('user5','hash5','안중근','010-1111-1115','2000-03-22','user5@test.com','google','g999', 14),
-('user6','hash6','윤봉길','010-1111-1116','1962-09-18','user6@test.com',null,null, 15),
-('user7','hash7','정몽주','010-1111-1117','1995-12-01','user7@test.com','github','gh777', 16),
-('user8','hash8','신사임당','010-1111-1118','1988-06-25','user8@test.com','facebook','fb888', 17),
-('user9','hash9','세종대왕','010-1111-1119','1955-08-30','user9@test.com','google','g555', 18),
-('user10','hash10','장영실','010-1111-1120','1999-01-10','user10@test.com',null,null, 19);
+insert into members (
+    mid, password_hash, mname, mphone, birthdate, email, 
+    provider, provider_id, pno, 
+    email_verified, refresh_token, refresh_token_expire
+) values
+('user1','hash1','홍길동','010-1111-1111','1960-05-10','user1@test.com','google','g123',10,false,null,null),
+('user2','hash2','이순신','010-1111-1112','1990-02-20','user2@test.com','github','gh456',11,false,null,null),
+('user3','hash3','강감찬','010-1111-1113','1985-07-15','user3@test.com','facebook','fb789',12,false,null,null),
+('user4','hash4','유관순','010-1111-1114','1970-11-05','user4@test.com',null,null,13,false,null,null),
+('user5','hash5','안중근','010-1111-1115','2000-03-22','user5@test.com','google','g999',14,false,null,null),
+('user6','hash6','윤봉길','010-1111-1116','1962-09-18','user6@test.com',null,null,15,false,null,null),
+('user7','hash7','정몽주','010-1111-1117','1995-12-01','user7@test.com','github','gh777',16,false,null,null),
+('user8','hash8','신사임당','010-1111-1118','1988-06-25','user8@test.com','facebook','fb888',17,false,null,null),
+('user9','hash9','세종대왕','010-1111-1119','1955-08-30','user9@test.com','google','g555',18,false,null,null),
+('user10','hash10','장영실','010-1111-1120','1999-01-10','user10@test.com',null,null,19,false,null,null);
+
 
 -- 좌석
 insert into seats(zno, seat_no, senior , gno) values
@@ -151,7 +169,7 @@ insert into seats(zno, seat_no, senior , gno) values
 (10008,801,false,107);
 
 -- 예매
-insert into reservations(mno, gno, sno, status) values
+insert into reservations(mno, sno, status) values
 (20001,30001,'reserved'),
 (20002,30002,'reserved'),
 (20003,30003,'reserved'),
@@ -211,3 +229,4 @@ select * from reservations;
 select * from tickets;
 select * from reservation_exchanges;
 select * from auto_assign_log;
+DESC members;

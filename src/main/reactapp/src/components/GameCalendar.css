@@ -1,0 +1,70 @@
+.calendar-wrapper {
+  width: 950px;
+  margin: 0 auto;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-weight: bold;
+  color: #ca2e26;
+  border-bottom: 2px solid #ca2e26;
+}
+
+.calendar-weekday {
+  padding: 6px 0;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px; /* 칸 간격 */
+}
+
+.calendar-cell {
+  border: 1px solid #ddd;
+  min-height: 110px;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.calendar-cell:hover {
+  background-color: #fff5f5;
+}
+
+.calendar-day-number {
+  font-size: 0.85rem;
+  font-weight: bold;
+  margin-top: 4px;
+}
+
+.calendar-match {
+  margin-top: 5px;
+}
+
+.calendar-logo {
+  width: 26px;
+  height: 26px;
+  margin: 3px auto;
+}
+
+.calendar-score {
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: #ca2e26;
+}
+
+.calendar-time {
+  font-size: 0.7rem;
+  color: #555;
+}
