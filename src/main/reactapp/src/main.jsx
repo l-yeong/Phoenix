@@ -1,10 +1,19 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.jsx'
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+import CssBaseline from "@mui/material/CssBaseline";
+import TicketQR from "./features/tickets/TicketQR.jsx";
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+// ReactDOM.createRoot(document.getElementById("root")).render(
+//   <React.StrictMode>
+//     <CssBaseline />
+//     <App />
+//   </React.StrictMode>
+// );
+
+// // QR 이미지테스트 용도
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <TicketQR />
+  </React.StrictMode>
+);

@@ -9,3 +9,5 @@ public class AppStart {
         SpringApplication.run(AppStart.class);
     }//main end
 } // class end
+//   이겨레 브랜치 커밋 테스트
+// 251001_MembersMapper_회원가입 , 로그인 테스트용

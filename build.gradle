@@ -44,6 +44,30 @@ dependencies {
     implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.5'
     // [9] AOP
     implementation 'org.springframework.boot:spring-boot-starter-aop'
+    // [10] Redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    // [11] Redisson
+    implementation 'org.redisson:redisson-spring-boot-starter:3.25.2'
+
+    // [10] 비밀번호 해시 (Spring Security 전체 )
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+
+    // [11] JWT 발급/검증 (io.jsonwebtoken)
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+
+    // [12] 이메일 발송용(JavaMailSender 자동 구성)
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+    // [13] Redis 연결/사용용(RedisTemplate 자동 구성)
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    // [14] Oauth2 추가
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+    // [15] zxing QR
+    implementation 'com.google.zxing:core:3.5.3'
+    implementation 'com.google.zxing:javase:3.5.3'
 
 }
 
