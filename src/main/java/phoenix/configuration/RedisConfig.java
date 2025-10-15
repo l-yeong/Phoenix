@@ -46,7 +46,7 @@ public class RedisConfig {// class start
 
         // RedisTemplate 객체 생성
         // → Redis 서버와 데이터를 주고받을 수 있는 핵심 도구
-        RedisTemplate<String , String> tpl = new RedisTemplate<>();
+        RedisTemplate<String , Object> tpl = new RedisTemplate<>();
 
         // Redis 서버와의 실제 연결(커넥션)을 담당하는 객체 주입
         // → Spring Boot가 자동으로 RedisConnectionFactory를 구성해준다.
@@ -55,18 +55,16 @@ public class RedisConfig {// class start
         // StringRedisSerializer 생성
         // → Redis에 데이터를 "문자열" 형태로 저장/조회할 수 있도록 직렬화 도구를 지정
         StringRedisSerializer stringSer = new StringRedisSerializer();
-
         // Redis에 저장되는 모든 key를 문자열로 직렬화 (예: "hong@test.com")
         tpl.setKeySerializer(stringSer);
-
-        // Redis에 저장되는 모든 value를 문자열로 직렬화 (예: "123456")
-        tpl.setValueSerializer(stringSer);
-
         // Hash 구조의 key (Map의 key 역할) 도 문자열로 직렬화
         tpl.setHashKeySerializer(stringSer);
 
-        // Hash 구조의 value (Map의 value 역할) 도 문자열로 직렬화
-        tpl.setHashValueSerializer(stringSer);
+        Jackson2JsonRedisSerializer<Object> jsonSer = new Jackson2JsonRedisSerializer<>(Object.class);
+        // Redis에 저장되는 모든 value를 object로 직렬화
+        tpl.setValueSerializer(jsonSer);
+        // Hash 구조의 value (Map의 value 역할) 도 object로 직렬화
+        tpl.setHashValueSerializer(jsonSer);
 
         // 설정이 모두 끝난 뒤 초기화
         // → 내부 프로퍼티를 세팅한 후 Bean 등록 준비 완료
