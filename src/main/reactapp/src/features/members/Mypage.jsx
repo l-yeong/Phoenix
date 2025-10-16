@@ -20,7 +20,6 @@ export default function Mypage( props ){
     useEffect( () => {
         reservePrint();
     },[]); 
-    // ( 예매내역에 경기 정보랑 경기날짜 시간 , 좌석 )
     return (
         <>
         <h2> 예매 내역 </h2>

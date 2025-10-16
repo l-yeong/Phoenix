@@ -20,7 +20,7 @@ public class ReservationsController {
      * 예매내역조회
      *
      * @param session
-     * @return List<ReservationsDto>
+     * @return List<Map<String,Object>>
      */
     @GetMapping("/print")
     public ResponseEntity<?> reservePrint(HttpSession session){
@@ -33,12 +33,12 @@ public class ReservationsController {
      * 예매내역 상세조회
      *
      * @param rno
-     * @return ReservationsDto
+     * @return  Map<String ,Object>
      */
     @GetMapping("/info")
-    public ResponseEntity<ReservationsDto> reserveInfo( @RequestParam int rno ){
-        ReservationsDto dto = reservationsService.reserveInfo(rno);
-        return ResponseEntity.ok().body(dto);
+    public ResponseEntity<?> reserveInfo( @RequestParam int rno ){
+        Map<String ,Object> map = reservationsService.reserveInfo(rno);
+        return ResponseEntity.ok().body(map);
     }// func end
 
     /**

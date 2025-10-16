@@ -21,7 +21,7 @@ public class ReservationsService {
      * 예매내역조회
      *
      * @param mno
-     * @return List<ReservationsDto>
+     * @return List<Map<String,Object>>
      */
     public List<Map<String,Object>> reservePrint(int mno){
         List<ReservationsDto> list = reservationMapper.reservePrint(mno);
@@ -41,10 +41,15 @@ public class ReservationsService {
      * 예매내역 상세조회
      *
      * @param rno
-     * @return ReservationsDto
+     * @return  Map<String ,Object>
      */
-    public ReservationsDto reserveInfo(int rno){
-        return reservationMapper.reserveInfo(rno);
+    public  Map<String ,Object> reserveInfo(int rno){
+        Map<String ,Object> map = new HashMap<>();
+        ReservationsDto dto = reservationMapper.reserveInfo(rno);
+        Map<String ,String> gameMap = fileService.getGame(dto.getGno());
+        map.put("reservation",dto);
+        map.put("game",gameMap);
+        return map;
     }// func end
 
     /**

@@ -39,10 +39,12 @@ public class ReservationExchangesService {
         int saved = redisService.saveRequest(dto);
         if (saved == 0 || saved == 2) return saved;
         Executor executor = threadPoolConfing.changeExecutor();
-        int fromSeat = reservationsService.reserveInfo(dto.getFrom_rno()).getSno();
+        ReservationsDto fromDto = (ReservationsDto) reservationsService.reserveInfo(dto.getFrom_rno()).get("reservation");
+        int fromSeat = fromDto.getMno();
         // 쓰레드풀에서 후속처리
         executor.execute( () -> { // 여기에 푸시알림 보낼메시지 작성해서 웹소켓에 보내기
-            int mno = reservationsService.reserveInfo(dto.getTo_rno()).getMno();
+            ReservationsDto toDto = (ReservationsDto) reservationsService.reserveInfo(dto.getTo_rno());
+            int mno = toDto.getMno();
             WebSocketSession session = baseballSocketHandler.getSession(mno);
             String msg = fromSeat + "번 좌석에서 좌석 교환 요청을 보냈습니다.";
             if(session != null && session.isOpen()){
@@ -74,8 +76,8 @@ public class ReservationExchangesService {
         String nowTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         dto.setResponded_at(nowTime);
         // 예매정보 조회
-        ReservationsDto toDto = reservationsService.reserveInfo(dto.getTo_rno()); // 응답자 예매정보
-        ReservationsDto fromDto = reservationsService.reserveInfo(from_rno); // 요청자 예매정보
+        ReservationsDto toDto = (ReservationsDto) reservationsService.reserveInfo(dto.getTo_rno()); // 응답자 예매정보
+        ReservationsDto fromDto = (ReservationsDto) reservationsService.reserveInfo(from_rno); // 요청자 예매정보
         // db에저장
         reservationExchangeMapper.changeAdd(dto);
         // 예매좌석 교체
