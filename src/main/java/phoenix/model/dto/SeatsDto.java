@@ -1,5 +1,5 @@
+// src/main/java/phoenix/dto/SeatsDto.java
 package phoenix.model.dto;
-
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -10,8 +10,8 @@ import java.util.Map;
 
 /**
  * ================================================================
- * [SeatDto]
- * - SeatLockService <-> Controller <-> Front 간 데이터 모델
+ * [SeatsDto]
+ * - SeatLockService <-> SeatController <-> Front 간 데이터 모델
  * - 이 파일만 보면 프론트가 어떤 JSON으로 주고받는지 이해 가능
  * ================================================================
  */
@@ -43,14 +43,21 @@ public class SeatsDto {
     /**
      * [SelectResponse]
      * - 좌석 선택 성공/실패 결과
+     * - code: SeatLockService.tryLockSeat(...)의 정수 결과
+     *   1   : 성공
+     *  -1   : 세션 없음
+     *  -2   : 이미 해당 공연 예매함
+     *  -3   : 매진/이미 홀드됨/락경쟁 실패
+     *  -4   : 보유 한도(4좌석) 초과
      *
      * JSON 예시:
-     * { "ok": true, "message": "locked" }
+     * { "ok": true, "code": 1, "message": "locked" }
      */
     @Data @AllArgsConstructor @NoArgsConstructor
     public static class SelectResponse {
-        private boolean ok;        // true: 선택 성공, false: 실패
-        private String message;    // "locked" | "already held/sold" | "session missing" 등
+        private boolean ok;     // true: 성공, false: 실패
+        private int code;       // 위 표 참고
+        private String message; // 사용자 노출 메시지
     }
 
 
@@ -61,13 +68,15 @@ public class SeatsDto {
     /**
      * [ReleaseRequest]
      * - 이미 내가 잡은 좌석을 다시 클릭해서 해제할 때 보냄
+     * - 다회차(복수 공연) 고려 시 showId도 함께 받는 버전
      *
      * JSON 예시:
-     * { "userId": "u123", "seatId": "A1" }
+     * { "userId": "u123", "showId": "SHOW-2025-10-16-19:00", "seatId": "A1" }
      */
     @Data
     public static class ReleaseRequest {
         private String userId;
+        private String showId;
         private String seatId;
     }
 
@@ -124,7 +133,7 @@ public class SeatsDto {
 
 
     // ------------------------------------------------------------
-    // 4) 좌석 상태 맵 요청/응답 (선택 기능: 주석 참고)
+    // 4) (선택) 좌석 상태 맵 요청/응답
     // ------------------------------------------------------------
 
     /**
