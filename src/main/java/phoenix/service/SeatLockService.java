@@ -173,10 +173,8 @@ public class SeatLockService {  // class start
         try {
             // 그 좌석에 걸려 있는 락을 가져온다.
             RLock lock = seatLock(key);
-            // 만약 그 락이 원래 예매했던 사람이 건 락이라면 해제한다.
-            // isHeldByCurrentThread() => 해당 해제하는 스레드가 락을 소유하고 있는지 확인하는 메소드 즉, 임시 소유한 유저의 스레드가 맞는가
-            // unlock() => 락 해제
-            if (lock.isHeldByCurrentThread()) lock.unlock();
+            // holder 검사 통과했으니 안전하게 강제 해제
+            lock.forceUnlock();
         } catch (Exception ignore) {}   // 예외 처리 안함
 
         // 다 했으면 성공 반환
@@ -227,6 +225,8 @@ public class SeatLockService {  // class start
             holdMap().remove(key);
             // 내 임시 목록에서 제거한다.
             userHoldSet(userId , showId).remove(seatId);
+            // 즉시 매진 처리
+            try { seatLock(key).forceUnlock(); } catch (Exception ignore) {}
         }   // for end
 
         // 공연 단위 “이미 예매” 기록
@@ -273,7 +273,7 @@ public class SeatLockService {  // class start
 
                     try {
                         // 소유자와 무관하게 좌석 락 즉시 해제
-                        seatLock(seatId).forceUnlock();
+                        seatLock(key).forceUnlock();
                     } catch (Exception ignore) {}
 
                 }   // if end
