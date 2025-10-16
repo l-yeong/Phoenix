@@ -47,7 +47,7 @@ export default function reservationFind( props ){
                     <li>경기시간 : {reservation.game.time}</li>
                     <li>취소여부 : {cancel ? "취소 가능" : "취소 불가"}</li>
                 </ul>
-                <button> 좌석교환 </button> <button> 예매취소 </button>
+                <button disabled={!cancel}> 좌석교환 </button> <button disabled={!cancel}> 예매취소 </button>
             </div>
         )}
         </>
