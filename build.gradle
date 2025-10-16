@@ -47,7 +47,7 @@ dependencies {
     // [10] Redis
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     // [11] Redisson
-    implementation 'org.redisson:redisson-spring-boot-starter:3.25.2'
+    implementation 'org.redisson:redisson:3.27.2'
 
     // [10] 비밀번호 해시 (Spring Security 전체 )
     implementation 'org.springframework.boot:spring-boot-starter-security'
@@ -60,14 +60,20 @@ dependencies {
     // [12] 이메일 발송용(JavaMailSender 자동 구성)
     implementation 'org.springframework.boot:spring-boot-starter-mail'
 
-    // [13] Redis 연결/사용용(RedisTemplate 자동 구성)
-    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-
     // [14] Oauth2 추가
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
     // [15] zxing QR
     implementation 'com.google.zxing:core:3.5.3'
     implementation 'com.google.zxing:javase:3.5.3'
+
+    // Bean 검증(@NotNull 등) — DTO 유효성 필수
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // 운영 상태 확인(헬스체크/지표) — 간단 모니터링
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    // 테스트 기본 세트(JUnit5/Mockito/AssertJ)
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
 }
 
