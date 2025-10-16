@@ -60,14 +60,13 @@ dependencies {
     // [12] 이메일 발송용(JavaMailSender 자동 구성)
     implementation 'org.springframework.boot:spring-boot-starter-mail'
 
-    // [13] Redis 연결/사용용(RedisTemplate 자동 구성)
-    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-
     // [14] Oauth2 추가
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
     // [15] zxing QR
     implementation 'com.google.zxing:core:3.5.3'
     implementation 'com.google.zxing:javase:3.5.3'
+    // [16] open CSV 라이브러리 설치
+    implementation("com.opencsv:opencsv:5.12.0")
 
 }
 
