@@ -47,7 +47,7 @@ public class OAuthController {
      * @param authentication Spring Security의 인증 정보
      * @return 로그인 성공/신규회원 등록 메시지
      */
-    @GetMapping("/success")
+    @GetMapping("/success/test")
     public String success(@AuthenticationPrincipal OAuth2User oAuth2User, Authentication authentication) {
         // [1] provider 식별 (google / github / facebook)
         String provider = ((OAuth2AuthenticationToken) authentication).getAuthorizedClientRegistrationId();
@@ -111,7 +111,7 @@ public class OAuthController {
      *
      * @return 실패 메시지
      */
-    @GetMapping("/failure")
+    @GetMapping("/failure/test")
     public String failure() {
         return "[OAuth 실패] 로그인 중 오류 발생";
     }
