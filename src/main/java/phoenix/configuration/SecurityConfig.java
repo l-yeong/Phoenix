@@ -130,7 +130,6 @@ public class SecurityConfig {
                 .oauth2Login(oauth2 -> oauth2 // oauth2Login : OAuth2 클라이언트 로그인 활성화
                         .userInfoEndpoint(user -> user.userService(customOAuth2UserService)) // provider(gogle, git , facebook)에서 받아온 사용자 프로필 커스텀 로직으로 가공
                         .successHandler(oAuth2SuccessHandler) // 로그인 성공 시 직접 토큰 발급/리다이렉트 등 후처리 , 이 핸들러가 우선 응답 완료하면 defaultSuccessUrl은 실행되지 않을 수 있음
-                        .defaultSuccessUrl("/oauth/success", true) // 성공 시 고정 경로로 이동. true는 항상 앞의 url로 이동
                         .failureUrl("/oauth/failure") // 실패 시 이동경로
                 )
 
