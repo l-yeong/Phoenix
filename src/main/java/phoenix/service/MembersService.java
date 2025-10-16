@@ -43,9 +43,12 @@ public class MembersService {
     @Transactional
     public boolean signUp(MembersDto membersDto){
 
-        // 비밀번호 null 방지 유효성 검사
-        if( membersDto.getPassword_hash() == null || membersDto.getPassword_hash().isEmpty()){
-            throw new IllegalArgumentException("비밀번호가 비어있습니다.");
+        // 소셜회원이면 비밀번호 검사 스킵
+        if( membersDto.getProvider() == null || membersDto.getProvider().isBlank()){
+            if( membersDto.getPassword_hash() == null || membersDto.getPassword_hash().isEmpty()){
+                throw new IllegalArgumentException("비밀번호가 비어있습니다.");
+            }
+            membersDto.setPassword_hash(passwordEncoder.encode(membersDto.getPassword_hash()));
         }
 
         // 비밀번호 해시화
