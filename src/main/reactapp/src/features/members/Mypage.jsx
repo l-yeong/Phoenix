@@ -1,3 +1,4 @@
+import axios from "axios";
 import { useEffect, useState } from "react";
 
 export default function Mypage( props ){
@@ -5,10 +6,10 @@ export default function Mypage( props ){
     const [ reservations , setReservations ] = useState([]);
         
     // [1] 예매내역 전체조회 ( 회원번호 쿼리스트링으로 전달 )
-    const reservePrint = async() => {
-        
+    const reservePrint = async() => {        
         try{
             const response = await axios.get("http://localhost:8080/reserve/print");
+            setReservations(response.data); // 상태 업데이트
             console.log(response.data);
         }catch(e){
             console.log(e);
@@ -34,16 +35,21 @@ export default function Mypage( props ){
                         <th>홈팀</th>
                         <th>어웨이팀</th>
                         <th>경기날짜</th> 
-                        <th>경기날짜</th>
-                        <th>비고</th>                       
+                        <th>예매현황</th>                       
                     </tr>
                 </thead>
                 <tbody>
                     {reservations.map( (r) => {
-                        <tr key={r.rno}>
-                            <td></td>
-                        </tr>
-                    })}
+                        return (
+                            <tr key={r.rno}>
+                                <td>{r.rno}</td>
+                                <td>{r.sno}</td>
+                                <td>{r.game.homeTeam}</td>
+                                <td>{r.game.awayTeam}</td>
+                                <td>{r.game.date} {r.game.time}</td>
+                                <td>{r.status === "reserved" ? "예매완료" : r.status === "cancelled" ? "예매취소" : r.status}</td>
+                            </tr>
+                        )})}
                 </tbody>
             </table>
         )}
