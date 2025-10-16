@@ -2,19 +2,19 @@ import axios from 'axios';
 
 const api = axios.create({
     baseURL : "http://localhost:8080",
-    headers : { "Contest-Type" : "application/json" }
+    headers : { "Content-Type" : "application/json" }
 });
 
 // [요청 인터셉터] Access Token을 헤더에 포함시키기
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem("accessToken");
-    if(token) config.headers.Authorization = `Bearer${token}`;
+    if(token) config.headers.Authorization = `Bearer ${token}`;
     return config;
 });
 
 // [응답 인터셉터] 에러처리 or 토큰 재발급
 api.interceptors.response.use(
-    (response) => reponse,
+    (response) => response,
     async(error) => {
         const {status} = error.response || {};
         if(status === 401){

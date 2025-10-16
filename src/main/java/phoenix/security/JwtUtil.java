@@ -3,9 +3,15 @@ package phoenix.security;
 import io.jsonwebtoken.*;                   // JWT 관련 클래스들 (토큰 생성, 파싱 등)
 import io.jsonwebtoken.security.Keys;       // 시크릿 키를 HMAC-SHA 알고리즘용 Key 객체로 변환
 import org.springframework.beans.factory.annotation.Value;  // application.properties 값 주입용
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import phoenix.model.dto.MembersDto;
 
+import java.util.Collections;
 import java.util.Date;
 
 /*
@@ -124,5 +130,21 @@ public class JwtUtil {
         return (claims != null ) ? claims.get(key) : null;
     } // func e
 
+
+    /** jwt로부터 Authentication 객체 생성하여 반환
+     * SecurityContext 에 인증 정보 등록할 때 사용
+     */
+    public Authentication getAuthentication(String token){
+        Claims claims = getClaims(token);
+        if(claims == null) return null;
+
+        String mid = claims.getSubject(); // JWT의 subject(사용자 식별자)
+        // 기본 권한 설정(ROLE_USER)
+        UserDetails userDetails = new User(mid ,"" , Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")));
+
+        // 비밀번호 없이 UsernamePasswordAuthenticationToken 생성
+        return new UsernamePasswordAuthenticationToken(userDetails , "" , userDetails.getAuthorities());
+
+    }
 
 } // class e

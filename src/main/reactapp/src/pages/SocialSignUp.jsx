@@ -15,12 +15,12 @@ const SocialSignUp = () => {
   }, [params]);
 
   const playerList = [
-    "박찬호",
-    "류현진",
-    "이정후",
-    "오타니 쇼헤이",
-    "추신수",
-    "김하성",
+    { id: 1, name: "박찬호" },
+    { id: 2, name: "류현진" },
+    { id: 3, name: "이정후" },
+    { id: 4, name: "오타니 쇼헤이" },
+    { id: 5, name: "추신수" },
+    { id: 6, name: "김하성" },
   ];
 
   const handleSubmit = async () => {
@@ -31,10 +31,12 @@ const SocialSignUp = () => {
 
     try {
       //  DTO 구조에 맞게 JSON 전송
-      const res = await api.post("/members/signup", {
+      const res = await api.post("/members/social/signup", {
         email,
-        favoritePlayer,
-        exchangeEligible,
+        provider: params.get("provider"),
+        provider_id: params.get("provider_id"),
+        pno: favoritePlayer,
+        exchange: exchangeEligible,
       });
 
       if (res.data.success) {
@@ -80,8 +82,8 @@ const SocialSignUp = () => {
         sx={{ maxWidth: "400px", mb: 3 }}
       >
         {playerList.map((player) => (
-          <MenuItem key={player} value={player}>
-            {player}
+          <MenuItem key={player.id} value={player.id}>
+            {player.name}
           </MenuItem>
         ))}
       </TextField>
