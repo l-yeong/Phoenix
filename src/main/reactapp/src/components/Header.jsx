@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { AppBar, Toolbar, Box, Typography, Button } from "@mui/material";
+import { ToastContainer , toast } from "react-toastify"; 
+import "react-toastify/dist/ReactToastify.css";
 
 const Header = () => {
   // [*] 메시지를 저장할 상태
@@ -25,6 +27,11 @@ const Header = () => {
       console.log('수신메시지',data);
       // 기존 메시지 상태에 새로운 메시지 추가
       setMessage( (prev) => [...prev,data]);
+      toast.info(` ${typeof data === "string" ? data : data.message}`,{
+        position: "bottom-right",
+        autoClose: 5000,
+        theme: "colored",
+      });
     }// func end
 
     // [1-3] 웹소켓 에러 발생 시 실행
@@ -122,6 +129,16 @@ const Header = () => {
           </Button>
         </Box>
       </Toolbar>
+        {/* 토스트 컨테이너 추가 */}
+      <ToastContainer 
+        position="bottom-right" 
+        autoClose={5000} 
+        hideProgressBar={false} 
+        newestOnTop 
+        closeOnClick 
+        pauseOnHover 
+        theme="colored" 
+      />
     </AppBar>
   );
 };
