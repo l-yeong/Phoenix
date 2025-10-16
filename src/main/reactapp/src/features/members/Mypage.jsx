@@ -40,13 +40,13 @@ export default function Mypage( props ){
                 <tbody>
                     {reservations.map( (r) => {
                         return (
-                            <tr key={r.rno}>
-                                <td>{r.rno}</td>
-                                <td>{r.sno}</td>
+                            <tr key={r.reservation.rno}>
+                                <td>{r.reservation.rno}</td>
+                                <td>{r.reservation.sno}</td>
                                 <td>{r.game.homeTeam}</td>
                                 <td>{r.game.awayTeam}</td>
                                 <td>{r.game.date} {r.game.time}</td>
-                                <td>{r.status === "reserved" ? "예매완료" : r.status === "cancelled" ? "예매취소" : r.status}</td>
+                                <td>{r.reservation.status === "reserved" ? "예매완료" : r.reservation.status === "cancelled" ? "예매취소" : r.reservation.status}</td>
                             </tr>
                         )})}
                 </tbody>
