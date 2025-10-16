@@ -58,11 +58,20 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         // [3] 로그인한 소셜 제공자 식별 (google / github / facebook)
         String provider = token.getAuthorizedClientRegistrationId();
 
-        // [4] 소셜 플랫폼 고유 ID 추출 (Google: "sub", GitHub: "id", Facebook: "id")
-        String providerId = (String) attributes.get("sub"); // ⚠️ 플랫폼별 key 다를 수 있음
+        // [4] providerId 플랫폼별로 다르게 처리
+        String providerId = null;
+        switch (provider) {
+            case "google" -> providerId = (String) attributes.get("sub"); //  Google: "sub"
+            case "github" -> providerId = String.valueOf(attributes.get("id")); // GitHub: "id" (Integer → String 변환)
+            case "facebook" -> providerId = String.valueOf(attributes.get("id")); //  Facebook: "id"
+            default -> providerId = String.valueOf(attributes.get("id")); // 기타
+        }
 
-        // [5] 사용자 이메일 정보 추출
+        // [5] 이메일 (플랫폼별 기본값 보정)
         String email = (String) attributes.get("email");
+        if (email == null || email.isEmpty()) {
+            email = provider + "_" + providerId + "@social.local"; // 기본값 세팅
+        }
 
         // [6] 소셜 로그인 처리 로직 호출 (JWT 발급 or 신규 회원 판단)
         String jwt = socialAuthService.socialLogin(provider, providerId);

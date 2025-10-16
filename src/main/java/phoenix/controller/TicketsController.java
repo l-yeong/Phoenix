@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import phoenix.service.TicketsService;
 import java.util.List;
+import java.util.Map;
 
 
 @RequestMapping("/ticket")
@@ -13,18 +14,27 @@ import java.util.List;
 public class TicketsController {
     private final TicketsService ticketsService;
 
-    // (기존) 발급: reserved일 때 INSERT
+    //예약 rno가 'reserved' 일 때만 QR 문자열 생성하여 tickets에 테이블에 저장
     @PostMapping("/write")
-    public ResponseEntity<?> ticketWrite(@RequestParam int rno) {
-        boolean ok = ticketsService.ticketWrite(rno);
-        return ok ? ResponseEntity.ok().build() : ResponseEntity.noContent().build();
+    public ResponseEntity<Boolean>ticketWrite(@RequestParam int rno) {
+        boolean result = ticketsService.ticketWrite(rno);
+        return ResponseEntity.ok(result);
     }//func end
 
-    // 프론트가 쓰는 payload 조회 (qrcode.react 렌더링용)
-    @GetMapping("/payloads")
-    public ResponseEntity<List<String>> payloads(@RequestParam int mno) {
-        List<String> list = ticketsService.getPayloadsByMno(mno);
-        return ResponseEntity.ok(list);
+    // 회원별 payload(QR 이미지 URL) 조회
+    @GetMapping("/print")
+    public ResponseEntity<List<String>>findPayloads(@RequestParam int mno) {
+        List<String> result = ticketsService.findPayloads(mno);
+        return ResponseEntity.ok(result);
     }//func end
+
+    // QR 상세 정보 조회
+    @GetMapping("/qrInfo")
+    public ResponseEntity<Map<String, Object>> findPayloadsInfo(@RequestParam String ticket_code) {
+        Map<String,Object> result = ticketsService.findPayloadsInfo(ticket_code);
+        return ResponseEntity.ok(result);
+
+    }//func end
+
 
 }//func end

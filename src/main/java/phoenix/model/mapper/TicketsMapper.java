@@ -8,22 +8,29 @@ import java.util.Map;
 
 @Mapper
 public interface TicketsMapper {
+    // rno 중복티켓 있는지 조회(중복방지)
+    @Select("SELECT ticket_code FROM tickets WHERE rno = #{rno} LIMIT 1")
+    String findTicketCodeByRno(@Param("rno") int rno);
 
-    // 예약 상태 확인
-    @Select("SELECT r.status AS reservation_status, z.price  AS seat_price, "+
-        " m.mname  AS mname,z.zname  AS zname, s.seat_no AS seat_no "+
-        " FROM reservations r JOIN seats s ON r.sno = s.sno JOIN zones z ON s.zno = z.zno "+
-        " JOIN members m ON r.mno = m.mno WHERE r.rno = #{rno} ")
-    Map<String,Object> ticketPrint(@Param("rno") int rno);
-
-    // 티켓 QR 이미지 추가
-    @Insert(" INSERT INTO tickets (rno, ticket_code, price, valid) VALUES (#{rno}, #{ticket_code}, #{price}, #{valid})")
-    @Options(useGeneratedKeys = true, keyProperty = "tno")
+    // 티켓발급 (ticket_code 에는 QR 이미지 경로)
+    @Insert("INSERT INTO tickets (rno, ticket_code, price, valid) VALUES (#{rno}, #{ticket_code}, #{price}, #{valid})")
     int ticketWrite(TicketsDto dto);
 
-    // payload 목록 조회(프론트에서 qrcode 패키지 사용될것)
-    @Select("SELECT t.qr_payload FROM ticket t JOIN reservations r ON t.rno = r.rno JOIN members m ON r.mno = m.mno"
-            +"WHERE m.mno = #{mno} ORDER BY t.tno DESC")
-    List<String>findPayloads(@Param("mno")int mno);
+    // 예약기반 정보 조회
+    @Select("SELECT r.status AS reservation_status, z.price  AS seat_price, m.mname  AS mname, "+
+            " z.zname  AS zname, s.seat_no AS seat_no FROM reservations r JOIN seats s ON r.sno = s.sno "+
+            " JOIN zones z ON s.zno = z.zno JOIN members m ON r.mno = m.mno WHERE r.rno = #{rno} ")
+    Map<String, Object> ticketPrint(@Param("rno") int rno);
+
+    // 회원별 티켓 코드 목록
+    @Select("SELECT t.ticket_code FROM tickets t JOIN reservations r ON t.rno = r.rno "+
+            " JOIN members m ON r.mno = m.mno WHERE m.mno = #{mno} ORDER BY t.tno DESC ")
+    List<String> findPayloads(@Param("mno") int mno);
+
+    // QR 스캔 상세 정보
+    @Select(" SELECT m.mname AS name, z.zname AS zone, s.seat_no AS seat, t.valid FROM tickets t JOIN reservations r ON t.rno = r.rno "+
+           " JOIN members m ON r.mno = m.mno JOIN seats s ON r.sno = s.sno JOIN zones z ON s.zno = z.zno WHERE t.ticket_code = #{ticket_code}")
+    Map<String, Object> findPayloadsInfo(@Param("ticket_code") String ticket_code);
+
 
 }//inter end

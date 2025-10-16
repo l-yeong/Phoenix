@@ -1,20 +1,26 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
 import Home from "./pages/Home";
-import Mypage from "./features/members/mypage";
-import ReservationFind from "./features/reservations/ReservationFind";
+import Header from "./components/Header";
+import LoginPage from "./pages/LoginPage";
+import SignUpPage from "./pages/SignUpPage";
+import SocialSuccess from "./pages/SocialSuccess";
+import SocialSignUp from "./pages/SocialSignUp";
+
+
 function App() {
   return (
-    <BrowserRouter>      
+    <BrowserRouter>
+      <Header />
       <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Home />} />
-        </Route>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignUpPage />} />
+        <Route path="/social/success" element={<SocialSuccess />} />
+        <Route path="/social/signup" element={<SocialSignUp />} />
       </Routes>
     </BrowserRouter>
   );
 }
 
 export default App;
-// <Route path="/mypage" element={<Mypage />} />
-// <Route path="/reservationFind/:rno" element={<ReservationFind />} />

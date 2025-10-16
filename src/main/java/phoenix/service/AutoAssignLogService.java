@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class AutoAssignLogService {
+public class AutoAssignLogService { //
     private final AutoAssignLogMappder autoAssignLogMappder;
 
-}//func end
+}   // class end
