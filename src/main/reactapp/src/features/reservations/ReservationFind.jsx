@@ -1,14 +1,15 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 
 export default function reservationFind( props ){
     // [*] 예매 상태 관리
     const [ reservation , setReservation ] = useState(null);
-
+    // [*] 예매번호 URL에서 추출
+    const rno = useParams();
     // [1] 예매 상세내역 조회
     const reserveInfo = async () => {
-        try{
-            const rno = props.rno;
+        try{            
             const response = await axios.get(`http://localhost:8080/reserve/info?rno=${rno}`);
             setReservation(response.data);
             console.log(response.data);

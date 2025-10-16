@@ -41,7 +41,7 @@ export default function Mypage( props ){
                     {reservations.map( (r) => {
                         return (
                             <tr key={r.reservation.rno}>
-                                <td>{r.reservation.rno}</td>
+                                <td><Link to={`/reservationFind/${r.reservation.rno}`}>{r.reservation.rno}</Link></td>
                                 <td>{r.reservation.sno}</td>
                                 <td>{r.game.homeTeam}</td>
                                 <td>{r.game.awayTeam}</td>
