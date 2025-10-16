@@ -21,18 +21,23 @@ public class FileService {
     private String baseDir = System.getProperty("user.dir"); //루트 디렉터리 경로
     private String uploadPath = baseDir + "/src/main/resources/static/upload/"; //QR 이미지 저장 경로
 
-    public String saveQRImg(String payload) {
+    public String saveQRImg(Object data) {
         try {
             Path dir = Paths.get(uploadPath);
             if (!Files.exists(dir)) Files.createDirectories(dir);
 
+            // Map → JSON 문자열 변환 (text 키로 감싸지 않음)
+            com.fasterxml.jackson.databind.ObjectMapper om = new com.fasterxml.jackson.databind.ObjectMapper();
+            String json = om.writeValueAsString(data);
+
             String fileName = UUID.randomUUID() + "_qr.png";
             Path output = dir.resolve(fileName);
 
-            byte[] png = ticketsQR.TicketQrCode(Map.of("text",payload)); // size 옵션 지원시
+            // QR 텍스트를 직접 전달
+            byte[] png = ticketsQR.TicketQrCode(json, 200);
             Files.write(output, png);
 
-            return "/upload/" + fileName; // ★ 정적 경로(URL) 반환
+            return "/upload/" + fileName;
         } catch (Exception e) {
             throw new RuntimeException("QR 파일 저장 실패", e);
         }
