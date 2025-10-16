@@ -19,33 +19,23 @@ public class FileService {
 
 
     private String baseDir = System.getProperty("user.dir"); //루트 디렉터리 경로
-    private String uploadPath = baseDir + "/src/main/resources/static/upload/"; //QR이미지 저장 경로
+    private String uploadPath = baseDir + "/src/main/resources/static/upload/"; //QR 이미지 저장 경로
 
-    public String ImgQrSave(String text, int size){
-        if(text==null || text.isEmpty()) return null;
-        if(ticketsQR ==null){
-            return null;
-        }//if end
+    public String saveQRImg(String payload) {
+        try {
+            Path dir = Paths.get(uploadPath);
+            if (!Files.exists(dir)) Files.createDirectories(dir);
 
-        try{
-            Path dir = Paths.get(uploadPath); // 업로드 폴더 경로 준비
-            if(!Files.exists(dir)) Files.createDirectories(dir); // 지정경로가 없을시 새로운경로 생성
+            String fileName = UUID.randomUUID() + "_qr.png";
+            Path output = dir.resolve(fileName);
 
-            String uuid = UUID.randomUUID().toString(); //UUID 생성
-            String fileName = uuid + "_qr.png";
+            byte[] png = ticketsQR.TicketQrCode(Map.of("text",payload)); // size 옵션 지원시
+            Files.write(output, png);
 
-            // 저장될 파일의 전체 경로
-            Path output = Paths.get(uploadPath+fileName);
-
-            // QR 이미지 생성
-            byte[] png = ticketsQR.TicketQrCode(Map.of("text",text));
-            Files.write(output,png);
-
-            return fileName;
+            return "/upload/" + fileName; // ★ 정적 경로(URL) 반환
         } catch (Exception e) {
-            System.out.println(e);
-            return null;
-        }//catch end
-    }//func end
+            throw new RuntimeException("QR 파일 저장 실패", e);
+        }
+    }
 
 }//class end
