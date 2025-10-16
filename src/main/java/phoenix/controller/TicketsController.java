@@ -28,13 +28,5 @@ public class TicketsController {
         return ResponseEntity.ok(result);
     }//func end
 
-    // QR 상세 정보 조회
-    @GetMapping("/qrInfo")
-    public ResponseEntity<Map<String, Object>> findPayloadsInfo(@RequestParam String ticket_code) {
-        Map<String,Object> result = ticketsService.findPayloadsInfo(ticket_code);
-        return ResponseEntity.ok(result);
-
-    }//func end
-
 
 }//func end
