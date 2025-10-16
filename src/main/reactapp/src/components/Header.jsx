@@ -1,78 +1,41 @@
 import React from "react";
 import { AppBar, Toolbar, Box, Typography, Button } from "@mui/material";
+import styles from "./Header.module.css";
 
-const Header = () => {
-  return (
-    <AppBar
-      position="static"
-      sx={{
-        bgcolor: "#CA2E26",
-        height: "70px",
-        justifyContent: "center",
-      }}
-    >
-      <Toolbar
-        sx={{
-          width: "1280px",
-          mx: "auto",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
+const Header = () =>  {
+  return(
+    <AppBar position="static" className={styles.appBar}>
+      <Toolbar className={styles.toolbar}>
         {/* 로고 */}
-        <Typography
-          variant="h6"
-          sx={{ fontWeight: "bold", cursor: "pointer" }}
-        >
+        <Typography variant="h6" className={styles.logo}>
           ⚾ PHOENIX
-        </Typography>
+          </Typography>
+          {/* 네비게이션 메뉴 */}
+          <Box className={styles.nav}>
+            {["TICKET", "PLAYERS", "GAME", "CONTENTS", "MEMBERSHIP"].map(
+              (menu) => (
+                <Button key={menu} className={styles.navButton}>
+                  {menu}
+                </Button>
+              )
+            )}
+          </Box>
 
-        {/* 네비게이션 */}
-        <Box sx={{ display: "flex", gap: 4 }}>
-          {["TICKETS", "PLAYERS", "GAME", "CONTENTS", "MEMBERSHIP"].map(
-            (menu) => (
-              <Button
-                key={menu}
-                sx={{
-                  color: "white",
-                  fontWeight: "bold",
-                  "&:hover": { opacity: 0.8 },
-                }}
-              >
-                {menu}
+            {/* 로그인/회원가입 버튼 */}
+            <Box className={styles.auth}>
+              <Button variant="outlined" className={styles.loginBtn}>
+                로그인
               </Button>
-            )
-          )}
-        </Box>
+              
+              <Button variant="contained" className={styles.signupBtn}>
+                회원가입
+              </Button>
 
-        {/* 로그인 */}
-        <Box sx={{ display: "flex", gap: 1 }}>
-          <Button
-            variant="outlined"
-            sx={{
-              color: "white",
-              borderColor: "white",
-              "&:hover": { bgcolor: "rgba(255,255,255,0.2)" },
-            }}
-          >
-            로그인
-          </Button>
-          <Button
-            variant="contained"
-            sx={{
-              bgcolor: "white",
-              color: "#CA2E26",
-              fontWeight: "bold",
-              "&:hover": { bgcolor: "#f8f8f8" },
-            }}
-          >
-            회원가입
-          </Button>
-        </Box>
+            </Box>
+
       </Toolbar>
     </AppBar>
-  );
-};
+  )
+}
 
 export default Header;
