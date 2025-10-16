@@ -29,7 +29,13 @@ export default function Mypage( props ){
             <table>
                 <thead>
                     <tr>
-                        <th></th>
+                        <th>예매번호</th>
+                        <th>좌석번호</th>
+                        <th>홈팀</th>
+                        <th>어웨이팀</th>
+                        <th>경기날짜</th> 
+                        <th>경기날짜</th>
+                        <th>비고</th>                       
                     </tr>
                 </thead>
                 <tbody>
