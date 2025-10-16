@@ -22,6 +22,12 @@ export default function reservationFind( props ){
     useEffect( () => {
         reserveInfo();
     },[props.rno]);
+    // 현재시간
+    const now = new Date();
+    // 경기날짜+시간
+    const gameDate = new Date(`${reservation.game.date}T${reservation.game.time}`);
+    // 취소 여부 체크
+    const cancel = now < gameDate;
 
     return (
         <>
@@ -39,6 +45,7 @@ export default function reservationFind( props ){
                     <li>어웨이팀 선발투수 : {reservation.game.awayPitcher}</li>
                     <li>경기날짜 : {reservation.game.date}</li>
                     <li>경기시간 : {reservation.game.time}</li>
+                    <li>취소여부 : {cancel ? "취소 가능" : "취소 불가"}</li>
                 </ul>
                 <button> 좌석교환 </button> <button> 예매취소 </button>
             </div>
