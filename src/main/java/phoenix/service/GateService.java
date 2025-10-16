@@ -11,6 +11,11 @@ import phoenix.util.RedisKeys;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * ===============================================================
  * [GateService]
@@ -42,103 +47,82 @@ public class GateService {
 
     private final RedissonClient redisson;
 
-    /** 동시 입장 허용 인원 (3명까지만 동시에 예매 페이지 접근 가능) */
+    // 동시 입장 허용 인원 (3명까지만 동시에 예매 페이지 접근 가능)
     private static final int MAX_PERMITS = 3;
 
-    /** 게이트 세션 TTL (5분) — 입장 후 5분 동안만 좌석 선택 가능 */
+    // 게이트 세션 TTL (5분) — 입장 후 5분 동안만 좌석 선택 가능
     private static final long SESSION_MINUTES = 5;
 
-    /** 입장 토큰 TTL (30초) — 토큰 발급 후 30초 안에 제출해야 함 */
+    // 입장 토큰 TTL (30초) — 토큰 발급 후 30초 안에 제출해야 함
     private static final long ADMISSION_TOKEN_TTL_SECONDS = 30;
 
-    // ===============================================================
-    // ✅ Redis 구조 접근자 (헬퍼)
-    // ===============================================================
+    // [SSE 추가] 유저별 Emitter 보관
+    private final Map<String, SseEmitter> emitters = new ConcurrentHashMap<>();
 
-    /** [1] 동시 입장 제한 세마포어 */
-    private RSemaphore semaphore() {
-        // "gate:semaphore" 키에 연결된 Redisson 분산 세마포어
-        // 퍼밋이 0이면 모든 입장이 꽉 찬 상태
-        return redisson.getSemaphore(RedisKeys.GATE_SEMAPHORE);
-    }
+    // Redis 구조 접근자
 
-    /** [2] 대기열 큐 (FIFO: 먼저 들어온 사람이 먼저 입장) */
-    private RBlockingQueue<String> queue() {
-        return redisson.getBlockingQueue(RedisKeys.WAITING_QUEUE);
-    }
+    // 동시 입장 제한 세마포어
+    // "gate:semaphore" 키에 연결된 Redisson 분산 세마포어
+    // 퍼밋이 0이면 모든 입장이 꽉 찬 상태 ,,,  세마포어란 쉽게 말하면 쓰레드풀임.
+    private RSemaphore semaphore() { return redisson.getSemaphore(RedisKeys.GATE_SEMAPHORE); }
 
-    /** [3] 입장 토큰 발급 이벤트 송신용 토픽 (Pub/Sub 구조) */
-    private RTopic admissionTopic() {
-        return redisson.getTopic(RedisKeys.ADMISSION_TOPIC);
-    }
+    // 대기열 큐 => 대기자를 순차적으로 들여보냄 , 분산 대기열임.
+    private RBlockingQueue<String> queue() { return redisson.getBlockingQueue(RedisKeys.WAITING_QUEUE); }
 
-    /** [4] 현재 게이트 안에 있는 사용자 Set */
-    private RSet<String> activeSet() {
-        return redisson.getSet(RedisKeys.ACTIVE_SET);
-    }
+    // 현재 게이트 안에 있는 사용자 Set 집합
+    private RSet<String> activeSet() {return redisson.getSet(RedisKeys.ACTIVE_SET);}
 
-    // ===============================================================
-    // ⚙️ 초기화 로직 (앱 시작 시 3개의 퍼밋 세팅)
-    // ===============================================================
+
+    // 초기화 로직 ==> 앱 스타트 시 3개의 퍼밋만 세팅
+    // 스프링(Spring)에서 “빈(Bean)이 생성되고 DI(의존성 주입)가 끝난 직후 한 번만 자동 실행되는 초기화 어노테이션
     @PostConstruct
     public void init() {
         // Redis 상에 퍼밋 개수를 지정 (이미 존재해도 무해)
         semaphore().trySetPermits(MAX_PERMITS);
-    }
+    }   // func end
 
-    // ===============================================================
-    // 🧩 [1] 중복 예매 확인 로직
-    // ===============================================================
 
-    /**
-     * [hasUserAlreadyBooked]
-     * - 이미 해당 공연(showId)을 예매 완료한 사용자인지 확인
-     * - 예매 완료 시 SeatLockService에서 다음 키로 기록됨:
-     *      user_booking:{userId}:{showId} = true
-     * - Redis의 Boolean 값을 읽어서 true면 이미 예매함.
-     */
+    // 메소드 부분
+
+    // 중복 예매 여부 확인 메소드
+    // getBucket으로 참조주소값을 가져오고 그 값을 Bucket<V> 타입의 b에 저장한다.
+    // 그것을 .get()해서 Redis 타입을 자동 파싱해서 자바 형식으로 가져와 true인지 false인지 확인한다.
+    // Boolean 타입인 이유는 가져온 Bucket이 null일 경우 nullPointException이 일어날 수 있기 때문에
+    // 안전하게 처리한다. 암튼 가져와서 비교하고 이미 예약 되어있으면 false를 반환한다.
     private boolean hasUserAlreadyBooked(String userId, String showId) {
         RBucket<Boolean> b = redisson.getBucket("user_booking:" + userId + ":" + showId);
         return Boolean.TRUE.equals(b.get());
-    }
+    }   // func end
 
-    // ===============================================================
-    // 🚪 [2] 대기열 등록 (enqueue)
-    // ===============================================================
 
+    // 대기열 등록 (enqueue) 메소드
     /**
-     * [enqueue]
-     * - 사용자가 "예매 페이지 입장 시도"를 하면 호출됨
-     * - ① 이미 예매한 사용자라면 대기열에 넣지 않음
-     * - ② 아직 예매하지 않았다면 대기열에 추가
-     * - ③ 빈 자리가 있으면 assignNextIfPossible()로 토큰 발급 시도
-     *
-     * @param userId 현재 사용자의 ID
-     * @param showId 공연(혹은 회차) ID
-     * @return EnqueueResult(queued 여부, 현재 대기열 인원수)
+     * 사용자가 "예매 페이지 입장 시도"를 하면 호출됨
+     * 1 이미 예매한 사용자라면 대기열에 넣지 않음
+     * 2 아직 예매하지 않았다면 대기열에 추가
+     * 3. 빈 자리가 있으면 assignNextIfPossible()로 토큰 발급 시도
      */
     public EnqueueResult enqueue(String userId, String showId) {
-        // 1️⃣ 이미 예매한 사용자인 경우 즉시 차단 (대기열 점유 방지)
+        // 이미 예매한 사용자인 경우 즉시 차단함 ===> 매크로등 쓸데 없는 대기열 점유를 방지한다.
         if (hasUserAlreadyBooked(userId, showId)) {
             return new EnqueueResult(false, 0);
-        }
+        }   // if end
 
-        // 2️⃣ 대기열(FIFO 큐)에 사용자 추가
+        // 대기열(큐)에 유저를 추가한다.
         queue().add(userId);
 
-        // 3️⃣ 빈 슬롯이 있다면 즉시 다음 사람을 입장시킴
+        // 빈 슬롯이 있다면 즉시 다음 사람을 입장시킴
+        // 아래에 메소드 호출임 오해 금지.
         assignNextIfPossible();
 
         // 현재 대기열 길이 반환
+        // 맨 아래의 생성자임
         return new EnqueueResult(true, queue().size());
-    }
+    }   // func end
 
-    // ===============================================================
-    // 🎫 [3] 다음 대기자에게 입장 토큰 발급
-    // ===============================================================
 
+    // 다음 대기자에게 입장 토큰 발급하는 메소드
     /**
-     * [assignNextIfPossible]
      * - 세마포어 퍼밋이 남아있을 때 호출됨
      * - 대기열의 맨 앞 사용자를 꺼내서
      *   입장 토큰(admission token)을 발급한다.
@@ -147,36 +131,38 @@ public class GateService {
      */
     public void assignNextIfPossible() {
         try {
-            // 1️⃣ 퍼밋이 남아 있지 않으면 (입장 인원 꽉 참)
+            // 세마포어 자리가 남아 있지 않으면 (입장 인원 꽉 참) 리턴한다.
             if (semaphore().availablePermits() <= 0) return;
 
-            // 2️⃣ 대기열에서 맨 앞 유저를 꺼냄
+            // 대기열에서 맨 앞 유저를 꺼냄
             String nextUser = queue().poll();
-            if (nextUser == null) return; // 대기열 비었으면 종료
+            // 대기하는 인원이 존재하지 않으면 그냥 종료
+            if (nextUser == null) return;
 
-            // 3️⃣ 퍼밋 1개 확보 시도 (tryAcquire: 즉시 반환)
+            // 세마포어 퍼밋 1개 확보를 시도한다.
+            // (tryAcquire() : 현재 세마포어에 여유 슬롯이 있다면 하나를 즉시 획득하고, 없으면 false 를 반환
             boolean acquired = semaphore().tryAcquire();
+            // 만약 실패한다면?
             if (!acquired) {
-                // 경쟁상황으로 실패 시 다시 큐에 되돌림
+                // 다시 큐에 되돌림 >> 잘가라~ 그리고 리턴
                 queue().add(nextUser);
                 return;
-            }
+            }   // if end
 
-            // 4️⃣ 1회용 토큰 생성 (UUID)
+            // 1회용 토큰 생성 (UUID) 나중에 jjwt로 해도 됨.
             String token = UUID.randomUUID().toString();
 
-            // 5️⃣ Redis에 토큰 → userId 저장 (30초 TTL)
+            // Redis에 토큰 userId를 저장한다 ==> 30초 TTL를 준다
             redisson.getBucket(RedisKeys.ADMISSION_PREFIX + token)
                     .set(nextUser, ADMISSION_TOKEN_TTL_SECONDS, TimeUnit.SECONDS);
 
-            // 6️⃣ 발급된 토큰 정보를 토픽(Pub/Sub)으로 전송
-            //     실제 서비스에서는 SSE/WebSocket으로 사용자 개별 알림을 권장
-            admissionTopic().publish(nextUser + "|" + token);
+            // ===== [SSE 추가] 브라우저로 실시간 입장 신호 전송 =====
+            sendAdmissionSignal(nextUser, token);
 
         } catch (Exception e) {
             e.printStackTrace();
-        }
-    }
+        }   // try end
+    }   // func end
 
     // ===============================================================
     // ✅ [4] 토큰 검증 및 입장 확정 (confirmEnter)
@@ -299,4 +285,45 @@ public class GateService {
      * - waiting : 현재 대기열 인원수
      */
     public record EnqueueResult(boolean queued, int waiting) {}
+
+    // ===============================================================
+    // ===== [SSE 추가] 유틸 메소드
+    // ===============================================================
+
+    /**
+     * 브라우저가 구독을 시작할 때 호출할 SSE 연결 함수
+     * - 컨트롤러에서 GET /gate/subscribe/{userId} 로 노출하여 사용
+     * - 연결 타임아웃은 세션TTL + 토큰TTL 여유로 설정
+     */
+    public SseEmitter connectSse(String userId) {
+        long timeoutMs = TimeUnit.MINUTES.toMillis(SESSION_MINUTES) + TimeUnit.SECONDS.toMillis(ADMISSION_TOKEN_TTL_SECONDS);
+        SseEmitter emitter = new SseEmitter(timeoutMs);
+        emitters.put(userId, emitter);
+
+        emitter.onCompletion(() -> emitters.remove(userId));
+        emitter.onTimeout(() -> emitters.remove(userId));
+        emitter.onError((ex) -> emitters.remove(userId));
+
+        return emitter;
+    }
+
+    /**
+     * 토큰 발급 시 해당 유저 브라우저로 실시간 푸시
+     * - 이벤트명: "admission"
+     * - data: 토큰 문자열 (JSON 직렬화 규칙에 맞춰 전송)
+     */
+    private void sendAdmissionSignal(String userId, String token) {
+        SseEmitter emitter = emitters.get(userId);
+        if (emitter == null) return;
+
+        try {
+            emitter.send(SseEmitter.event()
+                    .name("admission")
+                    .data(token));
+            emitter.complete(); // 일회성 이벤트 후 연결 종료 (원하면 주석처리하여 유지 가능)
+            emitters.remove(userId);
+        } catch (IOException e) {
+            emitters.remove(userId);
+        }
+    }
 }
