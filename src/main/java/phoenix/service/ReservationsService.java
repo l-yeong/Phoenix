@@ -5,12 +5,17 @@ import phoenix.model.dto.ReservationsDto;
 import phoenix.model.mapper.ReservationMapper;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 public class ReservationsService {
     private final ReservationMapper reservationMapper;
+    private final FileService fileService;
 
     /**
      * 예매내역조회
@@ -18,9 +23,18 @@ public class ReservationsService {
      * @param mno
      * @return List<ReservationsDto>
      */
-    public List<ReservationsDto> reservePrint(int mno){
+    public List<Map<String,Object>> reservePrint(int mno){
         List<ReservationsDto> list = reservationMapper.reservePrint(mno);
-        return list;
+        List<Map<String,Object>> result = new ArrayList<>();
+        for (ReservationsDto dto : list){
+            Map<String ,Object> map = new HashMap<>();
+            map.put("reservation",dto);
+            // csv 파일
+            Map<String,String> gameData = fileService.getGame(dto.getGno());
+            map.put("game",gameData);
+            result.add(map);
+        }// for end
+        return result;
     }// func end
 
     /**
