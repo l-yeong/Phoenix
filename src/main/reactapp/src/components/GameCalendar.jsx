@@ -2,7 +2,7 @@ import React from "react";
 import { Box, Typography, Avatar, IconButton } from "@mui/material";
 import { ChevronLeft, ChevronRight } from "@mui/icons-material";
 import dayjs from "dayjs";
-import "./GameCalendar.css";
+import "../styles/GameCalendar.css";
 
 const GameCalendar = ({ year, month, matches, onDateClick, onMonthChange }) => {
   const start = dayjs(`${year}-${month}-01`);

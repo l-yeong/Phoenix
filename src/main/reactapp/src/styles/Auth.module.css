@@ -1,0 +1,41 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background-color: #fafafa;
+}
+
+.form {
+  width: 400px;
+  background-color: white;
+  border-radius: 12px;
+  padding: 32px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.title {
+  text-align: center;
+  color: #ca2e26;
+  font-weight: bold;
+  margin-bottom: 24px;
+}
+
+.input {
+  margin-bottom: 16px;
+}
+
+.button {
+  width: 100%;
+  margin-top: 12px;
+  font-weight: bold !important;
+  background-color: #ca2e26 !important;
+}
+
+.socialBox {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
