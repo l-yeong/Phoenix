@@ -8,6 +8,7 @@ import phoenix.model.dto.ReservationsDto;
 import phoenix.service.ReservationsService;
 
 import java.util.List;
+import java.util.Map;
 
 @RequestMapping("/reserve")
 @RestController
@@ -19,12 +20,12 @@ public class ReservationsController {
      * 예매내역조회
      *
      * @param session
-     * @return List<ReservationsDto>
+     * @return List<Map<String,Object>>
      */
     @GetMapping("/print")
-    public ResponseEntity<List<ReservationsDto>> reservePrint(HttpSession session){
+    public ResponseEntity<?> reservePrint(HttpSession session){
         int mno = (int) session.getAttribute("logMno");
-        List<ReservationsDto> list = reservationsService.reservePrint(mno);
+        List<Map<String,Object>> list = reservationsService.reservePrint(mno);
         return ResponseEntity.ok().body(list);
     }// func end
 
@@ -32,12 +33,12 @@ public class ReservationsController {
      * 예매내역 상세조회
      *
      * @param rno
-     * @return ReservationsDto
+     * @return  Map<String ,Object>
      */
     @GetMapping("/info")
-    public ResponseEntity<ReservationsDto> reserveInfo( @RequestParam int rno ){
-        ReservationsDto dto = reservationsService.reserveInfo(rno);
-        return ResponseEntity.ok().body(dto);
+    public ResponseEntity<?> reserveInfo( @RequestParam int rno ){
+        Map<String ,Object> map = reservationsService.reserveInfo(rno);
+        return ResponseEntity.ok().body(map);
     }// func end
 
     /**

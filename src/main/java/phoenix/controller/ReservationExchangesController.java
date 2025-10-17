@@ -51,7 +51,14 @@ public class ReservationExchangesController {
      */
     @DeleteMapping("")
     public ResponseEntity<?> rejectChange(@RequestParam int from_rno){
+        ReservationExchangesDto dto = redisService.getRequest(from_rno);
         boolean result = reservationexchangesService.rejectChange(from_rno);
+        if (result){
+            if (dto != null){
+                String msg = "좌석 교환 요청이 거절되었습니다.";
+                reservationexchangesService.responseMessage(dto.getFrom_mno(), msg );
+            }// if end
+        }// if end
         return ResponseEntity.ok(result);
     }// func end
 
@@ -64,7 +71,14 @@ public class ReservationExchangesController {
     @PostMapping("/accept")
     public ResponseEntity<?> acceptChange(@RequestParam int from_rno , HttpSession session){
         int mno = (int) session.getAttribute("logMno");
+        ReservationExchangesDto dto = redisService.getRequest(from_rno);
         boolean result = reservationexchangesService.acceptChange(mno, from_rno);
+        if (result){
+            if (dto != null){
+                String msg = "좌석 교환 요청이 수락되었습니다.";
+                reservationexchangesService.responseMessage(dto.getFrom_mno(), msg );
+            }// if end
+        }// if end
         return ResponseEntity.ok(result);
     }// func end
 

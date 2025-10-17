@@ -39,10 +39,12 @@ public class ReservationExchangesService {
         int saved = redisService.saveRequest(dto);
         if (saved == 0 || saved == 2) return saved;
         Executor executor = threadPoolConfing.changeExecutor();
-        int fromSeat = reservationsService.reserveInfo(dto.getFrom_rno()).getSno();
+        ReservationsDto fromDto = (ReservationsDto) reservationsService.reserveInfo(dto.getFrom_rno()).get("reservation");
+        int fromSeat = fromDto.getMno();
         // 쓰레드풀에서 후속처리
         executor.execute( () -> { // 여기에 푸시알림 보낼메시지 작성해서 웹소켓에 보내기
-            int mno = reservationsService.reserveInfo(dto.getTo_rno()).getMno();
+            ReservationsDto toDto = (ReservationsDto) reservationsService.reserveInfo(dto.getTo_rno());
+            int mno = toDto.getMno();
             WebSocketSession session = baseballSocketHandler.getSession(mno);
             String msg = fromSeat + "번 좌석에서 좌석 교환 요청을 보냈습니다.";
             if(session != null && session.isOpen()){
@@ -74,8 +76,8 @@ public class ReservationExchangesService {
         String nowTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         dto.setResponded_at(nowTime);
         // 예매정보 조회
-        ReservationsDto toDto = reservationsService.reserveInfo(dto.getTo_rno()); // 응답자 예매정보
-        ReservationsDto fromDto = reservationsService.reserveInfo(from_rno); // 요청자 예매정보
+        ReservationsDto toDto = (ReservationsDto) reservationsService.reserveInfo(dto.getTo_rno()); // 응답자 예매정보
+        ReservationsDto fromDto = (ReservationsDto) reservationsService.reserveInfo(from_rno); // 요청자 예매정보
         // db에저장
         reservationExchangeMapper.changeAdd(dto);
         // 예매좌석 교체
@@ -100,4 +102,29 @@ public class ReservationExchangesService {
         redisService.deleteRequest(from_rno); // redis 삭제
         return true;
     }// func end
-}//func end
+
+    /**
+     * 알림메시지 발송
+     *
+     * @param mno
+     */
+    public void responseMessage( int mno , String msg ){
+        Executor executor = threadPoolConfing.changeExecutor();
+        executor.execute( () -> {
+            try{
+                WebSocketSession session = baseballSocketHandler.getSession(mno);
+                if (session != null && session.isOpen()){
+                    session.sendMessage(new TextMessage(msg));
+                    System.out.println("접속 = " + msg);
+                }else { // 요청자가 접속 안되어 있을때 redis에 메시지 저장
+                    redisService.saveMessage(mno , msg);
+                    System.out.println("미접속 = " + msg);
+                }// if end
+            } catch (Exception e) {
+                e.printStackTrace();
+            }// try end
+        }); // thread end
+    }// func end
+
+
+}// class end

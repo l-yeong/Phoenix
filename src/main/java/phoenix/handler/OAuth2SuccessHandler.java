@@ -5,12 +5,16 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import phoenix.security.JwtUtil;
 import phoenix.service.SocialAuthService;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 /**
@@ -35,6 +39,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
     /** 소셜 로그인 로직 (JWT 발급 및 신규회원 분기) */
     private final SocialAuthService socialAuthService;
+    private final JwtUtil jwtUtil;
 
     /**
      * OAuth2 로그인 성공 후 호출되는 콜백 메서드
@@ -58,22 +63,40 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         // [3] 로그인한 소셜 제공자 식별 (google / github / facebook)
         String provider = token.getAuthorizedClientRegistrationId();
 
-        // [4] 소셜 플랫폼 고유 ID 추출 (Google: "sub", GitHub: "id", Facebook: "id")
-        String providerId = (String) attributes.get("sub"); // ⚠️ 플랫폼별 key 다를 수 있음
+        // [4] providerId 플랫폼별로 다르게 처리
+        String providerId = null;
+        switch (provider) {
+            case "google" -> providerId = (String) attributes.get("sub"); //  Google: "sub"
+            case "github" -> providerId = String.valueOf(attributes.get("id")); // GitHub: "id" (Integer → String 변환)
+            case "facebook" -> providerId = String.valueOf(attributes.get("id")); //  Facebook: "id"
+            default -> providerId = String.valueOf(attributes.get("id")); // 기타
+        }
 
-        // [5] 사용자 이메일 정보 추출
+        // [5] 이메일 (플랫폼별 기본값 보정)
         String email = (String) attributes.get("email");
+        if (email == null || email.isEmpty()) {
+            email = provider + "_" + providerId + "@social.local"; // 기본값 세팅
+        }
 
         // [6] 소셜 로그인 처리 로직 호출 (JWT 발급 or 신규 회원 판단)
         String jwt = socialAuthService.socialLogin(provider, providerId);
 
         // [7] 신규 회원이면 → 추가 정보 입력 페이지로 이동
         if (jwt == null) {
-            getRedirectStrategy().sendRedirect(request, response,
-                    "http://localhost:5173/social/signup?email=" + email);
+            String redirectUrl = String.format(
+                    "http://localhost:5173/social/signup?email=%s&provider=%s&provider_id=%s",
+                    URLEncoder.encode(email , StandardCharsets.UTF_8),
+                    URLEncoder.encode(provider , StandardCharsets.UTF_8),
+                    URLEncoder.encode(providerId , StandardCharsets.UTF_8)
+            );
+            getRedirectStrategy().sendRedirect(request, response, redirectUrl);
         }
         // [8] 기존 회원이면 → JWT를 프론트엔드로 전달
         else {
+            // JWT로 Authentication 생성 후 SecurityContext에 등록
+            Authentication authentication1 = jwtUtil.getAuthentication(jwt);
+            SecurityContextHolder.getContext().setAuthentication(authentication1);
+
             response.sendRedirect("http://localhost:5173/social/success?token=" + jwt);
         }
     }

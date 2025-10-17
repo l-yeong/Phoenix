@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Box, Typography, Divider } from "@mui/material";
 import dayjs from "dayjs";
 import GameCalendar from "../components/GameCalendar";
-import "./Home.css";
+import "../styles/Home.css";
 
 const matches = [
   {
