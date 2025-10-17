@@ -5,12 +5,16 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import phoenix.security.JwtUtil;
 import phoenix.service.SocialAuthService;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 /**
@@ -35,6 +39,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
     /** 소셜 로그인 로직 (JWT 발급 및 신규회원 분기) */
     private final SocialAuthService socialAuthService;
+    private final JwtUtil jwtUtil;
 
     /**
      * OAuth2 로그인 성공 후 호출되는 콜백 메서드
@@ -78,11 +83,20 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         // [7] 신규 회원이면 → 추가 정보 입력 페이지로 이동
         if (jwt == null) {
-            getRedirectStrategy().sendRedirect(request, response,
-                    "http://localhost:5173/social/signup?email=" + email);
+            String redirectUrl = String.format(
+                    "http://localhost:5173/social/signup?email=%s&provider=%s&provider_id=%s",
+                    URLEncoder.encode(email , StandardCharsets.UTF_8),
+                    URLEncoder.encode(provider , StandardCharsets.UTF_8),
+                    URLEncoder.encode(providerId , StandardCharsets.UTF_8)
+            );
+            getRedirectStrategy().sendRedirect(request, response, redirectUrl);
         }
         // [8] 기존 회원이면 → JWT를 프론트엔드로 전달
         else {
+            // JWT로 Authentication 생성 후 SecurityContext에 등록
+            Authentication authentication1 = jwtUtil.getAuthentication(jwt);
+            SecurityContextHolder.getContext().setAuthentication(authentication1);
+
             response.sendRedirect("http://localhost:5173/social/success?token=" + jwt);
         }
     }

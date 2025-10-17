@@ -19,14 +19,19 @@ public class TicketsService {
     public boolean ticketWrite(int rno) {
         //예약 정보 조회
         Map<String, Object> info = ticketsMapper.ticketPrint(rno);
+        System.out.println("rno = " + rno);
         if (info == null) return false;
 
         String status = String.valueOf(info.get("reservation_status"));
-        if (!"reserved".equalsIgnoreCase(status)) return false;
+        if (!"reserved".equalsIgnoreCase(status)){
+            System.out.println("[ticketWrite] 상태가 reserved 아님 ->false");
+            return false;
+        }//func end
 
         // 기존 QR 존재 여부 확인
         String existingCode = ticketsMapper.findTicketCodeByRno(rno);
         if (existingCode != null && !existingCode.isEmpty()) {
+            System.out.println("[ticketWrite] 이미 QR 존재 → false");
             return false;
         }//if end
 
@@ -52,16 +57,10 @@ public class TicketsService {
         qrPayload.put("구역",zone);
         qrPayload.put("좌석",seat);
         qrPayload.put("사용여부",validText);
-        String qrText;
-        try {
-            com.fasterxml.jackson.databind.ObjectMapper om = new com.fasterxml.jackson.databind.ObjectMapper();
-            qrText = om.writeValueAsString(qrPayload);
-        } catch (Exception e) {
-            return false;
-        }
+
 
         // QR 이미지 파일 생성 및 저장
-        String imagePath = fileService.saveQRImg(qrText);
+        String imagePath = fileService.saveQRImg(qrPayload);
 
         //DB저장
         TicketsDto dto = new TicketsDto();
@@ -79,28 +78,5 @@ public class TicketsService {
     public List<String> findPayloads(int mno) {
         return ticketsMapper.findPayloads(mno);
     }//func end
-
-    // QR 상세 정보 조회
-    @Transactional(readOnly = true)
-    public Map<String, Object> findPayloadsInfo(String ticket_code) {
-        Map<String, Object> info = ticketsMapper.findPayloadsInfo(ticket_code);
-        if (info == null) return null;
-
-        boolean valid = Boolean.TRUE.equals(info.get("valid"));
-        String validText = valid ? "사용 가능" : "사용 불가능";
-
-        String name = Objects.toString(info.get("name"), "");
-        String zone = Objects.toString(info.get("zone"), "");
-        String seat = Objects.toString(info.get("seat"), "");
-
-        Map<String, Object> infoPatch = new LinkedHashMap<>();
-        infoPatch.put("이름", name);
-        infoPatch.put("구역", zone);
-        infoPatch.put("좌석", seat);
-        infoPatch.put("사용여부", validText);
-
-        return infoPatch;
-    }//func end
-
 
 }//class end
