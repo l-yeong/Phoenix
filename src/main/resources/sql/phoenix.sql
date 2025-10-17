@@ -96,6 +96,7 @@ create table reservation_exchanges(
     exno int auto_increment primary key,
     from_rno int not null,                    -- 요청 예매 번호
     to_rno int not null,                      -- 대상 예매 번호
+	gno int not null,                         -- 경기 번호 (CSV/크롤링 기반)
     status enum('pending','approved','rejected') default 'pending',
     requested_at timestamp default current_timestamp,
     responded_at timestamp null,
