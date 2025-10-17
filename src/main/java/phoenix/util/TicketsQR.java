@@ -17,31 +17,23 @@ public class TicketsQR {
 
     // [*] qr 생성
 
-    public static byte[] TicketQrCode(Map<String, Object> TicketQrMap) {
+    public static byte[] TicketQrCode(String text, int size) {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         try {
-            // Map 에서 JOSN 문자열 (한글)
-            // BitMatrix 생성
-            ObjectMapper mapper = new ObjectMapper();
-            String qrData = mapper.writeValueAsString(TicketQrMap);
+            Map<EncodeHintType, Object> hints = new HashMap<>();
+            hints.put(EncodeHintType.CHARACTER_SET, "UTF-8");
+            hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.L);
 
-            // QR UTF-8 설정
-            Map<EncodeHintType, Object>hints = new HashMap<>();
-            hints.put(EncodeHintType.CHARACTER_SET,"UTF-8"); // QR 코드 문자 인코딩
-            hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.L); // QR 이미지 일부 가려져있을때 읽을수 있는 복원 레벨
+            // text 문자열 그대로 QR 생성
+            BitMatrix matrix = new MultiFormatWriter().encode(
+                    text, BarcodeFormat.QR_CODE, size, size, hints);
 
-            // QR 생성
-            BitMatrix matrix = new MultiFormatWriter().encode(qrData,BarcodeFormat.QR_CODE,200, 200, hints);
-
-            // PNG로 변환
             MatrixToImageWriter.writeToStream(matrix, "PNG", bout);
-
             return bout.toByteArray();
 
         } catch (Exception e) {
-            e.printStackTrace();
-        }//catch end
-        return new byte[0];
-    }//func end
+            throw new RuntimeException("QR 생성 실패", e);
+        }
+    }
 
 }//class end
