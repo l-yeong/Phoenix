@@ -1545,3 +1545,59 @@ Caused by: java.net.ConnectException: Connection refused: getsockopt
 25-10-17 14:36:49 o.r.c.p.MasterConnectionPool 24 connections initialized for localhost/127.0.0.1:6379 
 25-10-17 14:36:50 o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer Global AuthenticationManager configured with UserDetailsService bean with name customUserDetailsService 
 25-10-17 14:36:50 o.s.b.a.e.w.EndpointLinksResolver Exposing 1 endpoint beneath base path '/actuator' 
+25-10-17 16:20:48 o.s.d.r.c.RepositoryConfigurationDelegate Multiple Spring Data modules found, entering strict repository configuration mode 
+25-10-17 16:20:48 o.s.d.r.c.RepositoryConfigurationDelegate Bootstrapping Spring Data Redis repositories in DEFAULT mode. 
+25-10-17 16:20:48 o.s.d.r.c.RepositoryConfigurationDelegate Finished Spring Data repository scanning in 16 ms. Found 0 Redis repository interfaces. 
+25-10-17 16:20:51 o.r.Version Redisson 3.27.2 
+25-10-17 16:20:51 o.r.c.ConnectionsHolder 1 connections initialized for localhost/127.0.0.1:6379 
+25-10-17 16:20:51 o.r.c.ConnectionsHolder 24 connections initialized for localhost/127.0.0.1:6379 
+25-10-17 16:20:51 o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer Global AuthenticationManager configured with UserDetailsService bean with name customUserDetailsService 
+25-10-17 16:20:52 o.s.b.a.e.w.EndpointLinksResolver Exposing 1 endpoint beneath base path '/actuator' 
+25-10-17 16:40:04 o.s.d.r.c.RepositoryConfigurationDelegate Multiple Spring Data modules found, entering strict repository configuration mode 
+25-10-17 16:40:04 o.s.d.r.c.RepositoryConfigurationDelegate Bootstrapping Spring Data Redis repositories in DEFAULT mode. 
+25-10-17 16:40:04 o.s.d.r.c.RepositoryConfigurationDelegate Finished Spring Data repository scanning in 15 ms. Found 0 Redis repository interfaces. 
+25-10-17 16:40:06 o.r.Version Redisson 3.27.2 
+25-10-17 16:40:06 o.r.c.ConnectionsHolder 1 connections initialized for localhost/127.0.0.1:6379 
+25-10-17 16:40:07 o.r.c.ConnectionsHolder 24 connections initialized for localhost/127.0.0.1:6379 
+25-10-17 16:40:07 o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer Global AuthenticationManager configured with UserDetailsService bean with name customUserDetailsService 
+25-10-17 16:40:07 o.s.b.a.e.w.EndpointLinksResolver Exposing 1 endpoint beneath base path '/actuator' 
+25-10-17 16:40:16 o.s.d.r.c.RepositoryConfigurationDelegate Multiple Spring Data modules found, entering strict repository configuration mode 
+25-10-17 16:40:16 o.s.d.r.c.RepositoryConfigurationDelegate Bootstrapping Spring Data Redis repositories in DEFAULT mode. 
+25-10-17 16:40:16 o.s.d.r.c.RepositoryConfigurationDelegate Finished Spring Data repository scanning in 14 ms. Found 0 Redis repository interfaces. 
+25-10-17 16:40:18 o.r.Version Redisson 3.27.2 
+25-10-17 16:40:19 o.r.c.ConnectionsHolder 1 connections initialized for localhost/127.0.0.1:6379 
+25-10-17 16:40:19 o.r.c.ConnectionsHolder 24 connections initialized for localhost/127.0.0.1:6379 
+25-10-17 16:40:19 o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer Global AuthenticationManager configured with UserDetailsService bean with name customUserDetailsService 
+25-10-17 16:40:20 o.s.b.a.e.w.EndpointLinksResolver Exposing 1 endpoint beneath base path '/actuator' 
+25-10-17 16:42:43 o.s.d.r.c.RepositoryConfigurationDelegate Multiple Spring Data modules found, entering strict repository configuration mode 
+25-10-17 16:42:43 o.s.d.r.c.RepositoryConfigurationDelegate Bootstrapping Spring Data Redis repositories in DEFAULT mode. 
+25-10-17 16:42:43 o.s.d.r.c.RepositoryConfigurationDelegate Finished Spring Data repository scanning in 22 ms. Found 0 Redis repository interfaces. 
+25-10-17 16:42:45 o.r.Version Redisson 3.27.2 
+25-10-17 16:42:45 o.r.c.ConnectionsHolder 1 connections initialized for localhost/127.0.0.1:6379 
+25-10-17 16:42:45 o.r.c.ConnectionsHolder 24 connections initialized for localhost/127.0.0.1:6379 
+25-10-17 16:42:46 o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer Global AuthenticationManager configured with UserDetailsService bean with name customUserDetailsService 
+25-10-17 16:42:46 o.s.b.a.e.w.EndpointLinksResolver Exposing 1 endpoint beneath base path '/actuator' 
+25-10-17 16:45:49 o.s.d.r.c.RepositoryConfigurationDelegate Multiple Spring Data modules found, entering strict repository configuration mode 
+25-10-17 16:45:49 o.s.d.r.c.RepositoryConfigurationDelegate Bootstrapping Spring Data Redis repositories in DEFAULT mode. 
+25-10-17 16:45:49 o.s.d.r.c.RepositoryConfigurationDelegate Finished Spring Data repository scanning in 21 ms. Found 0 Redis repository interfaces. 
+25-10-17 16:45:51 o.r.Version Redisson 3.27.2 
+25-10-17 16:45:51 o.r.c.ConnectionsHolder 1 connections initialized for localhost/127.0.0.1:6379 
+25-10-17 16:45:51 o.r.c.ConnectionsHolder 24 connections initialized for localhost/127.0.0.1:6379 
+25-10-17 16:45:51 o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer Global AuthenticationManager configured with UserDetailsService bean with name customUserDetailsService 
+25-10-17 16:45:52 o.s.b.a.e.w.EndpointLinksResolver Exposing 1 endpoint beneath base path '/actuator' 
+25-10-17 17:00:40 o.s.d.r.c.RepositoryConfigurationDelegate Multiple Spring Data modules found, entering strict repository configuration mode 
+25-10-17 17:00:40 o.s.d.r.c.RepositoryConfigurationDelegate Bootstrapping Spring Data Redis repositories in DEFAULT mode. 
+25-10-17 17:00:40 o.s.d.r.c.RepositoryConfigurationDelegate Finished Spring Data repository scanning in 13 ms. Found 0 Redis repository interfaces. 
+25-10-17 17:00:43 o.r.Version Redisson 3.27.2 
+25-10-17 17:00:43 o.r.c.ConnectionsHolder 1 connections initialized for localhost/127.0.0.1:6379 
+25-10-17 17:00:43 o.r.c.ConnectionsHolder 24 connections initialized for localhost/127.0.0.1:6379 
+25-10-17 17:00:43 o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer Global AuthenticationManager configured with UserDetailsService bean with name customUserDetailsService 
+25-10-17 17:00:44 o.s.b.a.e.w.EndpointLinksResolver Exposing 1 endpoint beneath base path '/actuator' 
+25-10-17 17:02:24 o.s.d.r.c.RepositoryConfigurationDelegate Multiple Spring Data modules found, entering strict repository configuration mode 
+25-10-17 17:02:24 o.s.d.r.c.RepositoryConfigurationDelegate Bootstrapping Spring Data Redis repositories in DEFAULT mode. 
+25-10-17 17:02:24 o.s.d.r.c.RepositoryConfigurationDelegate Finished Spring Data repository scanning in 14 ms. Found 0 Redis repository interfaces. 
+25-10-17 17:02:26 o.r.Version Redisson 3.27.2 
+25-10-17 17:02:26 o.r.c.ConnectionsHolder 1 connections initialized for localhost/127.0.0.1:6379 
+25-10-17 17:02:26 o.r.c.ConnectionsHolder 24 connections initialized for localhost/127.0.0.1:6379 
+25-10-17 17:02:26 o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer Global AuthenticationManager configured with UserDetailsService bean with name customUserDetailsService 
+25-10-17 17:02:27 o.s.b.a.e.w.EndpointLinksResolver Exposing 1 endpoint beneath base path '/actuator' 
