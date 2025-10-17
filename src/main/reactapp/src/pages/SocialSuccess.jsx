@@ -5,11 +5,15 @@ const SocialSuccess = () => {
   const [params] = useSearchParams();
   const navigate = useNavigate();
 
-  // facebook 리다이렉트 URL '#_=_' 버그 제거
+  // facebook 리다이렉트 URL '#_=_' 버그 제거해서 프론트에서 제대로 읽게 함
   useEffect(() => {
+    // location.hash 값이 존재하고 , 그 값이 '#_=_' 인지 검사
     if(window.location.hash && window.location.hash === "#_=_"){
+      // 브라우저가 history API를 지원하면
+      // 주소창에 '#_=_' 제거 하되 페이지 새로고침 없이 처리
       history.replaceState
         ? history.replaceState(null , null ,window.location.href.split("#"[0]))
+        // history API 없으면 그냥 hash 값을 빈 문자열로 덮어쓰기
         : (window.location.hash = "")
     }
   } , []);
