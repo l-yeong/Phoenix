@@ -80,6 +80,16 @@ export default function reservationFind( props ){
             </div>
         )}
         <h2> 교환 요청 받은 목록 </h2>
+        {exchange.length === 0 ? (
+            <p>교환 요청이 없습니다.</p>
+        ) : (
+            <ul>
+                {exchange.map( (ex) => {
+                    <li key={ex.fromRno}></li>
+                })}
+            </ul>
+        )
+        }
 
         </>
     )
