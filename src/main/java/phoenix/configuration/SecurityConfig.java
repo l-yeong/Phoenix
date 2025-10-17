@@ -123,8 +123,8 @@ public class SecurityConfig {
                                 "/members/verify-email",
                                 "/members/token/refresh",
                                 "/members/logout",
-                                "/oauth/**", // 소셜 로그인 허용
-                                "/ticket/**"
+                                "/oauth/**" // 소셜 로그인 허용
+
                         ).permitAll()
                         .anyRequest().authenticated() // 나머지는 전부 인증필요(JWT 또는 OAuth2 로그인 성공 상태)
                 )

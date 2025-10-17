@@ -10,7 +10,7 @@ import java.util.Map;
 public interface TicketsMapper {
     // rno 중복티켓 있는지 조회(중복방지)
     @Select("SELECT ticket_code FROM tickets WHERE rno = #{rno} LIMIT 1")
-    String findTicketCodeByRno(@Param("rno") int rno);
+    String findTicketdedupe(@Param("rno") int rno);
 
     // 티켓발급 (ticket_code 에는 QR 이미지 경로)
     @Insert("INSERT INTO tickets (rno, ticket_code, price, valid) VALUES (#{rno}, #{ticket_code}, #{price}, #{valid})")
@@ -28,9 +28,9 @@ public interface TicketsMapper {
     List<String> findPayloads(@Param("mno") int mno);
 
     // QR 스캔 상세 정보
-    @Select(" SELECT m.mname AS name, z.zname AS zone, s.seat_no AS seat, t.valid FROM tickets t JOIN reservations r ON t.rno = r.rno "+
-           " JOIN members m ON r.mno = m.mno JOIN seats s ON r.sno = s.sno JOIN zones z ON s.zno = z.zno WHERE t.ticket_code = #{ticket_code}")
-    Map<String, Object> findPayloadsInfo(@Param("ticket_code") String ticket_code);
+    //@Select(" SELECT m.mname AS name, z.zname AS zone, s.seat_no AS seat, t.valid FROM tickets t JOIN reservations r ON t.rno = r.rno "+
+    //       " JOIN members m ON r.mno = m.mno JOIN seats s ON r.sno = s.sno JOIN zones z ON s.zno = z.zno WHERE t.ticket_code = #{ticket_code}")
+    //Map<String, Object> findPayloadsInfo(@Param("ticket_code") String ticket_code);
 
 
 }//inter end

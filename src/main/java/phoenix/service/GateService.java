@@ -8,38 +8,34 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import phoenix.util.RedisKeys;
 
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * ===============================================================
  * [GateService]
  * 🎟️ 공연 예매 입장 제어(대기열 + 동시성 제어) 핵심 로직
  * ===============================================================
- *
- * ✅ 핵심 역할
+
+ * 핵심 역할
  * 1. 동시에 입장 가능한 사용자 수를 제한 (예: 3명만)
  * 2. 나머지 인원은 "대기열"에 넣어 순서대로 입장시킴
  * 3. 입장 시 "1회용 토큰"을 발급하여 프론트에 전달
  * 4. 입장 중(게이트 통과)인 사용자는 TTL(세션 유지 시간) 동안만 예매 가능
  * 5. 이미 예매한 사용자는 대기열에 들어가지 못하도록 차단
- *
- * ⚙️ 기술 요소
+
+ * 기술 요소
  * - Redisson RSemaphore : 동시 입장 인원(퍼밋) 제어
  * - Redisson RBlockingQueue : 대기열(FIFO)
  * - Redisson RBucket : 세션 상태(userId), 토큰 저장(token → userId)
  * - Redisson RSet : 현재 활성 사용자 목록 관리
- *
- * 🧱 TTL 설정
+
+ * TTL 설정
  * - 게이트 세션 유지시간 : 5분
  * - 1회용 토큰 유효시간 : 30초
  * - RSemaphore 퍼밋 수 : 3명 (동시 입장 제한)
  */
+
 @Service
 @RequiredArgsConstructor
 @EnableScheduling // @Scheduled로 세션 만료 회수를 주기적으로 수행
@@ -53,11 +49,7 @@ public class GateService {
     // 게이트 세션 TTL (5분) — 입장 후 5분 동안만 좌석 선택 가능
     private static final long SESSION_MINUTES = 5;
 
-    // 입장 토큰 TTL (30초) — 토큰 발급 후 30초 안에 제출해야 함
-    private static final long ADMISSION_TOKEN_TTL_SECONDS = 30;
 
-    // [SSE 추가] 유저별 Emitter 보관
-    private final Map<String, SseEmitter> emitters = new ConcurrentHashMap<>();
 
     // Redis 구조 접근자
 
@@ -71,6 +63,8 @@ public class GateService {
 
     // 현재 게이트 안에 있는 사용자 Set 집합
     private RSet<String> activeSet() {return redisson.getSet(RedisKeys.ACTIVE_SET);}
+    // 대기 명단
+    private RSet<String> waitingSet() { return redisson.getSet(RedisKeys.WAITING_SET); }
 
 
     // 초기화 로직 ==> 앱 스타트 시 3개의 퍼밋만 세팅
@@ -85,8 +79,8 @@ public class GateService {
     // 메소드 부분
 
     // 중복 예매 여부 확인 메소드
-    // getBucket으로 참조주소값을 가져오고 그 값을 Bucket<V> 타입의 b에 저장한다.
-    // 그것을 .get()해서 Redis 타입을 자동 파싱해서 자바 형식으로 가져와 true인지 false인지 확인한다.
+    // getBucket 으로 참조주소값을 가져오고 그 값을 Bucket<V> 타입의 b에 저장한다.
+    // 그것을 .get()해서 Redis 타입을 자동 파싱해서 자바 형식으로 가져와 true 인지 false 인지 확인한다.
     // Boolean 타입인 이유는 가져온 Bucket이 null일 경우 nullPointException이 일어날 수 있기 때문에
     // 안전하게 처리한다. 암튼 가져와서 비교하고 이미 예약 되어있으면 false를 반환한다.
     private boolean hasUserAlreadyBooked(String userId, String showId) {
@@ -108,6 +102,9 @@ public class GateService {
             return new EnqueueResult(false, 0);
         }   // if end
 
+        // 이미 대기중이면 재등록하지 않음
+        if (!waitingSet().add(userId)) return new EnqueueResult(true, queue().size());
+
         // 대기열(큐)에 유저를 추가한다.
         queue().add(userId);
 
@@ -123,11 +120,11 @@ public class GateService {
 
     // 다음 대기자에게 입장 토큰 발급하는 메소드
     /**
-     * - 세마포어 퍼밋이 남아있을 때 호출됨
-     * - 대기열의 맨 앞 사용자를 꺼내서
-     *   입장 토큰(admission token)을 발급한다.
-     * - 발급된 토큰은 30초 동안만 유효하며,
-     *   이 시간 안에 프론트에서 "/enter" 요청을 보내야 입장 확정됨.
+     세마포어 퍼밋이 남아있을 때 호출됨
+     대기열의 맨 앞 사용자를 꺼내서
+     입장 토큰(admission token)을 발급한다.
+     발급된 토큰은 30초 동안만 유효하며,
+     이 시간 안에 프론트에서 "/enter" 요청을 보내야 입장 확정됨.
      */
     public void assignNextIfPossible() {
         try {
@@ -138,6 +135,8 @@ public class GateService {
             String nextUser = queue().poll();
             // 대기하는 인원이 존재하지 않으면 그냥 종료
             if (nextUser == null) return;
+            // 이미 활성 유저라면 재입장 방지 로 인하여 그냥 종료
+            if (activeSet().contains(nextUser)) return;
 
             // 세마포어 퍼밋 1개 확보를 시도한다.
             // (tryAcquire() : 현재 세마포어에 여유 슬롯이 있다면 하나를 즉시 획득하고, 없으면 false 를 반환
@@ -149,104 +148,117 @@ public class GateService {
                 return;
             }   // if end
 
-            // 1회용 토큰 생성 (UUID) 나중에 jjwt로 해도 됨.
-            String token = UUID.randomUUID().toString();
-
             // Redis에 토큰 userId를 저장한다 ==> 30초 TTL를 준다
-            redisson.getBucket(RedisKeys.ADMISSION_PREFIX + token)
-                    .set(nextUser, ADMISSION_TOKEN_TTL_SECONDS, TimeUnit.SECONDS);
+            redisson.getBucket(RedisKeys.SESSION_PREFIX + nextUser)
+                    .set("alive", SESSION_MINUTES, TimeUnit.MINUTES);
 
-            // ===== [SSE 추가] 브라우저로 실시간 입장 신호 전송 =====
-            sendAdmissionSignal(nextUser, token);
+            // 활성 유저명단에 넣음
+            activeSet().add(nextUser);
+            // assignNextIfPossible 안에서 입장 처리 직후 제거
+            waitingSet().remove(nextUser);
 
         } catch (Exception e) {
             e.printStackTrace();
         }   // try end
     }   // func end
 
-    // ===============================================================
-    // ✅ [4] 토큰 검증 및 입장 확정 (confirmEnter)
-    // ===============================================================
+    // 프론트에서 확인할 입장했는지 확인용 메소드
+    public boolean isEntered(String userId) {
+        return redisson.getBucket(RedisKeys.SESSION_PREFIX + userId).isExists();
+    }   // func end
 
+
+    // [퇴장 처리용 메소드 => 사용자가 예매를 끝내거나 퇴장할 때 실행.
     /**
-     * [confirmEnter]
-     * - 프론트에서 토큰을 제출하면 호출됨.
-     * - ① 토큰이 유효하고 userId 일치 시 → 게이트 세션 시작
-     * - ② 이미 예매한 사용자면 → 퍼밋을 즉시 반납하고 입장 거부
-     * - ③ 세션은 Redis에 session:{userId} = alive (TTL=5분) 으로 저장됨.
-     */
-    public boolean confirmEnter(String userId, String token, String showId) {
-        // 1️⃣ 토큰 → userId 매핑 확인
-        RBucket<String> b = redisson.getBucket(RedisKeys.ADMISSION_PREFIX + token);
-        String owner = b.get();
-
-        // 2️⃣ 토큰이 존재하지 않거나 userId 불일치 시 입장 거부
-        if (owner == null || !owner.equals(userId)) {
-            try { semaphore().release(); } catch (Exception ignore) {}
-            return false;
-        }
-
-        // 3️⃣ 이미 예매 완료된 상태라면 입장 불가 (동시창 방지)
-        if (hasUserAlreadyBooked(userId, showId)) {
-            b.delete(); // 토큰 폐기
-            try { semaphore().release(); } catch (Exception ignore) {}
-            return false;
-        }
-
-        // 4️⃣ 토큰 삭제 (1회용)
-        b.delete();
-
-        // 5️⃣ 세션 생성: session:{userId} = "alive" (5분 TTL)
-        redisson.getBucket(RedisKeys.SESSION_PREFIX + userId)
-                .set("alive", SESSION_MINUTES, TimeUnit.MINUTES);
-
-        // 6️⃣ 현재 활성 사용자 집합에 추가
-        activeSet().add(userId);
-
-        return true; // 입장 성공
-    }
-
-    // ===============================================================
-    // 🚪 [5] 퇴장 처리 (수동)
-    // ===============================================================
-
-    /**
-     * [leave]
-     * - 사용자가 예매를 마치거나 직접 퇴장할 때 호출됨.
-     * - ① session:{userId} 키 삭제
-     * - ② activeSet 에서 제거
-     * - ③ 세마포어 퍼밋 1개 반환 → 다음 대기자에게 기회 부여
+     사용자가 예매를 마치거나 직접 퇴장할 때 호출됨.
+     session:{userId} 키 삭제
+     activeSet 에서 제거
+     세마포어 퍼밋 1개 반환 후 다음 대기자에게 기회 부여
      */
     public boolean leave(String userId) {
         // 세션 및 활성 사용자 제거
+        // delete() => 해당 버켓 제거
         redisson.getBucket(RedisKeys.SESSION_PREFIX + userId).delete();
-        activeSet().remove(userId);
 
-        // 퍼밋 반환 후 다음 사람 호출
-        try { semaphore().release(); } catch (Exception ignore) {}
+        // 지금 입장 중인 유저 목록(activeSet) 에서 빼고, 원래 들어있었는지 결과를 wasActive로 받음 (있었으면 true)
+        boolean wasActive = activeSet().remove(userId);
+
+        // 세마포어에 있는 퍼밋을 제거함
+        if (wasActive) {
+            try {
+                semaphore().release();
+            } catch (Exception ignore) {
+            }
+        }
+        // 큐에 있는 1순위 사람을 퍼밋에 불러오는 메소드 실행
         assignNextIfPossible();
 
+        // 성공 반환
         return true;
-    }
+    }   // func end
 
-    // ===============================================================
-    // 📊 [6] 상태 조회용 헬퍼
-    // ===============================================================
 
+    // 상태 조회용 헬퍼
+    // 대기 인원수 조회 메소드
     public int waitingCount() {
         // 현재 큐에 대기 중인 사람 수
         return queue().size();
-    }
+    }   // func end
 
+    // 남은 입장 가능 슬롯 수 알려주는 메소드
     public int availablePermits() {
         // 현재 남은 입장 가능 슬롯 수
         return semaphore().availablePermits();
+    }   // func end
+
+
+    // 1분 연장 하는 메소드
+    /**
+     사용자가 "연장하기" 버튼을 눌렀을 때 호출됨.
+     session:{userId} 의 TTL(남은 수명)을 1분 더 늘려준다.
+     연장은 최대 N회로 제한할 수도 있음 (원하면 구현 가능)
+     */
+    public int extendSession(String userId) {
+        try {
+            // 세션 버킷을 가져옴
+            RBucket<String> sessionBucket = redisson.getBucket(RedisKeys.SESSION_PREFIX + userId);
+
+            // 세션이 존재하지 않으면 (만료된 경우) 연장이 불가능
+            if (!sessionBucket.isExists()) return 0;
+
+            // 연장 횟수 카운트 버킷 가져오기
+            RBucket<Integer> countBucket = redisson.getBucket("gate:extendCount:" + userId);
+            // null 값이 뜰 수도 있고 그냥 Integer로 가져옴
+            Integer count = countBucket.get();
+            // 만약 null 이면 0으로 함
+            if (count == null) count = 0;
+
+            // 이미 2회 연장했다면 안됨
+            if (count >= 2) return 2;
+
+            // 현재 남은 TTL 가져와서 1분 추가
+            // remainTimeToLive() : TTL 시간 가져옴
+            long remain = sessionBucket.remainTimeToLive();
+            long extended = remain + TimeUnit.MINUTES.toMillis(1);
+
+            // TTL 재설정 (기존 TTL + 1분)
+            // expire() 은 이미 있는 버켓에 TTL 다시 설정한다는거임. expire.(int시간 , 시간 단위)
+            sessionBucket.expire(extended, TimeUnit.MILLISECONDS);
+
+            // 연장 횟수 +1 저장 (TTL은 세션과 동일하게 설정)
+            countBucket.set(count + 1, SESSION_MINUTES, TimeUnit.MINUTES);
+
+            System.out.println("[GateService] " + userId + " 님 세션 연장 (" + (count + 1) + "/2)");
+
+            return count; // 연장 성공
+        } catch (Exception e) {
+            return -1;
+        }
     }
 
-    // ===============================================================
-    // 🕓 [7] 스케줄러: 세션 만료 회수
-    // ===============================================================
 
+
+    // 스케줄러 : 세션 만료 회수 메소드
     /**
      * [reapExpiredSessions]
      * - 2초마다 실행(@Scheduled)
@@ -259,71 +271,26 @@ public class GateService {
     public void reapExpiredSessions() {
         try {
             for (String uid : activeSet()) {
-                // session:{userId} 키가 여전히 존재하는지 검사
+                // session:{userId} 키가 여전히 존재하는지 검사하기 위해 버켓을 가져옴.
                 boolean alive = redisson.getBucket(RedisKeys.SESSION_PREFIX + uid).isExists();
 
                 // 존재하지 않으면 TTL 만료된 것 → 회수 처리
                 if (!alive) {
+                    // 없앰
                     activeSet().remove(uid);
+                    // 세마포어 퍼밋 삭제
                     try { semaphore().release(); } catch (Exception ignore) {}
-                    assignNextIfPossible(); // 다음 대기자 입장 시도
-                }
-            }
+                    // 다음 대기자 입장 시도
+                    assignNextIfPossible();
+                }   // if end
+            }   // for end
         } catch (Exception e) {
             e.printStackTrace();
-        }
-    }
+        }   // try end
+    }   // func end
 
     // ===============================================================
-    // 🧾 [8] 내부 결과 DTO(record)
-    // ===============================================================
-
-    /**
-     * [EnqueueResult]
-     * - enqueue() 요청의 결과를 표현하는 간단한 데이터 객체
-     * - queued : 대기열 등록 성공 여부
-     * - waiting : 현재 대기열 인원수
-     */
+    // 내부 결과 DTO(record) 이거 반환하고 컨트롤러에서 실제 dto에 넣어 쓸 예정
+    // record는 그냥 dto 같이 생성해줌
     public record EnqueueResult(boolean queued, int waiting) {}
-
-    // ===============================================================
-    // ===== [SSE 추가] 유틸 메소드
-    // ===============================================================
-
-    /**
-     * 브라우저가 구독을 시작할 때 호출할 SSE 연결 함수
-     * - 컨트롤러에서 GET /gate/subscribe/{userId} 로 노출하여 사용
-     * - 연결 타임아웃은 세션TTL + 토큰TTL 여유로 설정
-     */
-    public SseEmitter connectSse(String userId) {
-        long timeoutMs = TimeUnit.MINUTES.toMillis(SESSION_MINUTES) + TimeUnit.SECONDS.toMillis(ADMISSION_TOKEN_TTL_SECONDS);
-        SseEmitter emitter = new SseEmitter(timeoutMs);
-        emitters.put(userId, emitter);
-
-        emitter.onCompletion(() -> emitters.remove(userId));
-        emitter.onTimeout(() -> emitters.remove(userId));
-        emitter.onError((ex) -> emitters.remove(userId));
-
-        return emitter;
-    }
-
-    /**
-     * 토큰 발급 시 해당 유저 브라우저로 실시간 푸시
-     * - 이벤트명: "admission"
-     * - data: 토큰 문자열 (JSON 직렬화 규칙에 맞춰 전송)
-     */
-    private void sendAdmissionSignal(String userId, String token) {
-        SseEmitter emitter = emitters.get(userId);
-        if (emitter == null) return;
-
-        try {
-            emitter.send(SseEmitter.event()
-                    .name("admission")
-                    .data(token));
-            emitter.complete(); // 일회성 이벤트 후 연결 종료 (원하면 주석처리하여 유지 가능)
-            emitters.remove(userId);
-        } catch (IOException e) {
-            emitters.remove(userId);
-        }
-    }
-}
+}   // class end
