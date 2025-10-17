@@ -59,7 +59,7 @@ public class FileService {
      */
     private void loadCsv(){
         try{
-            CSVReader reader = new CSVReader(new FileReader("games.csv"));
+            CSVReader reader = new CSVReader(new FileReader("src/main/resources/static/games.csv"));
             String[] headers = reader.readNext(); // 첫 줄 : 컬럼명
             String[] line;
             while ((line = reader.readNext()) != null ){
