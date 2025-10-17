@@ -13,6 +13,8 @@ import phoenix.security.JwtUtil;
 import phoenix.service.SocialAuthService;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 /**
@@ -81,8 +83,13 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         // [7] 신규 회원이면 → 추가 정보 입력 페이지로 이동
         if (jwt == null) {
-            getRedirectStrategy().sendRedirect(request, response,
-                    "http://localhost:5173/social/signup?email=" + email);
+            String redirectUrl = String.format(
+                    "http://localhost:5173/social/signup?email=%s&provider=%s&provider_id=%s",
+                    URLEncoder.encode(email , StandardCharsets.UTF_8),
+                    URLEncoder.encode(provider , StandardCharsets.UTF_8),
+                    URLEncoder.encode(providerId , StandardCharsets.UTF_8)
+            );
+            getRedirectStrategy().sendRedirect(request, response, redirectUrl);
         }
         // [8] 기존 회원이면 → JWT를 프론트엔드로 전달
         else {
