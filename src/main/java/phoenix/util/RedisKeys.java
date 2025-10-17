@@ -6,9 +6,8 @@ public class RedisKeys {    // class start
     // ===== Gate(입장/대기열) =====
     public static final String GATE_SEMAPHORE = "gate:semaphore";           // 동시 입장 세마포어(전역 5명)
     public static final String WAITING_QUEUE  = "gate:waiting:queue";       // 대기열(FIFO)
-    public static final String ADMISSION_PREFIX = "gate:admission:";        // admission:{token} -> userId (1회용/TTL)
+    public static final String WAITING_SET = "gate:waiting:";               // 웨이팅용
     public static final String SESSION_PREFIX   = "gate:session:";          // session:{userId} -> "alive" (TTL 유지)
-    public static final String EXTENDED_PREFIX  = "gate:extended:";         // extended:{userId} -> true/false
     public static final String ACTIVE_SET       = "gate:active:users";      // 현재 입장 중 사용자 Set
 
     // ===== Seat(좌석) =====

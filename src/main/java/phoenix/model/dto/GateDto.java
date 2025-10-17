@@ -15,7 +15,7 @@ public class GateDto {
     @Data
     public static class EnqueueRequest {
         private String userId;
-        private String showId; // ✅ 추가: 같은 공연 중복 예매 사전 차단용
+        private String showId; // 같은 공연 중복 예매 사전 차단용
     }
 
     /** 대기열 등록 응답 */
@@ -30,7 +30,7 @@ public class GateDto {
     public static class EnterRequest {
         private String userId;
         private String token;
-        private String showId; // ✅ 추가: 입장 시에도 중복 예매 재확인
+        private String showId; // 입장 시에도 중복 예매 재확인
     }
 
     /** 입장 확정 응답 */
