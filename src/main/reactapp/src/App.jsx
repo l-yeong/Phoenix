@@ -16,7 +16,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/social/success" element={<SocialSuccess />} />
-        <Route path="/social/signup" element={<SocialSignUp />} />
+        <Route path="/social/signup" element={<SocialSignUp />} />        
       </Routes>
     </BrowserRouter>
   );

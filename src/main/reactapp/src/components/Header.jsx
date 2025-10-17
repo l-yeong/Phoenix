@@ -13,7 +13,7 @@ const Header = () => {
   // [1] 컴포넌트가 마운트될때 한번 실행
   useEffect( () => {
     // 웹소켓 연결 생성
-    const socket = new WebSocket("http://localhost:8080/socket");
+    const socket = new WebSocket("ws://localhost:8080/socket");
     // 상태에 객체 저장
     setWs(socket);
 
