@@ -27,6 +27,13 @@ public interface TicketsMapper {
             " JOIN members m ON r.mno = m.mno WHERE m.mno = #{mno} ORDER BY t.tno DESC ")
     List<String> findPayloads(@Param("mno") int mno);
 
+    //지난 경기 티켓 무효화 valid->false 변경
+    @Update("")
+    int ticketNullify(@Param("gnoList")List<TicketsDto>gnoList);
+    //지난 경기 티켓 QR삭제
+    @Update("")
+    int ticketDelete(@Param("gnoList")List<TicketsDto>gnoList);
+
     // QR 스캔 상세 정보
     //@Select(" SELECT m.mname AS name, z.zname AS zone, s.seat_no AS seat, t.valid FROM tickets t JOIN reservations r ON t.rno = r.rno "+
     //       " JOIN members m ON r.mno = m.mno JOIN seats s ON r.sno = s.sno JOIN zones z ON s.zno = z.zno WHERE t.ticket_code = #{ticket_code}")
