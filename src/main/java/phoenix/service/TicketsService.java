@@ -29,7 +29,7 @@ public class TicketsService {
         }//func end
 
         // 기존 QR 존재 여부 확인
-        String existingCode = ticketsMapper.findTicketCodeByRno(rno);
+        String existingCode = ticketsMapper.findTicketdedupe(rno);
         if (existingCode != null && !existingCode.isEmpty()) {
             System.out.println("[ticketWrite] 이미 QR 존재 → false");
             return false;
@@ -40,11 +40,11 @@ public class TicketsService {
         int price = seatPrice != null ? seatPrice.intValue() : 0;
 
         // QR 코드용 고정 문자열
-        java.time.ZoneId KST = java.time.ZoneId.of("Asia/Seoul");
-        String date = java.time.LocalDate.now(KST)
-                .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String uuid = java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 8);
-        String payload = String.format("%s_%s", date, uuid);
+        //java.time.ZoneId KST = java.time.ZoneId.of("Asia/Seoul");
+        //String date = java.time.LocalDate.now(KST)
+        //        .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        //String uuid = java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+        //String payload = String.format("%s_%s", date, uuid);
 
         // QR 스캔시 정보 출력
         String name = String.valueOf(info.getOrDefault("mname",""));
