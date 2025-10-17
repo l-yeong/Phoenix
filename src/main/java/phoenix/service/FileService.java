@@ -53,31 +53,31 @@ public class FileService {
      * 서비스 생성시 csv파일 읽어오는 기능
      *
      */
-    @PostConstruct
-    private void init(){
-        gameMap = new HashMap<>();
-        loadCsv();
-    }// func end
+    //@PostConstruct
+    //private void init(){
+    //    gameMap = new HashMap<>();
+    //    loadCsv();
+    //}// func end
 
     /**
      * CSV 파일 읽어서 gameMap에 저장
      */
-    private void loadCsv(){
-        try{
-            CSVReader reader = new CSVReader(new FileReader("games.csv"));
-            String[] headers = reader.readNext(); // 첫 줄 : 컬럼명
-            String[] line;
-            while ((line = reader.readNext()) != null ){
-                Map<String,String> row = new HashMap<>();
-                for (int i = 0; i < headers.length; i++){ // 0번째는 번호(gno)
-                    row.put(headers[i],line[i]);
-                }// for end
-                gameMap.put(line[0] , row);
-            }
-        } catch (Exception e){
-            e.printStackTrace();;
-        }// try end
-    }// func end
+    //private void loadCsv(){
+    //    try{
+    //        CSVReader reader = new CSVReader(new FileReader("games.csv"));
+    //        String[] headers = reader.readNext(); // 첫 줄 : 컬럼명
+    //        String[] line;
+    //        while ((line = reader.readNext()) != null ){
+    //            Map<String,String> row = new HashMap<>();
+    //            for (int i = 0; i < headers.length; i++){ // 0번째는 번호(gno)
+    //                row.put(headers[i],line[i]);
+    //            }// for end
+    //            gameMap.put(line[0] , row);
+    //        }
+    //    } catch (Exception e){
+    //        e.printStackTrace();;
+    //    }// try end
+    //}// func end
 
     /**
      * 특정 경기번호의 경기내용 조회
