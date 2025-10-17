@@ -74,4 +74,14 @@ public class ReservationsService {
     public boolean reserveCancle(int rno , int mno){
         return reservationMapper.reserveCancel(rno, mno);
     }// func end
+
+    /**
+     * 교환신청 가능한 좌석목록 예매정보
+     *
+     * @param rno
+     * @return List<ReservationsDto>
+     */
+    public List<ReservationsDto> seatPossible(int rno){
+        return reservationMapper.seatPossible(rno);
+    }// func end
 }//func end

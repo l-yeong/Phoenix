@@ -36,13 +36,7 @@ create table members (
     -- true: 교환 신청 가능 / false: 교환 신청 불가
     
     -- 이메일 인증 여부( 이메일 인증 완료 여부 저장 )
-    email_verified boolean default false not null ,  -- 이메일 인증 여부
-    
-    -- JWT 리프레시 토큰( 재발급용 )
-    refresh_token varchar(255) null , -- JWT 리프레시 토큰
-    
-    -- JWT 리프레시 토큰 만료 일시
-    refresh_token_expire timestamp null  -- JWT 리프레시 토큰 만료시간
+    email_verified boolean default false not null   -- 이메일 인증 여부   
     
 );
 
@@ -141,45 +135,45 @@ insert into zones(zname, price) values
 insert into members (
     mid, password_hash, mname, mphone, birthdate, email, 
     provider, provider_id, pno, 
-    email_verified, refresh_token, refresh_token_expire
+    email_verified
 ) values
-('user1','hash1','홍길동','010-1111-1111','1960-05-10','user1@test.com','google','g123',10,false,null,null),
-('user2','hash2','이순신','010-1111-1112','1990-02-20','user2@test.com','github','gh456',11,false,null,null),
-('user3','hash3','강감찬','010-1111-1113','1985-07-15','user3@test.com','facebook','fb789',12,false,null,null),
-('user4','hash4','유관순','010-1111-1114','1970-11-05','user4@test.com',null,null,13,false,null,null),
-('user5','hash5','안중근','010-1111-1115','2000-03-22','user5@test.com','google','g999',14,false,null,null),
-('user6','hash6','윤봉길','010-1111-1116','1962-09-18','user6@test.com',null,null,15,false,null,null),
-('user7','hash7','정몽주','010-1111-1117','1995-12-01','user7@test.com','github','gh777',16,false,null,null),
-('user8','hash8','신사임당','010-1111-1118','1988-06-25','user8@test.com','facebook','fb888',17,false,null,null),
-('user9','hash9','세종대왕','010-1111-1119','1955-08-30','user9@test.com','google','g555',18,false,null,null),
-('user10','hash10','장영실','010-1111-1120','1999-01-10','user10@test.com',null,null,19,false,null,null);
+('user1','hash1','홍길동','010-1111-1111','1960-05-10','user1@test.com','google','g123',10,false),
+('user2','hash2','이순신','010-1111-1112','1990-02-20','user2@test.com','github','gh456',11,false),
+('user3','hash3','강감찬','010-1111-1113','1985-07-15','user3@test.com','facebook','fb789',12,false),
+('user4','hash4','유관순','010-1111-1114','1970-11-05','user4@test.com',null,null,13,false),
+('user5','hash5','안중근','010-1111-1115','2000-03-22','user5@test.com','google','g999',14,false),
+('user6','hash6','윤봉길','010-1111-1116','1962-09-18','user6@test.com',null,null,15,false),
+('user7','hash7','정몽주','010-1111-1117','1995-12-01','user7@test.com','github','gh777',16,false),
+('user8','hash8','신사임당','010-1111-1118','1988-06-25','user8@test.com','facebook','fb888',17,false),
+('user9','hash9','세종대왕','010-1111-1119','1955-08-30','user9@test.com','google','g555',18,false),
+('user10','hash10','장영실','010-1111-1120','1999-01-10','user10@test.com',null,null,19,false);
 
 
 -- 좌석
-insert into seats(zno, seat_no, senior , gno) values
-(10001,101,false,101),
-(10001,102,false,102),
-(10002,201,false,103),
-(10002,202,false,104),
-(10003,301,false,104),
-(10004,401,false,105),
-(10005,501,false,105),
-(10006,601,true,106),
-(10007,701,false,106),
-(10008,801,false,107);
+insert into seats(zno, seat_no, senior ) values
+(10001,101,false),
+(10001,102,false),
+(10002,201,false),
+(10003,202,false),
+(10003,301,false),
+(10004,401,false),
+(10005,501,false),
+(10006,601,true),
+(10007,701,false),
+(10008,801,false);
 
 -- 예매
-insert into reservations(mno, sno, status) values
-(20001,30001,'reserved'),
-(20002,30002,'reserved'),
-(20003,30003,'reserved'),
-(20004,30004,'reserved'),
-(20005,30005,'reserved'),
-(20006,30006,'reserved'),
-(20007,30007,'reserved'),
-(20008,30008,'reserved'),
-(20009,30009,'reserved'),
-(20010,30010,'cancelled');
+insert into reservations(mno, sno, status ,gno) values
+(20001,30001,'reserved',101),
+(20002,30002,'reserved',102),
+(20003,30003,'reserved',103),
+(20004,30004,'reserved',104),
+(20005,30005,'reserved',104),
+(20006,30006,'reserved',105),
+(20007,30007,'reserved',105),
+(20008,30008,'reserved',106),
+(20009,30009,'reserved',107),
+(20010,30010,'cancelled',108);
 
 -- 티켓
 insert into tickets(rno, ticket_code, valid, price) values
@@ -230,3 +224,8 @@ select * from tickets;
 select * from reservation_exchanges;
 select * from auto_assign_log;
 DESC members;
+
+# 교환가능한 좌석정보 
+select r.* from reservations r inner join seats s on r.sno = s.sno where
+  r.gno = (select gno from reservations where rno = 40004) and s.zno = (select s2.zno from reservations r2 inner join seats s2 on r2.sno = s2.sno where r2.rno = 40004)
+  and r.status = 'reserved' and r.rno != 40004;  

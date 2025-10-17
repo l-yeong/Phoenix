@@ -6,7 +6,7 @@ export default function reservationFind( props ){
     // [*] 예매 상태 관리
     const [ reservation , setReservation ] = useState(null);
     // [*] 예매번호 URL에서 추출
-    const rno = useParams();
+    const {rno} = useParams();
     // [1] 예매 상세내역 조회
     const reserveInfo = async () => {
         try{            
@@ -21,11 +21,11 @@ export default function reservationFind( props ){
     // 컴포넌트 처음 랜더링시 호출
     useEffect( () => {
         reserveInfo();
-    },[props.rno]);
+    },[rno]);
     // 현재시간
     const now = new Date();
     // 경기날짜+시간
-    const gameDate = new Date(`${reservation.game.date}T${reservation.game.time}`);
+    const gameDate = reservation ? new Date(`${reservation.game.date}T${reservation.game.time}`) : null;
     // 취소 여부 체크
     const cancel = now < gameDate;
 
@@ -47,7 +47,7 @@ export default function reservationFind( props ){
                     <li>경기시간 : {reservation.game.time}</li>
                     <li>취소여부 : {cancel ? "취소 가능" : "취소 불가"}</li>
                 </ul>
-                <button> 좌석교환 </button> <button> 예매취소 </button>
+                <button disabled={!cancel}> 좌석교환 </button> <button disabled={!cancel}> 예매취소 </button>
             </div>
         )}
         </>

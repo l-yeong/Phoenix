@@ -68,4 +68,16 @@ public class ReservationsController {
         boolean result = reservationsService.reserveCancle(rno , mno);
         return ResponseEntity.ok().body(result);
     }// func end
+
+    /**
+     * 교환신청 가능한 좌석목록 예매정보
+     *
+     * @param rno
+     * @return List<ReservationsDto>
+     */
+    @GetMapping("/possible")
+    public ResponseEntity<?> seatPossible(@RequestParam int rno){
+        List<ReservationsDto> list = reservationsService.seatPossible(rno);
+        return ResponseEntity.ok(list);
+    }// func end
 }//class end
