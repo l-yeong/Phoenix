@@ -5,6 +5,15 @@ const SocialSuccess = () => {
   const [params] = useSearchParams();
   const navigate = useNavigate();
 
+  // facebook 리다이렉트 URL '#_=_' 버그 제거
+  useEffect(() => {
+    if(window.location.hash && window.location.hash === "#_=_"){
+      history.replaceState
+        ? history.replaceState(null , null ,window.location.href.split("#"[0]))
+        : (window.location.hash = "")
+    }
+  } , []);
+
   useEffect(() => {
     const token = params.get("token");
     if (token) {
