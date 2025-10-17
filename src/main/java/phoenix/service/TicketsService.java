@@ -52,7 +52,7 @@ public class TicketsService {
         String seat = String.valueOf(info.getOrDefault("seat_no",""));
         String validText = "사용가능";
 
-        Map<String,Object>qrPayload=new HashMap<>();
+        Map<String,Object>qrPayload=new LinkedHashMap<>();
         qrPayload.put("이름",name);
         qrPayload.put("구역",zone);
         qrPayload.put("좌석",seat);
