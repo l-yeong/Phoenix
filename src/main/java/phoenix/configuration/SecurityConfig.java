@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -106,11 +107,14 @@ public class SecurityConfig {
                 .formLogin(form -> form.disable()) // 스프링 기본 로그인 폼 비활성화(프론트/REST로만 로그인 처리하겠다는 뜻)
                 .httpBasic(basic -> basic.disable()) // Basic 인증 비활성화(아이디/비번을 Base64로 보내는 방식 금지
                 .logout(logout -> logout.disable()) // 로그아웃 비활성화 추가
+                .cors(cors -> {}) // CORS 설정과 통합(CorsConfig 반영)
 
                 // =============================
                 // URL 접근 제어
                 // =============================
                 .authorizeHttpRequests(auth -> auth // URL별 인가 규칙 시작
+                        .requestMatchers(HttpMethod.OPTIONS , "/**").permitAll() // 프리플라이트 요청 허용
+                        .requestMatchers("/members/social/**").permitAll() // 소셜 로그인/회원가입 경로 허용
                         .requestMatchers(                                       // requestMatchers(...).permitAll() : 나열한 경로는 "인증 없이" 접근 허용
                                 "/members/signup",
                                 "/members/login",
