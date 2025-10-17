@@ -17,6 +17,6 @@ public class WebSocKetConfig implements WebSocketConfigurer { // class start
     // [1] 내가만든 소켓핸들러 등록
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler( baseballSocketHandler , "/socket" );
+        registry.addHandler( baseballSocketHandler , "/socket" ).setAllowedOrigins("http://localhost:5173");
     }// func end
 }// class end

@@ -253,8 +253,8 @@ public class GateService {
             return count; // 연장 성공
         } catch (Exception e) {
             return -1;
-        }
-    }
+        }   // try end
+    }   // func end
 
 
 
