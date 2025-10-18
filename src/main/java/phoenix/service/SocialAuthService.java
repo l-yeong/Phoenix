@@ -49,7 +49,7 @@ public class SocialAuthService {
         tokenService.saveRefreshToken(member.getMid(), refreshToken, 7 * 24 * 60);
 
         return accessToken;
-    }
+    } // func e
 
     /**
      * 소셜 신규 회원가입
@@ -110,5 +110,12 @@ public class SocialAuthService {
 
         // [4] DB 저장
         return membersMapper.signUp(membersDto) > 0;
-    }
-}
+    } // func e
+
+
+    @Transactional
+    public MembersDto findMemberByProvider(String provider, String providerId) {
+        return membersMapper.findByProvider(provider, providerId);
+    } // func e
+
+} // class e
