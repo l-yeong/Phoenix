@@ -1,5 +1,5 @@
 .appBar {
-  background-color: #ca2e26;
+  background-color: #ca2e26 !important;
   height: 70px;
   display: flex;
   justify-content: center;
