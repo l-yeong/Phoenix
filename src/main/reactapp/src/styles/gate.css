@@ -1,0 +1,16 @@
+.gate-wrap { max-width: 540px; margin: 24px auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 12px; background: #fff; box-shadow: 0 6px 16px rgba(0,0,0,0.06); }
+.gate-title { display: flex; align-items: center; gap: 8px; font-size: 22px; font-weight: 800; margin-bottom: 16px; }
+.gate-title .emoji { font-size: 20px; }
+.gate-field { margin-bottom: 12px; }
+.gate-label { display:block; font-size: 12px; color:#475569; margin-bottom: 6px; }
+.gate-input { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; }
+.gate-actions { display:flex; gap:8px; margin-top: 8px; }
+.gate-btn { padding: 10px 14px; border-radius: 8px; border: 1px solid #1d4ed8; background: #2563eb; color:#fff; font-weight: 600; cursor: pointer; }
+.gate-btn:disabled { background:#93c5fd; border-color:#93c5fd; cursor: not-allowed; }
+.gate-card { margin-top: 14px; padding: 12px; border:1px solid #e5e7eb; border-radius: 10px; background:#f8fafc; }
+.gate-meta { font-size: 13px; color:#111827; display:flex; gap:12px; flex-wrap:wrap; }
+.gate-meta b { font-weight: 700; }
+.gate-msg { margin-top: 8px; color:#475569; font-size:12px; }
+.gate-ready { color:#16a34a; font-weight:700; }
+.gate-wait { color:#dc2626; font-weight:700; }
+.gate-foot { margin-top: 12px; font-size: 12px; color:#64748b; line-height: 1.4; }

@@ -7,6 +7,7 @@ import org.redisson.api.*;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import phoenix.model.mapper.SeatsMapper;
 import phoenix.util.RedisKeys;
 
 import java.util.*;
@@ -18,6 +19,9 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 //  좌석 클릭 시마다 좌석에 모든 것을 처리하는 서비스
 public class SeatLockService {  // class start
+
+    // 의존성 추가
+    private final SeatsMapper seatsMapper;
 
     /// redisson configuration 의존성 주입
     private final RedissonClient redisson;
@@ -285,41 +289,60 @@ public class SeatLockService {  // class start
 
     }   // func end
 
-//    /**
-//     * [좌석 상태 조회]
-//     * - 프론트가 폴링(2~3초) 혹은 새로고침할 때 호출
-//     * - 상태 규칙:
-//     *   SOLD        → "SOLD"
-//     *   holdMap 에 있음 → holder==me ? "HELD_BY_ME" : "HELD"
-//     *   아무것도 아님  → "AVAILABLE"
-//     */
-//    public Map<String, String> getSeatStatusMap(List<String> seatIds, String requesterUserId) {
-//        // 만약에 좌석이 null 이거나 비어있거나  그러면 좌석을 db 에서 가져옴
-//        if (seatIds == null || seatIds.isEmpty()) seatIds = defaultSeatPool();
-//
-//        Map<String, String> res = new LinkedHashMap<>();
-//        for (String seatId : seatIds) {
-//            if (soldSet().contains(seatId)) {
-//                res.put(seatId, "SOLD");
-//                continue;
-//            }
-//            String holder = holdMap().get(seatId);
-//            if (holder != null) {
-//                res.put(seatId, holder.equals(requesterUserId) ? "HELD_BY_ME" : "HELD");
-//            } else {
-//                res.put(seatId, "AVAILABLE");
-//            }
-//        }
-//        return res;
-//    }
+    /**
+     * [좌석 상태 조회]
+     * - DB의 예매상태(reserved/cancelled) + Redis 임시보유 상태를 결합하여 결과를 반환.
+     * - 상태 규칙:
+     *   SOLD         → reservations.status='reserved' or soldSet()에 포함
+     *   HELD_BY_ME   → holdMap()에 있고 holder==me
+     *   HELD         → holdMap()에 있고 holder!=me
+     *   AVAILABLE    → 위 두 조건에 해당하지 않음
+     */
+    public Map<String, String> getSeatStatusMap(int gno, String requesterUserId) {
 
-//    // 데모용 좌석 풀,  내일 db 에서 처리 예정
-//    private List<String> defaultSeatPool() {
-//        List<String> seats = new ArrayList<>();
-//        for (char row = 'A'; row <= 'D'; row++) {
-//            for (int n = 1; n <= 4; n++) seats.add(row + String.valueOf(n));
-//        }
-//        return seats;
-//    }   // func end
+        // 1️⃣ DB 조회 (좌석 + 예매 상태)
+        List<Map<String, Object>> seatRows = seatsMapper.getSeatsWithReservationStatus(gno);
+
+        // 2️⃣ Redis 구조
+        String showKey = String.valueOf(gno);
+        RSet<String> redisSoldSet = soldSet(showKey);          // 매진 캐시
+        RMapCache<String, String> redisHoldMap = holdMap();    // 임시 보유 캐시 (key = gno:seatName)
+
+        // 3️⃣ 결과 매핑
+        Map<String, String> result = new LinkedHashMap<>();
+
+        for (Map<String, Object> row : seatRows) {
+            String seatName = String.valueOf(row.get("seatName"));
+            String seatKey = showKey + ":" + seatName;
+
+            int isSold = (row.get("is_sold") != null)
+                    ? ((Number) row.get("is_sold")).intValue()
+                    : 0;
+
+            // (1) SOLD 판정 (DB or Redis)
+            if (isSold == 1 || redisSoldSet.contains(seatName)) {
+                result.put(seatName, "SOLD");
+                continue;
+            }
+
+            // (2) HELD / HELD_BY_ME 판정
+            String holder = redisHoldMap.get(seatKey);
+            if (holder != null) {
+                if (holder.equals(requesterUserId)) {
+                    result.put(seatName, "HELD_BY_ME");
+                } else {
+                    result.put(seatName, "HELD");
+                }
+                continue;
+            }
+
+            // (3) AVAILABLE
+            result.put(seatName, "AVAILABLE");
+        }
+
+        return result;
+    }
+
+
 
 }   // class end

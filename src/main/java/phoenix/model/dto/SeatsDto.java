@@ -24,19 +24,19 @@ public class SeatsDto {
     /**
      * [SelectRequest]
      * - 프론트에서 좌석 버튼(A1 등)을 클릭할 때 보내는 요청
-     * - showId는 "공연/회차 식별자"로 중복 예매 방지에 사용됨
+     * - gno는 "공연/회차 식별자"로 중복 예매 방지에 사용됨
      *
      * JSON 예시:
      * {
-     *   "userId": "u123",
-     *   "showId": "SHOW-2025-10-16-19:00",
+     *   "mno": "u123",
+     *   "gno": "SHOW-2025-10-16-19:00",
      *   "seatId": "A1"
      * }
      */
     @Data
     public static class SelectRequest {
-        private String userId;
-        private String showId;
+        private String mno;
+        private String gno;
         private String seatId;
     }
 
@@ -68,16 +68,16 @@ public class SeatsDto {
     /**
      * [ReleaseRequest]
      * - 이미 내가 잡은 좌석을 다시 클릭해서 해제할 때 보냄
-     * - 다회차(복수 공연) 고려 시 showId도 함께 받는 버전
+     * - 다회차(복수 공연) 고려 시 gno도 함께 받는 버전
      *
      * JSON 예시:
-     * { "userId": "u123", "showId": "SHOW-2025-10-16-19:00", "seatId": "A1" }
+     * { "mno": "1", "gno": "SHOW-2025-10-16-19:00", "sno": "A1" }
      */
     @Data
     public static class ReleaseRequest {
-        private String userId;
-        private String showId;
-        private String seatId;
+        private String mno;
+        private String gno;
+        private String sno;
     }
 
     /**
@@ -103,15 +103,15 @@ public class SeatsDto {
      *
      * JSON 예시:
      * {
-     *   "userId": "u123",
-     *   "showId": "SHOW-2025-10-16-19:00",
+     *   "mno": "u123",
+     *   "gno": "SHOW-2025-10-16-19:00",
      *   "seatIds": ["A1","A2","B1"]
      * }
      */
     @Data
     public static class ConfirmRequest {
-        private String userId;
-        private String showId;
+        private String mno;
+        private String gno;
         private List<String> seatIds;
     }
 
@@ -135,16 +135,6 @@ public class SeatsDto {
     // ------------------------------------------------------------
     // 4) (선택) 좌석 상태 맵 요청/응답
     // ------------------------------------------------------------
-
-    /**
-     * [MapRequest] (선택)
-     * - 특정 좌석 목록의 상태를 조회하고 싶을 때 사용
-     * - seatIds가 null/빈배열이면 서버 기본 풀을 사용(서비스 구현에 따라)
-     */
-    @Data
-    public static class MapRequest {
-        private List<String> seatIds;
-    }
 
     /**
      * [MapResponse] (선택)

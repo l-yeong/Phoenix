@@ -289,6 +289,22 @@ public class GateService {
         }   // try end
     }   // func end
 
+    // 내가 몇 번째 순번인지 알려주는 메소드
+    public Integer positionOf(String userId) {
+        // 이미 입장(세션 alive)이면 0으로 표기하거나 null 반환 등 정책 선택
+        if (isEntered(userId)) return 0;
+
+        // 현재 대기열에서 1-base 순번 계산 (O(n))
+        RBlockingQueue<String> q = queue();
+        int idx = 1;
+        for (String uid : q) {
+            if (uid.equals(userId)) return idx; // 1,2,3,...
+            idx++;
+        }
+        // 큐에 없으면 null (대기열 미등록/활성 유저 등)
+        return null;
+    }   // func end
+
     // ===============================================================
     // 내부 결과 DTO(record) 이거 반환하고 컨트롤러에서 실제 dto에 넣어 쓸 예정
     // record는 그냥 dto 같이 생성해줌

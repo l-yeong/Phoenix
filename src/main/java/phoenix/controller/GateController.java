@@ -34,12 +34,12 @@ public class GateController {   // class start
 
 
     // 퇴장 처리 메소드
-    // 사용자가 예매를 마쳤거나 브라우저를 닫을 때 호출ㅁ된다
+    // 사용자가 예매를 마쳤거나 브라우저를 닫을 때 호출된다
     // 요청: LeaveRequest(userId)
     // 응답: LeaveResponse(success)
     // consumes
-    @PostMapping( value = "/leave" , consumes = MediaType.ALL_VALUE)
-    public ResponseEntity<GateDto.LeaveResponse> leave (@RequestBody GateDto.LeaveRequest req) {
+    @PostMapping(value = "/leave", consumes = MediaType.ALL_VALUE)
+    public ResponseEntity<GateDto.LeaveResponse> leave(@RequestBody GateDto.LeaveRequest req) {
         boolean ok = gateService.leave(req.getUserId());
         return ResponseEntity.ok(new GateDto.LeaveResponse(ok));
     }   // func end
@@ -78,5 +78,14 @@ public class GateController {   // class start
         boolean ready = gateService.isEntered(userId);
         return ResponseEntity.ok(Map.of("ready", ready));
     }   // func end
+
+    // 내가 대기열 몇 번째인지 알려주는 메소드
+    @GetMapping("/position/{userId}")
+    public ResponseEntity<Map<String, Integer>> position(@PathVariable String userId) {
+        Integer pos = gateService.positionOf(userId);
+        // 정책: null → -1 로 내려 “대기열에 없음” 표현
+        return ResponseEntity.ok(Map.of("position", pos == null ? -1 : pos));
+    }   // func end
+
 
 }   // class end
