@@ -8,6 +8,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -108,6 +109,14 @@ public class SecurityConfig {
                 .httpBasic(basic -> basic.disable()) // Basic 인증 비활성화(아이디/비번을 Base64로 보내는 방식 금지
                 .logout(logout -> logout.disable()) // 로그아웃 비활성화 추가
                 .cors(cors -> {}) // CORS 설정과 통합(CorsConfig 반영)
+
+                // =============================
+                // 세션 관리 정책
+                // =============================
+                .sessionManagement( session ->
+                            session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                            // 로그인 시 SecurityContextHolder 세션 자동 생성 허용
+                        )
 
                 // =============================
                 // URL 접근 제어
