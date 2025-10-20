@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import phoenix.model.dto.MembersDto;
+import phoenix.security.JwtUtil;
 import phoenix.service.SocialAuthService;
 import phoenix.util.ApiResponseUtil;
 import java.util.Map;
@@ -18,6 +19,7 @@ import java.util.Map;
 public class SocialAuthController {
 
     private final SocialAuthService socialAuthService;
+    private final JwtUtil jwtUtil;
 
     /**
      * 소셜 로그인 요청
@@ -35,8 +37,14 @@ public class SocialAuthController {
                     Map.of("provider", provider, "provider_id", providerId)));
         }
 
+        // JWT 안에서 mid 추출
+        String mid = jwtUtil.getMid(accessToken);
+        Integer mno = (Integer) jwtUtil.getClaim(accessToken , "mno");
+
         Map<String, Object> tokenInfo = Map.of(
                 "access_token", accessToken,
+                "mid" , mid,    // mid 포함
+                "mno" , mno,        // mno 포함
                 "token_type", "Bearer",
                 "expires_in", 3600
         );

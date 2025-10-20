@@ -9,6 +9,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import phoenix.model.dto.MembersDto;
 import phoenix.security.JwtUtil;
 import phoenix.service.SocialAuthService;
 
@@ -93,11 +94,25 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         }
         // [8] 기존 회원이면 → JWT를 프론트엔드로 전달
         else {
+
             // JWT로 Authentication 생성 후 SecurityContext에 등록
             Authentication authentication1 = jwtUtil.getAuthentication(jwt);
             SecurityContextHolder.getContext().setAuthentication(authentication1);
 
-            response.sendRedirect("http://localhost:5173/social/success?token=" + jwt);
+            // 회원 정보 조회
+            MembersDto member = socialAuthService.findMemberByProvider(provider , providerId);
+
+            // mid , mno 포함 리다이렉트 url 생성
+            String redirectUrl = String.format(
+                    "http://localhost:5173/social/success?token=%s&mid=%s&mno=%d" ,
+                    URLEncoder.encode(jwt , StandardCharsets.UTF_8),
+                    URLEncoder.encode(member.getMid() , StandardCharsets.UTF_8) ,
+                    member.getMno()
+            );
+
+            getRedirectStrategy().sendRedirect(request , response , redirectUrl);
         }
-    }
-}
+
+    } // func e
+
+} // class e
