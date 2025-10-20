@@ -29,7 +29,7 @@ public interface TicketsMapper {
 
     //지난 경기 티켓 무효화 valid->false 및 ticket_code null  변경
     @Update(" UPDATE tickets t JOIN reservations r ON r.rno = t.rno "+
-            " SET t.valid = 0, WHERE r.gno IN (${gnoList}) " +
+            " SET t.valid = 0 WHERE r.gno IN (${gnoList}) " +
             " AND (t.valid = 1)")
     int formerGame(@Param("gnoList")String gnoList);
 
