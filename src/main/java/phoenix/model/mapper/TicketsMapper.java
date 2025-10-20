@@ -33,9 +33,8 @@ public interface TicketsMapper {
     int ticketNullify(@Param("gnoList")String gnoList);
 
     //지난 경기 티켓 QR삭제
-    @Update("UPDATE tickets t JOIN reservations r ON r.rno = t.rno " +
-            "SET t.ticket_code = NULL WHERE r.gno IN (${gnoList}) " +
-            "AND t.ticket_code IS NOT NULL")
+    @Update("UPDATE tickets t JOIN reservations r ON r.rno = t.rno SET t.valid = 0 "+
+            " WHERE r.gno IN (${gnoList}) AND t.valid = 1")
     int ticketDelete(@Param("gnoList")String gnoList);
 
     // QR 스캔 상세 정보

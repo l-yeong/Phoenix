@@ -116,17 +116,35 @@ public class TicketsService {
      * - 무효화 방식은 데이터 보존(증빙/분쟁 대비)에 유리
      *
      * @param expiredGno 지난 경기 gno 리스트
-     *
-     * <연계 컨트롤러 예시>
-     * - POST /tickets/nullify
-     *   Body(JSON): [1,2,3,4]
      */
     public void ticketNullify(List<Integer> expiredGno){
         String gnoList = expiredGno.stream()
                 .map(String::valueOf)
                 .collect(Collectors.joining(","));
         ticketsMapper.ticketNullify(gnoList);
-    }
+    }//func end
+    /**
+     * CSV 파일의 경기일자를 기준으로 '지난 경기'를 자동 식별하여
+     * tickets.valid 값을 false(0)로 일괄 변경합니다.
+     *
+     * <동작 과정>
+     * 1. FileService.getExpiredGames() 를 통해 지난 경기 gno 목록을 CSV에서 추출
+     * 2. 지난 경기 목록이 존재할 경우, ticketNullify(List<Integer>) 를 호출하여 DB 업데이트
+     * 3. 처리된 gno 개수를 반환
+     *
+     * @return 처리된 지난 경기(gno) 개수 (0이면 해당 없음)
+     *
+     * <연계 컨트롤러 예시>
+     * - POST /tickets/nullify/csv
+     *   Body: (없음)
+     */
+    @Transactional
+    public int ticketNullifyCsv(){
+        List<Integer>expired = fileService.getExpiredGames();
+        if(expired.isEmpty()) return 0;
+        ticketNullify(expired);
+        return expired.size();
+    }//func end
 
     /**
      * 지난 경기(gno 목록) 기준으로 티켓의 QR 문자열을 '삭제' 처리합니다.
@@ -147,6 +165,13 @@ public class TicketsService {
                 .map(String::valueOf)
                 .collect(Collectors.joining(","));
         ticketsMapper.ticketDelete(gnoList);
-    }
+    }//func end
+    @Transactional
+    public int ticketDeleteCsv(){
+        List<Integer>expired = fileService.getExpiredGames();
+        if(expired.isEmpty()) return 0;
+        ticketDelete(expired);
+        return expired.size();
+    }//func end
 
 }//class end

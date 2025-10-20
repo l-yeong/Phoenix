@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 
-@RequestMapping("/ticket")
+@RequestMapping("/tickets")
 @RestController
 @RequiredArgsConstructor
 public class TicketsController {
@@ -38,29 +38,21 @@ public class TicketsController {
     /**
      * 지난 경기 티켓 무효화 (valid = false)
      * 예: POST /tickets/Nullify
-     * body: [1,2,3,4]  ← 지난 경기 gno 목록
      */
     @PostMapping("/nullify")
-    public ResponseEntity<?> ticketNullify(@RequestBody List<Integer> gnoList) {
-        if (gnoList == null || gnoList.isEmpty()) {
-            return ResponseEntity.badRequest().body("gnoList is empty");
-        }
-        ticketsService.ticketNullify(gnoList);
-        return ResponseEntity.ok("지난 경기 티켓이 무효화되었습니다.");
+    public ResponseEntity<?> ticketNullify() {
+        int result = ticketsService.ticketNullifyCsv();
+        return ResponseEntity.ok(result);
     }//func end
 
     /**
      * 지난 경기 티켓 QR 코드 삭제 (ticket_code = NULL)
      * 예: POST /tickets/delete
-     * body: [1,2,3,4]
      */
     @PostMapping("/delete")
-    public ResponseEntity<?> ticketDelete(@RequestBody List<Integer> gnoList) {
-        if (gnoList == null || gnoList.isEmpty()) {
-            return ResponseEntity.badRequest().body("gnoList is empty");
-        }
-        ticketsService.ticketDelete(gnoList);
-        return ResponseEntity.ok("지난 경기 QR코드가 삭제되었습니다.");
+    public ResponseEntity<?> ticketDelete() {
+        int result = ticketsService.ticketDeleteCsv();
+        return ResponseEntity.ok(result);
     }//func end
 
 }//func end
