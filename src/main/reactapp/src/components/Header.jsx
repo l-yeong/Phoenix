@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState , useRef } from "react";
 import { AppBar, Toolbar, Box, Typography, Button } from "@mui/material";
 import { ToastContainer , toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -7,66 +7,65 @@ import { useNavigate } from "react-router-dom";
 import {useAuth} from "../api/loginstate.jsx";
 
 const Header = () => {
+
+  const navigate = useNavigate();
+  const { user, logout } = useAuth(); // 로그인 상태 전역 접근
+  const wsRef = useRef(null);
+
   // [*] 메시지를 저장할 상태
   const [ message , setMessage ] = useState([]);
   // [*] 웹소켓 객체 상태 저장
   const [ ws , setWs ] = useState(null);
   // [1] 컴포넌트가 마운트될때 한번 실행
   useEffect( () => {
-    // 웹소켓 연결 생성
-    const socket = new WebSocket("ws://localhost:8080/socket");
-    // 상태에 객체 저장
-    setWs(socket);
+    if (!user) return; // 로그인 안됐으면 리턴
+    if (!wsRef.current){ // 이미 열려있으면 재생성 X
+      // 웹소켓 연결 생성
+      const socket = new WebSocket("ws://localhost:8080/socket");
+      // 상태에 객체 저장
+      setWs(socket);
 
-    // [1-1] 웹소켓 열렸을때 실행
-    socket.onopen = () => {
-      console.log('WebSocket 연결성공');
-    }// func end
+      // [1-1] 웹소켓 열렸을때 실행
+      socket.onopen = () => {
+        console.log('WebSocket 연결성공');
+        socket.send(JSON.stringify({ type: "login", mno: user.mno }));
+        console.log("회원번호 자동전송",user.mno);
+      }// func end
 
-    // [1-2] 서버로부터 메시지 받았을때 실행
-    socket.onmessage = (event) => {
-      // 수신 데이터는 문자열이므로 JSON으로 파싱
-      const data = JSON.parse(event.data);
-      console.log('수신메시지',data);
-      // 기존 메시지 상태에 새로운 메시지 추가
-      setMessage( (prev) => [...prev,data]);
-      toast.info(` ${typeof data === "string" ? data : data.message}`,{
-        position: "bottom-right",
-        autoClose: 5000,
-        theme: "colored",
-      });
-    }// func end
+      // [1-2] 서버로부터 메시지 받았을때 실행
+      socket.onmessage = (event) => {
+        // 수신 데이터는 문자열이므로 JSON으로 파싱
+        const data = JSON.parse(event.data);
+        console.log('수신메시지',data);
+        // 기존 메시지 상태에 새로운 메시지 추가
+        setMessage( (prev) => [...prev,data]);
+        toast.info(` ${typeof data === "string" ? data : data.message}`,{
+          position: "bottom-right",
+          autoClose: 5000,
+          theme: "colored",
+        });
+      }// func end
 
-    // [1-3] 웹소켓 에러 발생 시 실행
-    socket.onerror = (e) => {
-      console.log('WebSocket 에러' , e);
-    }// func end
+      // [1-3] 웹소켓 에러 발생 시 실행
+      socket.onerror = (e) => {
+        console.log('WebSocket 에러' , e);
+      }// func end
 
-    // [1-4] 웹소켓 연결 종료 시 실행
-    socket.onclose = () => {
-      console.log('WebSocket 연결종료');
-    }// func end
+      // [1-4] 웹소켓 연결 종료 시 실행
+      socket.onclose = () => {
+        console.log('WebSocket 연결종료');
+      }// func end
 
-    // [1-5] 컴포넌트 언마운트시 웹소켓 연결종료
-    return () => {
-      socket.close();
-    }// func end
-  } , [] );
-
-  // [2] 메시지 전송함수
-  const sendMessage = (msg) => {
-    // 웹소켓이 연결되어 있고 열려있을때만 전송
-    if(ws && ws.readyState === WebSocket.OPEN){
-      ws.send(JSON.stringify(msg));
+    }// if end   
+  } , [user] );  
+  const socketClose = () => {
+    logout();
+    if(wsRef.current && wsRef.current.readyState === WebSocket.OPEN){
+      wsRef.current.close();
+      wsRef.current = null;
+      console.log("소켓 종료")
     }// if end
   }// func end
-
-
-
-
-  const navigate = useNavigate();
-  const { user, logout } = useAuth(); // 로그인 상태 전역 접근
-
 
   // 현재 로그인 상태 콘솔로 확인
   console.log(" Header 렌더링됨, 현재 user:", user);
@@ -117,7 +116,7 @@ const Header = () => {
               <Button
                 variant="contained"
                 color="secondary"
-                onClick={logout}
+                onClick={socketClose}
                 sx={{
                   backgroundColor: "#fff",
                   color: "#CA2E26",

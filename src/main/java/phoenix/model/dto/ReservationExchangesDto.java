@@ -16,4 +16,5 @@ public class ReservationExchangesDto {
     private String requested_at;    // 요청 시각
     private String responded_at;    // 응답 시각
     private int from_mno;           // 요청자 회원번호
+    private int fromSeat;           // 요청자 좌석번호
 }//func end

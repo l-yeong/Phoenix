@@ -40,7 +40,8 @@ public class ReservationExchangesService {
         if (saved == 0 || saved == 2) return saved;
         Executor executor = threadPoolConfing.changeExecutor();
         ReservationsDto fromDto = (ReservationsDto) reservationsService.reserveInfo(dto.getFrom_rno()).get("reservation");
-        int fromSeat = fromDto.getMno();
+        int fromSeat = fromDto.getSno();
+        dto.setFromSeat(fromSeat);
         // 쓰레드풀에서 후속처리
         executor.execute( () -> { // 여기에 푸시알림 보낼메시지 작성해서 웹소켓에 보내기
             ReservationsDto toDto = (ReservationsDto) reservationsService.reserveInfo(dto.getTo_rno());

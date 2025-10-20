@@ -6,6 +6,7 @@ import SignUpPage from "./pages/SignUpPage";
 import SocialSuccess from "./pages/SocialSuccess";
 import SocialSignUp from "./pages/SocialSignUp";
 import { AuthProvider } from "./api/loginstate.jsx";
+import Mypage from "./features/members/Mypage.jsx";
 
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
           <Route path="/signup" element={<SignUpPage />} />
           <Route path="/social/success" element={<SocialSuccess />} />
           <Route path="/social/signup" element={<SocialSignUp />} />
+          <Route path="/mypage" element={<Mypage />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

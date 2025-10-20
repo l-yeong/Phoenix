@@ -52,6 +52,34 @@ export default function reservationFind( props ){
         }// try end
     }// func end
 
+    // [4] 교환요청 수락
+    const acceptChange = async (fromRno) => {
+        try{
+            const response = await axios.post(`http://localhost:8080/seat/accept?rno=${fromRno}`);
+            if(response.data.status == 200){
+                alert('좌석이 교환되었습니다');
+            }else{
+                alert('좌석교환 실패하였습니다');
+            }// if end
+        }catch(e){
+            console.log(e);
+        }// try end
+    }// func end
+
+    // [5] 교환요청 거절
+    const rejectChange = async (fromRno) => {
+        try{
+            const response = await axios.delete(`http://localhost:8080/seat/reject?rno=${fromRno}`);
+            if(response.data.status == 200){
+                alert('좌석교환을 거절하였습니다.');
+            }else{
+                alert('교환 거절 실패하였습니다.');
+            }// if end
+        }catch(e){
+            console.log(e);
+        }// try end
+    }// func end
+
     // 컴포넌트 처음 랜더링시 호출
     useEffect( () => {
         reserveInfo();
@@ -85,7 +113,8 @@ export default function reservationFind( props ){
         ) : (
             <ul>
                 {exchange.map( (ex) => {
-                    <li key={ex.fromRno}></li>
+                    <li key={ex.fromRno}>{ex.fromSeat} 번 좌석에서 좌석 교환 요청을 보냈습니다. 
+                    <button onClick={ (e) => {acceptChange(ex.fromRno)} }>수락</button> <button onClick={(e) => {rejectChange(ex.fromRno)} }>거절</button></li>
                 })}
             </ul>
         )
