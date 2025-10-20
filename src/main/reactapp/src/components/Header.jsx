@@ -4,6 +4,7 @@ import { ToastContainer , toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import styles from "../styles/Header.module.css";
 import { useNavigate } from "react-router-dom";
+import {useAuth} from "../api/loginstate.jsx";
 
 const Header = () => {
   // [*] 메시지를 저장할 상태
