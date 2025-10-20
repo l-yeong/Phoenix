@@ -35,24 +35,4 @@ public class TicketsController {
         return ResponseEntity.ok(result);
     }//func end
 
-    /**
-     * 지난 경기 티켓 무효화 (valid = false)
-     * 예: POST /tickets/Nullify
-     */
-    @PostMapping("/nullify")
-    public ResponseEntity<?> ticketNullify() {
-        int result = ticketsService.ticketNullifyCsv();
-        return ResponseEntity.ok(result);
-    }//func end
-
-    /**
-     * 지난 경기 티켓 QR 코드 삭제 (ticket_code = NULL)
-     * 예: POST /tickets/delete
-     */
-    @PostMapping("/delete")
-    public ResponseEntity<?> ticketDelete() {
-        int result = ticketsService.ticketDeleteCsv();
-        return ResponseEntity.ok(result);
-    }//func end
-
-}//func end
+}//class end

@@ -1,6 +1,7 @@
 package phoenix.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.transaction.annotation.Transactional;
 import phoenix.model.dto.TicketsDto;
 import phoenix.model.mapper.TicketsMapper;
@@ -106,72 +107,39 @@ public class TicketsService {
         return ticketsMapper.findPayloads(mno);
     }//func end
 
-
     /**
-     * 지난 경기(gno 목록) 기준으로 티켓을 '무효화' 처리합니다.
-     * - tickets.valid 를 false(0)로 일괄 업데이트합니다.
-     * - QR 문자열(ticket_code)은 보존되어 감사/추적에 유리합니다.
-     *
-     * <보안/운영 권장>
-     * - 무효화 방식은 데이터 보존(증빙/분쟁 대비)에 유리
-     *
-     * @param expiredGno 지난 경기 gno 리스트
+     * <스케줄>
+     * 매일 9시~23시 사이 5분마다 자동 실행 (KST)
+     * 반환값 없음(반드시 void), 파라미터 없음(필수)
      */
-    public void ticketNullify(List<Integer> expiredGno){
-        String gnoList = expiredGno.stream()
-                .map(String::valueOf)
-                .collect(Collectors.joining(","));
-        ticketsMapper.ticketNullify(gnoList);
-    }//func end
-    /**
-     * CSV 파일의 경기일자를 기준으로 '지난 경기'를 자동 식별하여
-     * tickets.valid 값을 false(0)로 일괄 변경합니다.
-     *
-     * <동작 과정>
-     * 1. FileService.getExpiredGames() 를 통해 지난 경기 gno 목록을 CSV에서 추출
-     * 2. 지난 경기 목록이 존재할 경우, ticketNullify(List<Integer>) 를 호출하여 DB 업데이트
-     * 3. 처리된 gno 개수를 반환
-     *
-     * @return 처리된 지난 경기(gno) 개수 (0이면 해당 없음)
-     *
-     * <연계 컨트롤러 예시>
-     * - POST /tickets/nullify/csv
-     *   Body: (없음)
-     */
-    @Transactional
-    public int ticketNullifyCsv(){
-        List<Integer>expired = fileService.getExpiredGames();
-        if(expired.isEmpty()) return 0;
-        ticketNullify(expired);
-        return expired.size();
+    @Scheduled(cron = "0 */5 9-23 * * *",zone = "Asia/Seoul")
+    public void formerGame(){
+        try{
+            int updated = formerGameCSV();
+            if(updated > 0){
+                System.out.println(" 티켓 만료 처리 완료 (valid 1 -> 0) : "+updated);
+            }//if end
+        } catch (Exception e) {
+            System.out.println("티켓 만료 처리 실패"+e);
+        }//catch end
     }//func end
 
     /**
-     * 지난 경기(gno 목록) 기준으로 티켓의 QR 문자열을 '삭제' 처리합니다.
-     * - tickets.ticket_code 를 NULL로 일괄 업데이트합니다.
-     * - 스캔 시 "만료된 QR코드입니다" 응답을 주도록 검증 로직과 함께 사용하세요.
+     * CSV의 경기 날짜+시간 기준으로 지난 경기 gno를 추출하여
+     * tickets.valid=0 로 일괄 업데이트.
      *
-     * <보안/운영 주의>
-     * - 문자열 삭제는 복구/추적에 불리할 수 있어, 보통 무효화(valid=false)와 병행 또는 대체 사용
-     *
-     * @param expiredGno 지난 경기 gno 리스트
-     *
-     * <연계 컨트롤러 예시>
-     * - POST /tickets/delete
-     *   Body(JSON): [1,2,3,4]
+     * @return 실제로 업데이트된 행 수
      */
-    public void ticketDelete(List<Integer>expiredGno){
-        String gnoList = expiredGno.stream()
+    @Transactional
+    public int formerGameCSV(){
+        List<Integer>expired = fileService.getExpiredGames(); // game.csv 호출
+        if(expired.isEmpty()) return 0; // 만료된 경기가 없으면 종료
+
+        String gnoList = expired.stream()
                 .map(String::valueOf)
                 .collect(Collectors.joining(","));
-        ticketsMapper.ticketDelete(gnoList);
+        return ticketsMapper.formerGame(gnoList);
     }//func end
-    @Transactional
-    public int ticketDeleteCsv(){
-        List<Integer>expired = fileService.getExpiredGames();
-        if(expired.isEmpty()) return 0;
-        ticketDelete(expired);
-        return expired.size();
-    }//func end
+
 
 }//class end

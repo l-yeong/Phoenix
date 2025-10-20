@@ -27,15 +27,12 @@ public interface TicketsMapper {
             " JOIN members m ON r.mno = m.mno WHERE m.mno = #{mno} ORDER BY t.tno DESC ")
     List<String> findPayloads(@Param("mno") int mno);
 
-    //지난 경기 티켓 무효화 valid->false 변경
-    @Update("UPDATE tickets t JOIN reservations r ON r.rno = t.rno SET t.valid = 0 " +
-            "WHERE r.gno IN (${gnoList}) AND t.valid = 1")
-    int ticketNullify(@Param("gnoList")String gnoList);
+    //지난 경기 티켓 무효화 valid->false 및 ticket_code null  변경
+    @Update(" UPDATE tickets t JOIN reservations r ON r.rno = t.rno "+
+            " SET t.valid = 0, t.ticket_code = NULL WHERE r.gno IN (${gnoList}) " +
+            " AND (t.valid = 1)")
+    int formerGame(@Param("gnoList")String gnoList);
 
-    //지난 경기 티켓 QR삭제
-    @Update("UPDATE tickets t JOIN reservations r ON r.rno = t.rno SET t.valid = 0 "+
-            " WHERE r.gno IN (${gnoList}) AND t.valid = 1")
-    int ticketDelete(@Param("gnoList")String gnoList);
 
     // QR 스캔 상세 정보
     //@Select(" SELECT m.mname AS name, z.zname AS zone, s.seat_no AS seat, t.valid FROM tickets t JOIN reservations r ON t.rno = r.rno "+
