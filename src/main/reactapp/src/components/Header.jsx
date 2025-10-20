@@ -1,25 +1,29 @@
-import React from "react";
 import { AppBar, Toolbar, Box, Typography, Button } from "@mui/material";
 import styles from "../styles/Header.module.css";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../api/loginstate.jsx";
+import React, { useRef, useEffect } from "react";
 
 const Header = () => {
 
   const navigate = useNavigate();
   const { user, logout } = useAuth(); // 로그인 상태 전역 접근
+  const loggedOnce = useRef(false); //  로그 출력 여부 저장
 
-
-  // 현재 로그인 상태 콘솔로 확인
-  console.log(" Header 렌더링됨, 현재 user:", user);
-  console.log("현재 user 상태:", user);
+  // 로그인 상태 로그 1회만 출력
+  useEffect(() => {
+    if (!loggedOnce.current) {
+      console.log("[Header] 현재 로그인 상태:", user);
+      loggedOnce.current = true; // 이후엔 로그 안 찍힘
+    }
+  }, [user]);
 
   return (
-    <AppBar position="relative" color="transaparent" className={styles.appBar}>
+    <AppBar position="relative" color="transparent" className={styles.appBar}>
       <Toolbar className={styles.toolbar}>
         {/* 로고 */}
         <Typography variant="h6" color="inherit" className={styles.logo}
-          onClick= {() => navigate("/")}
+          onClick={() => navigate("/")}
         >
           ⚾ PHOENIX
         </Typography>
@@ -46,7 +50,7 @@ const Header = () => {
                   fontWeight: "500",
                 }}
               >
-                {user.mid}님 
+                {user.mid}님
               </Typography>
               <Button
                 variant="outlined"

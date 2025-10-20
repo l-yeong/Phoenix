@@ -14,8 +14,9 @@ import { AuthProvider } from "./api/loginstate.jsx";
 
 function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
+    <AuthProvider>
+      <BrowserRouter>
+
         <Header />
         <Routes>
           {/* 🔴 메인 선택 페이지 */}
@@ -37,8 +38,9 @@ function App() {
           <Route path="/social/signup" element={<SocialSignUp />} />
         </Routes>
         <Footer />
-      </AuthProvider>
-    </BrowserRouter>
+
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 
