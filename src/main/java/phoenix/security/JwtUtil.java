@@ -139,12 +139,24 @@ public class JwtUtil {
         if(claims == null) return null;
 
         String mid = claims.getSubject(); // JWT의 subject(사용자 식별자)
+        Integer mno = claims.get("mno" , Integer.class); // JWT claim에서 회원번호 꺼냄
+
+        MembersDto member = new MembersDto();
+        member.setMno(mno);
+        member.setMid(mid);
+
         // 기본 권한 설정(ROLE_USER)
         UserDetails userDetails = new User(mid ,"" , Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")));
 
-        // 비밀번호 없이 UsernamePasswordAuthenticationToken 생성
-        return new UsernamePasswordAuthenticationToken(userDetails , "" , userDetails.getAuthorities());
+        // 인증 객체 생성
+        UsernamePasswordAuthenticationToken auth =
+                new UsernamePasswordAuthenticationToken( userDetails , "" , userDetails.getAuthorities());
 
-    }
+        auth.setDetails(mno);
+
+        // 비밀번호 없이 UsernamePasswordAuthenticationToken 생성
+        return auth;
+
+    } // func e
 
 } // class e
