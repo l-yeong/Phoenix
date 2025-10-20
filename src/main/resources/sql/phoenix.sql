@@ -56,7 +56,6 @@ create table seats(
     zno int not null,                         -- 구역 번호
     seat_no int not null,                     -- 좌석 번호
     senior boolean default false,             -- 시니어 전용 여부
-    gno int not null,                         -- 경기 번호 (외부 CSV/크롤링 데이터와 매칭)
     foreign key(zno) references zones(zno)
 );
 
@@ -67,6 +66,7 @@ create table reservations(
     rno int auto_increment primary key,       -- 예매 고유번호(PK)
     mno int not null,                         -- 회원 번호
     sno int not null,                         -- 좌석 번호
+    gno int not null,                         -- 경기 번호 (외부 CSV/크롤링 데이터와 매칭)
     reserved_at timestamp default current_timestamp,
     status enum('reserved','cancelled') default 'reserved',
     foreign key(mno) references members(mno),
@@ -151,17 +151,17 @@ insert into members (
 
 
 -- 좌석
-insert into seats(zno, seat_no, senior , gno) values
-(10001,101,false,101),
-(10001,102,false,102),
-(10002,201,false,103),
-(10002,202,false,104),
-(10003,301,false,104),
-(10004,401,false,105),
-(10005,501,false,105),
-(10006,601,true,106),
-(10007,701,false,106),
-(10008,801,false,107);
+insert into seats(zno, seat_no, senior) values
+(10001,101,false),
+(10001,102,false),
+(10002,201,false),
+(10002,202,false),
+(10003,301,false),
+(10004,401,false),
+(10005,501,false),
+(10006,601,true),
+(10007,701,false),
+(10008,801,false);
 
 -- 예매
 insert into reservations(mno, sno, status ,gno) values

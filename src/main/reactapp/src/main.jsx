@@ -5,10 +5,12 @@ import CssBaseline from "@mui/material/CssBaseline";
 import TicketQR from "./features/tickets/TicketQR.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
+  // <React.StrictMode>
+  <div>
     <CssBaseline />
     <App />
-  </React.StrictMode>
+  </div>
+  // </React.StrictMode>
 );
 
 // // // QR 이미지테스트 용도
