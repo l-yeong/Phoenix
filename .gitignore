@@ -45,3 +45,5 @@ bin/
 logs/
 *.log
 *.gz
+src/main/resources/application.properties
+logs/app.log
