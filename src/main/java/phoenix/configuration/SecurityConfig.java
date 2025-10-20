@@ -123,7 +123,6 @@ public class SecurityConfig {
                                 "/members/verify-email",
                                 "/members/token/refresh",
                                 "/members/logout",
-                                "/tickets/**",
                                 "/oauth/**" // 소셜 로그인 허용
 
                         ).permitAll()
