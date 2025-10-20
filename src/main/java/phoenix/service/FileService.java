@@ -14,6 +14,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
@@ -88,26 +92,77 @@ public class FileService {
         return gameMap.get(gno);
     }// func end
 
+
     /**
+     * 티켓 만료기간 위한 메소드
+     * 공백 제거 유틸 (null-safe trim)
+     */
+    private static String trimOrNull(String s) {
+        return (s == null) ? null : s.trim();
+    }
+
+
+    /**
+     * 티켓 만료기간 위한 메소드
+     * 날짜 문자열 파서 (다양한 포맷 지원)
+     * 지원 포맷: "2025-10-20", "2025/10/20", "20251020"
+     */
+    private static LocalDate parseDate(String s) {
+        List<DateTimeFormatter> fs = List.of(
+                DateTimeFormatter.ISO_LOCAL_DATE    // 2025-10-20
+        );
+        for (DateTimeFormatter f : fs) {
+            try { return LocalDate.parse(s, f); } catch (Exception ignore) {}
+        }
+        throw new IllegalArgumentException("지원하지 않는 날짜 포맷: " + s);
+    }//func end
+
+    /**
+     * 티켓 만료기간 위한 메소드
+     * 시간 문자열 파서 (HH:mm 또는 HH:mm:ss 지원)
+     */
+    private static LocalTime parseTime(String s) {
+        List<DateTimeFormatter> fs = List.of(
+                DateTimeFormatter.ofPattern("HH:mm")    // 19:05
+        );
+        for (DateTimeFormatter f : fs) {
+            try { return LocalTime.parse(s, f); } catch (Exception ignore) {}
+        }
+        throw new IllegalArgumentException("지원하지 않는 시간 포맷: " + s);
+    }
+
+
+    /**
+     * 티켓 만료기간 위한 헬퍼메소드
      * 지난 경기(gno) 목록 추출
      * - 오늘(LocalDate.now()) 기준으로 날짜가 지난 경기만 추출
-     * - CSV 컬럼 중 경기일자 컬럼명("game_date")은 실제 파일에 맞게 수정 필요
+     * - time이 비어 있으면 당일 23:59:59로 간주
      */
-    public List<Integer> getExpiredGames(){
+    public List<Integer> getExpiredGames() {
         List<Integer> expired = new ArrayList<>();
-        LocalDate today = LocalDate.now();
-        for(Map.Entry<String,Map<String,String>> entry : gameMap.entrySet()){
+        // KST 현재 시각
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
+
+        //gameMap(CSV 에서 읽은 전체 경기 데이터)
+        for (Map.Entry<String, Map<String, String>> entry : gameMap.entrySet()) {
             String gnoStr = entry.getKey();
-            String dateStr = entry.getValue().get("date");
-            if(dateStr == null || dateStr.isEmpty())continue;
+            Map<String, String> row = entry.getValue();
+
+            // CSV 컬럼 데이터 추출
+            String dateStr = trimOrNull(row.get("date"));
+            String timeStr = trimOrNull(row.get("time"));
 
             try {
-                LocalDate gameDate = LocalDate.parse(dateStr);
-                if(gameDate.isBefore(today)){
-                    expired.add(Integer.parseInt(gnoStr));
-                }//if end
+                    LocalDate d = parseDate(dateStr);
+                    LocalTime t = (timeStr == null || timeStr.isEmpty())
+                            ? LocalTime.of(23, 59, 59) //CSV 경기날짜 공백일 경우 23:59:59에 티켓 만료
+                            : parseTime(timeStr);
+                    LocalDateTime gameDT = LocalDateTime.of(d,t);
+                    if(gameDT.isBefore(now)){
+                        expired.add(Integer.parseInt(gnoStr));
+                    }//if end
             } catch (Exception e) {
-                System.out.println("날짜변환실패 gno ="+gnoStr + "date="+dateStr);
+                System.out.println("[getExpiredGames] 날짜/시간 파싱 실패 gno=" + gnoStr + dateStr + timeStr);
             }//catch end
         }//for end
         return expired;
