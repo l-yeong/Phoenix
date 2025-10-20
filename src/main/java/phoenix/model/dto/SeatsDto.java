@@ -30,14 +30,14 @@ public class SeatsDto {
      * {
      *   "mno": "u123",
      *   "gno": "SHOW-2025-10-16-19:00",
-     *   "seatId": "A1"
+     *   "sno": "A1"
      * }
      */
     @Data
     public static class SelectRequest {
         private String mno;
         private String gno;
-        private String seatId;
+        private String sno;
     }
 
     /**
@@ -112,7 +112,7 @@ public class SeatsDto {
     public static class ConfirmRequest {
         private String mno;
         private String gno;
-        private List<String> seatIds;
+        private List<String> seats;
     }
 
     /**
@@ -153,5 +153,13 @@ public class SeatsDto {
     @Data @AllArgsConstructor @NoArgsConstructor
     public static class MapResponse {
         private Map<String, String> statusBySeat;
+    }
+
+    // SeatsDto.java 내부에 추가
+    @Data @AllArgsConstructor @NoArgsConstructor
+    public static class MapRequest {
+        private int uno;
+        private int gno;
+
     }
 }

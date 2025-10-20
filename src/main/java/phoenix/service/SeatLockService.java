@@ -38,22 +38,22 @@ public class SeatLockService {  // class start
     // RMapCache<K, V> => TTL 지원 Map 형태임, put에 key랑 value를 넣고 만료시간과 만료 타입을 넣어주면 됨.
     private RMapCache<String, String> holdMap() { return redisson.getMapCache(RedisKeys.SEAT_HOLD_MAP); }
     // RSet<V> => Redis 중복 없는 집합, 중복을 방지한다!
-    private RSet<String> soldSet(String showId) { return redisson.getSet(RedisKeys.SEAT_SOLD_SET + ":" + showId); }
+    private RSet<String> soldSet(String gno) { return redisson.getSet(RedisKeys.SEAT_SOLD_SET + ":" + gno); }
     // RSetCache<V> : TTL 정할 수 있는 집합
-    private RSetCache<String> userHoldSet(String userId, String showId) { return redisson.getSetCache("user:hold:" + userId + ":" + showId); }
+    private RSetCache<String> userHoldSet(String uno, String gno) { return redisson.getSetCache("user:hold:" + uno + ":" + gno); }
     // RLock => 분산 락 , 여러 요청에서 단 하나만 선택하여 락을 거는 것.
     private RLock seatLock(String seatKey) { return redisson.getLock("seat:lock:" + seatKey); }
     // 좌석 유틸 키
-    private String seatKey(String showId, String seatId) { return showId + ":" + seatId; }
+    private String seatKey(String gno, String sno) { return gno + ":" + sno; }
 
     // 메소드 부분
 
     // 현재 유저가 게이트세션 을 보유 중인지 확인하고, 없을 시에는 좌석에 대한 권한을 부여하지 않는 헬퍼 메소드
-    private boolean hasActiveSession(String userId) {
-        // session:{userId} -> "alive" 를 TTL 로 가지고 있으면 true
+    private boolean hasActiveSession(String uno) {
+        // session:{uno} -> "alive" 를 TTL 로 가지고 있으면 true
         // getBucket => 레디슨에 해당 단일 객체 참조주소값 가져옴.
         // get(), set() , isExists()등 매소드를 할당해줌
-        return redisson.getBucket(RedisKeys.SESSION_PREFIX + userId).isExists();
+        return redisson.getBucket(RedisKeys.SESSION_PREFIX + uno).isExists();
     }   // func end
 
     // 중복 예매 여부 확인 (공연/회차 단위)
@@ -61,76 +61,68 @@ public class SeatLockService {  // class start
     // 그것을 .get()해서 Redis 타입을 자동 파싱해서 자바 형식으로 가져와 true인지 false인지 확인한다.
     // Boolean 타입인 이유는 가져온 Bucket이 null일 경우 nullPointException이 일어날 수 있기 때문에
     // 안전하게 처리한다. 암튼 가져와서 비교하고 이미 예약 되어있으면 false를 반환한다.
-    private boolean hasUserAlreadyBooked(String userId, String showId) {
-        RBucket<Boolean> b = redisson.getBucket("user_booking:" + userId + ":" + showId);
+    private boolean hasUserAlreadyBooked(String uno, String gno) {
+        RBucket<Boolean> b = redisson.getBucket("user_booking:" + uno + ":" + gno);
         return Boolean.TRUE.equals(b.get());
     }   // func end
 
     // 예매 완료 시 기록
-    private void markUserAsBooked(String userId, String showId) {
+    private void markUserAsBooked(String uno, String gno) {
         // 6시간 캐시 (원하면 공연 시작 시각까지 남은 시간으로 설정)
         // getBucket => 레디슨에 해당 단일 객체 참조주소값 가져옴.
         // () 그 안에값은 그 객체의 key
         // .set => 안에 value를 지정. true고 6시간동안 ttl 설정
-        redisson.getBucket("user_booking:" + userId + ":" + showId)
+        redisson.getBucket("user_booking:" + uno + ":" + gno)
                 .set(true, 6, TimeUnit.HOURS);
     }   // func end
 
-//    // 서버 시작 시 DB 에서 매진 좌석을 불러옴 , Redis 캐시 복원하는 거임.
-//    @PostConstruct
-//    public void initSoldSeatsCache() {
-//
-//        try {
-//            /// db 에서 가져와야함!!! 여기 수정해야함. 무조건 수정해야함
-//            List<String> getSoldSeats = new ArrayList<>();
-//                    ///seatRepository.findAllSoldSeats(); 수정해야함
-//
-//            // db 에서 가져온 매진된 좌석이 없으면 print 하고 return
-//            if (getSoldSeats == null || getSoldSeats.isEmpty()) {
-//                System.out.println("[SeatLockService] 초기화: 매진 좌석 없음.");
-//                return;
-//            }   // if end
-//
-//            // Redis 캐시에 이미 매진된 좌석이 있으면 DB에 가져온 정보로 초기화하지 않음, 중복을 방지하기 위한 것
-//            RSet<String> sold = soldSet();
-//            if (sold.isEmpty()) {
-//                // 만약에 Redis 캐시가 비어있다면 addAll, 다 넣어줌.
-//                sold.addAll( getSoldSeats );
-//                System.out.printf("[SeatLockService] 초기화 완료: DB에서 %d개 좌석 복원됨.%n", getSoldSeats.size());
-//            } else {
-//                System.out.printf("[SeatLockService] Redis soldSet 이미 존재 (%d개). 초기화 생략.%n", sold.size());
-//            }   // if end
-//
-//        } catch (Exception e) { // 예외 처리
-//            System.out.println("[SeatLockService] soldSet 초기화 실패: " + e.getMessage());
-//        }   // try end
-//
-//    }   // func end
+    @PostConstruct
+    public void initSeatListCache() {
+        try {
+            Map<Integer, List<String>> seatByGame = seatsMapper.findAllSeatNamesGroupedByGame();
+            if (seatByGame == null || seatByGame.isEmpty()) {
+                System.out.println("[SeatLockService] 초기화: 좌석 데이터 없음");
+                return;
+            }
+
+            for (Map.Entry<Integer, List<String>> entry : seatByGame.entrySet()) {
+                String gno = String.valueOf(entry.getKey());
+                RSet<String> allSeats = redisson.getSet("allSeats:" + gno); // 네 구조 그대로 사용 가능
+                if (allSeats.isEmpty()) {
+                    allSeats.addAll(entry.getValue());
+                }
+            }
+            System.out.println("[SeatLockService] 좌석 목록 캐시 완료");
+
+        } catch (Exception e) {
+            System.out.println("[SeatLockService] 좌석 목록 초기화 실패: " + e.getMessage());
+        }
+    }
 
 
 
     // 좌석 선택 메소드 => 프론트에서 좌석 버튼 클릭 시마다 메소드 실행함
     // 실패 경우는  세션 없음 / 매진석 / 이미 임시 4좌석 보유 / 락 경쟁으로 인하여 내가 실패한 경우
-    public int tryLockSeat(String userId, String showId,  String seatId) throws InterruptedException {
+    public int tryLockSeat(String uno, String gno,  String sno) throws InterruptedException {
 
         // 게이트에 없으면 false(=실패) 반환 (보안)
-        if (!hasActiveSession(userId)) return -1;
+        if (!hasActiveSession(uno)) return -1;
 
         // 만약 중복 예매라면 실패 반환
-        if (hasUserAlreadyBooked(userId, showId)) return -2;
+        if (hasUserAlreadyBooked(uno, gno)) return -2;
 
         // 해당 선택한 좌석이 매진된 좌석이면 false 반환(실패)
-        if (soldSet(showId).contains(seatId)) return -3;
+        if (soldSet(gno).contains(sno)) return -3;
 
         // 해당 유저가 이미 4좌석을 선택했다면 선택 불가 false 반환(실패)
-        // userHoldSet 즉, userId가 들어가 있는 집합을 만들어서 그것을 myHolds의 변수에 대입
-        RSetCache<String> myHolds = userHoldSet(userId , showId);
+        // userHoldSet 즉, uno가 들어가 있는 집합을 만들어서 그것을 myHolds의 변수에 대입
+        RSetCache<String> myHolds = userHoldSet(uno , gno);
 
         // 그 유저의 집합(좌석 수를 관리함) 것의 size 즉 좌석 갯수가 내가 지정한 4개의 좌석보다 크면 실패, size는 0부터 세는 것을 참고하자
         if (myHolds.size() >= MAX_SEATS_PER_USER) return -4;
 
-        // 좌석 키 생성 (showId:seatId)
-        String key = seatKey(showId, seatId);
+        // 좌석 키 생성 (gno:sno)
+        String key = seatKey(gno, sno);
 
         // 좌석에 대한 분산락 (RLock)을 즉시 시도한다.
         RLock lock = seatLock(key);
@@ -146,10 +138,10 @@ public class SeatLockService {  // class start
 
         // 락 성공 했으므로 내 임시 좌석으로 기록한다. 만료는 TTL=120초, 시간이 지나면 자동 만료됨!
         // holdMap()은 위에 내가 정의한 것 , 기록할 것은 좌석, 내id, 내가 정의한 120, 초로 단위를 맞춤
-        holdMap().put(key, userId, HOLD_TTL_SECONDS, TimeUnit.SECONDS);
+        holdMap().put(key, uno, HOLD_TTL_SECONDS, TimeUnit.SECONDS);
 
         // 내 좌석 정보 Redisson 집합에 좌석 정보를 기록한다. => 4좌석 초과면 막아야 하니까
-        myHolds.add(seatId, HOLD_TTL_SECONDS, TimeUnit.SECONDS);
+        myHolds.add(sno, HOLD_TTL_SECONDS, TimeUnit.SECONDS);
 
         // 성공 반환
         return 1;
@@ -157,21 +149,21 @@ public class SeatLockService {  // class start
     }   // func end
 
     // 좌석 해제 메소드 => 내가 잡아둔 좌석을 다시 클릭하면 해제하는 메소드
-    public boolean releaseSeat(String userId, String seatId, String showId) {
+    public boolean releaseSeat(String uno, String sno, String gno) {
 
-        // 좌석 키 생성 (showId:seatId)
-        String key = seatKey(showId, seatId);
+        // 좌석 키 생성 (gno:sno)
+        String key = seatKey(gno, sno);
 
         // 내가 임시로 소유 중인지 확인한다. (남의 좌석 해제 금지) , holdMap() 호출한다 해당 좌석을
         String holder = holdMap().get(key);
         // holder가 없거나 holder의 유저 정보가 일치하지 않으면 해제 실패
-        if (holder == null || !holder.equals(userId)) return false;
+        if (holder == null || !holder.equals(uno)) return false;
 
         // 임시 소유 좌석 정보를 제거한다.
         holdMap().remove(key);
 
         // 해당 유저의 좌석 정보를 삭제한다. 좌석 취소하고 4개 좌석 중 다른 좌석을 선택해야 하는 경우가 있기 때문
-        userHoldSet(userId , showId).remove(seatId);
+        userHoldSet(uno , gno).remove(sno);
 
         // 좌석에 대한 락 해제한다. 다른 사람이 예매 해야함.
         try {
@@ -189,52 +181,52 @@ public class SeatLockService {  // class start
 
     // 결제 메소드
     // 성공 한 경우 SOLD set 에 등록하고 holdMap/userHoldSet 에서 제거 db 저장함.
-    public boolean confirmSeats(String userId, List<String> seatIds, String showId, StringBuilder failReason ) {
+    public boolean confirmSeats(String uno, List<String> snos, String gno, StringBuilder failReason ) {
 
         // 게이트 체크함, 이유는 게이트 만료 후 구매를 방지한다.
-        if (!hasActiveSession(userId)) { failReason.append("not exist session"); return false; }
+        if (!hasActiveSession(uno)) { failReason.append("not exist session"); return false; }
 
         // 중복 예매 최종 방어
-        if (hasUserAlreadyBooked(userId, showId)) {
+        if (hasUserAlreadyBooked(uno, gno)) {
             failReason.append("already booked this show");
             return false;
         }
 
         // 유효성 검사 => 내가 찜한 좌석인지 , 혹은 자바 오류로 매진이 아닌지
-        for (String seatId : seatIds) {
+        for (String sno : snos) {
 
             // 만약 Redis 매진 집합에 좌석넘버가 포함되어있다면 실패 반환
-            if (soldSet(showId).contains(seatId)) { failReason.append(seatId).append("already sold"); return false; }
+            if (soldSet(gno).contains(sno)) { failReason.append(sno).append("already sold"); return false; }
 
             // 좌석 키 설정함
-            String key = seatKey(showId, seatId);
+            String key = seatKey(gno, sno);
             // 임시 찜한 좌석을 가져온다.
             String holder = holdMap().get(key);
 
             // holder가 없거나 그것이 유저정보랑 일치하지 않으면
-            if (holder == null || !holder.equals(userId)) {
+            if (holder == null || !holder.equals(uno)) {
                 // 실패 반환
-                failReason.append(seatId).append(" not held by you; ");
+                failReason.append(sno).append(" not held by you; ");
                 return false;
             }   // if end
         }   // for end
 
         /// 모든게 괜찮다면 구매처리, 임시 소유 제거 => 꼭 !!!! db 에도 해야함!!! // 추가해야함.
-        for (String seatId : seatIds) {
+        for (String sno : snos) {
             // 매진 집합에 추가한다
-            soldSet(showId).add(seatId);
+            soldSet(gno).add(sno);
             // 키 설정하기
-            String key = seatKey(showId, seatId);
+            String key = seatKey(gno, sno);
             // 임시 소유 제거한다
             holdMap().remove(key);
             // 내 임시 목록에서 제거한다.
-            userHoldSet(userId , showId).remove(seatId);
+            userHoldSet(uno , gno).remove(sno);
             // 즉시 매진 처리
             try { seatLock(key).forceUnlock(); } catch (Exception ignore) {}
         }   // for end
 
         // 공연 단위 “이미 예매” 기록
-        markUserAsBooked(userId, showId);
+        markUserAsBooked(uno, gno);
 
         return true;
     }   // func end
@@ -249,13 +241,13 @@ public class SeatLockService {  // class start
             for (Map.Entry<String, String> entry : holdMap().entrySet()) {
                 // 좌석이랑 유저 정보 다 꺼냄 반복문 순회마다
                 String key = entry.getKey();     // seatKey
-                String userId = entry.getValue();
+                String uno = entry.getValue();
 
                 // 해당 사용자의 게이트 세션 존재 여부 확인
                 // getBucket() => Redis 에서 해당 key에 맞는 value 값을 객체로 가지고
                 // get(), set() , isExists()등 매소드를 할당해줌
                 // isExists() : key가 존재하나 묻는 메소드
-                boolean alive = redisson.getBucket(RedisKeys.SESSION_PREFIX + userId).isExists();
+                boolean alive = redisson.getBucket(RedisKeys.SESSION_PREFIX + uno).isExists();
 
                 // 세션 만료된 사용자만 정리
                 if (!alive) {
@@ -269,11 +261,11 @@ public class SeatLockService {  // class start
                     }   // if end
 
                     // 각각 정보들을 가져온다.
-                    String showId = key.substring(0, idx);
-                    String seatId = key.substring(idx + 1);
+                    String gno = key.substring(0, idx);
+                    String sno = key.substring(idx + 1);
 
                     holdMap().remove(key);        // 좌석 hold 제거
-                    userHoldSet(userId , showId).remove(seatId); // 내가 게이트 해제 전 좌석 보유한 것들도 보유 목록에서도 제거
+                    userHoldSet(uno , gno).remove(sno); // 내가 게이트 해제 전 좌석 보유한 것들도 보유 목록에서도 제거
 
                     try {
                         // 소유자와 무관하게 좌석 락 즉시 해제
@@ -289,59 +281,36 @@ public class SeatLockService {  // class start
 
     }   // func end
 
-    /**
-     * [좌석 상태 조회]
-     * - DB의 예매상태(reserved/cancelled) + Redis 임시보유 상태를 결합하여 결과를 반환.
-     * - 상태 규칙:
-     *   SOLD         → reservations.status='reserved' or soldSet()에 포함
-     *   HELD_BY_ME   → holdMap()에 있고 holder==me
-     *   HELD         → holdMap()에 있고 holder!=me
-     *   AVAILABLE    → 위 두 조건에 해당하지 않음
-     */
-    public Map<String, String> getSeatStatusMap(int gno, String requesterUserId) {
-
-        // 1️⃣ DB 조회 (좌석 + 예매 상태)
-        List<Map<String, Object>> seatRows = seatsMapper.getSeatsWithReservationStatus(gno);
-
-        // 2️⃣ Redis 구조
+    public Map<String, String> getSeatStatusMap(int gno, int uno) {
         String showKey = String.valueOf(gno);
-        RSet<String> redisSoldSet = soldSet(showKey);          // 매진 캐시
-        RMapCache<String, String> redisHoldMap = holdMap();    // 임시 보유 캐시 (key = gno:seatName)
+        RSet<String> allSeats = redisson.getSet("allSeats:" + showKey);
+        RSet<String> soldSet = soldSet(showKey);
+        RMapCache<String, String> holdMap = holdMap();
 
-        // 3️⃣ 결과 매핑
         Map<String, String> result = new LinkedHashMap<>();
 
-        for (Map<String, Object> row : seatRows) {
-            String seatName = String.valueOf(row.get("seatName"));
-            String seatKey = showKey + ":" + seatName;
+        for (String seatName : allSeats) {
+            String seatKey = seatKey(showKey, seatName);
 
-            int isSold = (row.get("is_sold") != null)
-                    ? ((Number) row.get("is_sold")).intValue()
-                    : 0;
-
-            // (1) SOLD 판정 (DB or Redis)
-            if (isSold == 1 || redisSoldSet.contains(seatName)) {
+            // SOLD
+            if (soldSet.contains(seatName)) {
                 result.put(seatName, "SOLD");
                 continue;
-            }
+            }   // if end
 
-            // (2) HELD / HELD_BY_ME 판정
-            String holder = redisHoldMap.get(seatKey);
+            // HELD / HELD_BY_ME
+            String holder = holdMap.get(seatKey);
             if (holder != null) {
-                if (holder.equals(requesterUserId)) {
-                    result.put(seatName, "HELD_BY_ME");
-                } else {
-                    result.put(seatName, "HELD");
-                }
+                result.put(seatName, holder.equals(String.valueOf(uno)) ? "HELD_BY_ME" : "HELD");
                 continue;
-            }
+            }   // if end
 
-            // (3) AVAILABLE
+            // AVAILABLE
             result.put(seatName, "AVAILABLE");
-        }
+        }   // for end
 
         return result;
-    }
+    }   // func end
 
 
 

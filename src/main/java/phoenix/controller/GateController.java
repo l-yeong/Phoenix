@@ -21,12 +21,12 @@ public class GateController {   // class start
 
     // 대기열 등록 메소드
     // 사용자가 예매 페이지 입장 를 했을 때 호출되는 로직
-    // 요청: EnqueueRequest(userId, showId)
+    // 요청: EnqueueRequest(uno, showId)
     // 응답: EnqueueResponse(queued, waiting)
     @PostMapping("/enqueue")
     public ResponseEntity<GateDto.EnqueueResponse> enqueue (@RequestBody GateDto.EnqueueRequest req) {
         // 서비스 호출 (실제 대기열 등록 로직 실행)
-        var res = gateService.enqueue(req.getUserId(), req.getShowId());
+        var res = gateService.enqueue(req.getUno(), req.getGno());
 
         // 응답 DTO로 변환하여 반환 (queued = 등록여부, waiting = 대기열 길이)
         return ResponseEntity.ok(new GateDto.EnqueueResponse(res.queued(), res.waiting()));
@@ -35,12 +35,12 @@ public class GateController {   // class start
 
     // 퇴장 처리 메소드
     // 사용자가 예매를 마쳤거나 브라우저를 닫을 때 호출된다
-    // 요청: LeaveRequest(userId)
+    // 요청: LeaveRequest(uno)
     // 응답: LeaveResponse(success)
     // consumes
     @PostMapping(value = "/leave", consumes = MediaType.ALL_VALUE)
     public ResponseEntity<GateDto.LeaveResponse> leave(@RequestBody GateDto.LeaveRequest req) {
-        boolean ok = gateService.leave(req.getUserId());
+        boolean ok = gateService.leave(req.getUno());
         return ResponseEntity.ok(new GateDto.LeaveResponse(ok));
     }   // func end
 
@@ -65,24 +65,24 @@ public class GateController {   // class start
     // 단, 최대 2회까지만 가능 (3번째 시도는 false 반환)
     // TTL이 만료된 세션은 연장 불가
     // 응답: 연장 결과 코드 (1=1회차 성공, 2=2회차 성공, -1=실패)
-    @PostMapping("/extend/{userId}")
-    public ResponseEntity<Integer> extend(@PathVariable String userId) {
-        int result = gateService.extendSession(userId);
+    @PostMapping("/extend/{uno}")
+    public ResponseEntity<Integer> extend(@PathVariable String uno) {
+        int result = gateService.extendSession(uno);
         return ResponseEntity.ok(result);
     }   // func end
 
 
     // 프론트에서 확인할 것 세션이 있는지! 주기적 확인
-    @GetMapping("/check/{userId}")
-    public ResponseEntity<Map<String, Boolean>> check(@PathVariable String userId) {
-        boolean ready = gateService.isEntered(userId);
+    @GetMapping("/check/{uno}")
+    public ResponseEntity<Map<String, Boolean>> check(@PathVariable String uno) {
+        boolean ready = gateService.isEntered(uno);
         return ResponseEntity.ok(Map.of("ready", ready));
     }   // func end
 
     // 내가 대기열 몇 번째인지 알려주는 메소드
-    @GetMapping("/position/{userId}")
-    public ResponseEntity<Map<String, Integer>> position(@PathVariable String userId) {
-        Integer pos = gateService.positionOf(userId);
+    @GetMapping("/position/{uno}")
+    public ResponseEntity<Map<String, Integer>> position(@PathVariable String uno) {
+        Integer pos = gateService.positionOf(uno);
         // 정책: null → -1 로 내려 “대기열에 없음” 표현
         return ResponseEntity.ok(Map.of("position", pos == null ? -1 : pos));
     }   // func end
