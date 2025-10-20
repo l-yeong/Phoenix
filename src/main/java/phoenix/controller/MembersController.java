@@ -75,9 +75,19 @@ public class MembersController {
         String token = membersService.login(mid , password );
 
         if( token != null ){
+
+            // 회원 정보 조회 (mno , mid 포함)
+            MembersDto member = membersService.findByMid(mid);
+
+            Map<String , Object> data = Map.of(
+                    "accessToken" , token,
+                    "mid" , member.getMid(),
+                    "mno" , member.getMno()
+            );
+
             return ResponseEntity
                     .ok() // 200 OK
-                    .body(new ApiResponseUtil<>(true , "로그인 성공" , token));
+                    .body(new ApiResponseUtil<>(true , "로그인 성공" , data));
         } else {
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED) // 401 Unauthorized
