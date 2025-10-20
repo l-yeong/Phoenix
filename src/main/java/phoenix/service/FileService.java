@@ -13,9 +13,8 @@ import java.io.FileReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.time.LocalDate;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -88,5 +87,30 @@ public class FileService {
     public Map<String,String> getGame(int gno){
         return gameMap.get(gno);
     }// func end
+
+    /**
+     * 지난 경기(gno) 목록 추출
+     * - 오늘(LocalDate.now()) 기준으로 날짜가 지난 경기만 추출
+     * - CSV 컬럼 중 경기일자 컬럼명("game_date")은 실제 파일에 맞게 수정 필요
+     */
+    public List<Integer> getExpiredGames(){
+        List<Integer> expired = new ArrayList<>();
+        LocalDate today = LocalDate.now();
+        for(Map.Entry<String,Map<String,String>> entry : gameMap.entrySet()){
+            String gnoStr = entry.getKey();
+            String dateStr = entry.getValue().get("date");
+            if(dateStr == null || dateStr.isEmpty())continue;
+
+            try {
+                LocalDate gameDate = LocalDate.parse(dateStr);
+                if(gameDate.isBefore(today)){
+                    expired.add(Integer.parseInt(gnoStr));
+                }//if end
+            } catch (Exception e) {
+                System.out.println("날짜변환실패 gno ="+gnoStr + "date="+dateStr);
+            }//catch end
+        }//for end
+        return expired;
+    }//func end
 
 }//class end
