@@ -2,8 +2,10 @@ package phoenix;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
+@EnableScheduling //자동 티켓만료 필요한 스케줄링
 public class AppStart {
     public static void main(String[] args) {
         SpringApplication.run(AppStart.class);
