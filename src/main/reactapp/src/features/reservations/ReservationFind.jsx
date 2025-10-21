@@ -108,7 +108,7 @@ export default function reservationFind( props ){
                     <li>어웨이팀 선발투수 : {reservation.game?.awayPitcher ?? "-"}</li>
                     <li>경기날짜 : {reservation.game?.date ?? "-"}</li>
                     <li>경기시간 : {reservation.game?.time ?? "-"}</li>
-                    <li>취소여부 : {cancel ? "취소 가능" : "취소 불가"}</li>
+                    <li>취소가능여부 : {cancel ? "취소 가능" : "취소 불가"}</li>
                 </ul>
                 <button disabled={!cancel}>좌석교환</button>
                 <button onClick={reserveCancle} disabled={!cancel}>예매취소</button>

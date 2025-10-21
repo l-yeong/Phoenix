@@ -48,13 +48,13 @@ public class ReservationExchangesController {
     /**
      * 교환요청 거절
      *
-     * @param from_rno 요청자 예매번호
+     * @param rno 요청자 예매번호
      * @return boolean 성공 : true , 실패 : false
      */
     @DeleteMapping("")
-    public ResponseEntity<?> rejectChange(@RequestParam int from_rno){
-        ReservationExchangesDto dto = redisService.getRequest(from_rno);
-        boolean result = reservationexchangesService.rejectChange(from_rno);
+    public ResponseEntity<?> rejectChange(@RequestParam int rno){
+        ReservationExchangesDto dto = redisService.getRequest(rno);
+        boolean result = reservationexchangesService.rejectChange(rno);
         if (result){
             if (dto != null){
                 String msg = "좌석 교환 요청이 거절되었습니다.";
@@ -67,14 +67,14 @@ public class ReservationExchangesController {
     /**
      * 교환요청 수락
      *
-     * @param from_rno 요청자 예매번호
+     * @param rno 요청자 예매번호
      * @return boolean 성공 : true , 실패 : false0
      */
     @PostMapping("/accept")
-    public ResponseEntity<?> acceptChange(@RequestParam int from_rno ){
+    public ResponseEntity<?> acceptChange(@RequestParam int rno ){
         int mno = membersService.getLoginMember().getMno();
-        ReservationExchangesDto dto = redisService.getRequest(from_rno);
-        boolean result = reservationexchangesService.acceptChange(mno, from_rno);
+        ReservationExchangesDto dto = redisService.getRequest(rno);
+        boolean result = reservationexchangesService.acceptChange(mno, rno);
         if (result){
             if (dto != null){
                 String msg = "좌석 교환 요청이 수락되었습니다.";
