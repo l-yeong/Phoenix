@@ -23,7 +23,6 @@ public class ReservationsController {
     /**
      * 예매내역조회
      *
-     * @param session
      * @return List<Map<String,Object>>
      */
     @GetMapping("/print")
@@ -54,12 +53,11 @@ public class ReservationsController {
      * 예매내역 수정
      *
      * @param dto
-     * @param session
      * @return boolean
      */
     @PutMapping("/update")
-    public ResponseEntity<Boolean> reserveUpdate(@RequestBody ReservationsDto dto , HttpSession session){
-        int mno = (int) session.getAttribute("logMno");
+    public ResponseEntity<Boolean> reserveUpdate(@RequestBody ReservationsDto dto ){
+        int mno = membersService.getLoginMember().getMno();
         boolean result = reservationsService.reserveUpdate(dto.getSno(),dto.getRno(),mno);
         return ResponseEntity.ok().body(result);
     }// func end
@@ -68,12 +66,11 @@ public class ReservationsController {
      * 예매취소
      *
      * @param rno
-     * @param session
      * @return boolean
      */
     @PutMapping("/cancle")
-    public ResponseEntity<Boolean> reserveCancle(@RequestParam int rno , HttpSession session){
-        int mno = (int) session.getAttribute("logMno");
+    public ResponseEntity<Boolean> reserveCancle(@RequestParam int rno ){
+        int mno = membersService.getLoginMember().getMno();
         boolean result = reservationsService.reserveCancle(rno , mno);
         return ResponseEntity.ok().body(result);
     }// func end

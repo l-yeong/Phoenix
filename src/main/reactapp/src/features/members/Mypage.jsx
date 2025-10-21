@@ -81,8 +81,8 @@ export default function Mypage() {
                                     <tr key={idx}>
                                         <td>{r?.reservation?.rno ?? "-"}</td>
                                         <td>{r?.reservation?.sno ?? "-"}</td>
-                                        <td>{r?.game?.homeTeam ?? "-"}</td>  {/* null-safe */}
-                                        <td>{r?.game?.awayTeam ?? "-"}</td>  {/* null-safe */}
+                                        <td>{r?.game?.homeTeam ?? "-"}</td>  
+                                        <td>{r?.game?.awayTeam ?? "-"}</td>  
                                         <td>
                                             {r?.game?.date ?? "-"} {r?.game?.time ?? ""}
                                         </td>
