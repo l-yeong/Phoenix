@@ -772,3 +772,45 @@ java.lang.IllegalArgumentException: 비밀번호가 비어있습니다.
 25-10-21 15:17:37 c.z.h.HikariDataSource HikariPool-1 - Start completed. 
 25-10-21 15:17:37 o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer Global AuthenticationManager configured with UserDetailsService bean with name customUserDetailsService 
 25-10-21 15:17:38 o.s.b.a.e.w.EndpointLinksResolver Exposing 1 endpoint beneath base path '/actuator' 
+25-10-21 15:43:22 o.s.d.r.c.RepositoryConfigurationDelegate Multiple Spring Data modules found, entering strict repository configuration mode 
+25-10-21 15:43:22 o.s.d.r.c.RepositoryConfigurationDelegate Bootstrapping Spring Data Redis repositories in DEFAULT mode. 
+25-10-21 15:43:23 o.s.d.r.c.RepositoryConfigurationDelegate Finished Spring Data repository scanning in 34 ms. Found 0 Redis repository interfaces. 
+25-10-21 15:43:26 o.r.Version Redisson 3.27.2 
+25-10-21 15:43:27 o.r.c.ConnectionsHolder 1 connections initialized for localhost/127.0.0.1:6379 
+25-10-21 15:43:27 o.r.c.ConnectionsHolder 24 connections initialized for localhost/127.0.0.1:6379 
+25-10-21 15:43:28 c.z.h.HikariDataSource HikariPool-1 - Starting... 
+25-10-21 15:43:28 i.o.a.GlobalOpenTelemetry AutoConfiguredOpenTelemetrySdk found on classpath but automatic configuration is disabled. To enable, run your JVM with -Dotel.java.global-autoconfigure.enabled=true 
+25-10-21 15:43:28 c.z.h.p.HikariPool HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@46507dda 
+25-10-21 15:43:28 c.z.h.HikariDataSource HikariPool-1 - Start completed. 
+25-10-21 15:43:29 o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer Global AuthenticationManager configured with UserDetailsService bean with name customUserDetailsService 
+25-10-21 15:43:30 o.s.b.a.e.w.EndpointLinksResolver Exposing 1 endpoint beneath base path '/actuator' 
+25-10-21 16:01:37 i.l.c.p.CommandHandler null Unexpected exception during request: java.net.SocketException: Connection reset 
+java.net.SocketException: Connection reset
+	at java.base/sun.nio.ch.SocketChannelImpl.throwConnectionReset(SocketChannelImpl.java:394)
+	at java.base/sun.nio.ch.SocketChannelImpl.read(SocketChannelImpl.java:426)
+	at io.netty.buffer.PooledByteBuf.setBytes(PooledByteBuf.java:255)
+	at io.netty.buffer.AbstractByteBuf.writeBytes(AbstractByteBuf.java:1132)
+	at io.netty.channel.socket.nio.NioSocketChannel.doReadBytes(NioSocketChannel.java:356)
+	at io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:151)
+	at io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:796)
+	at io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:732)
+	at io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:658)
+	at io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)
+	at io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:998)
+	at io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:840)
+25-10-21 16:01:37 i.l.c.p.ConnectionWatchdog Reconnecting, last destination was localhost/127.0.0.1:6379 
+25-10-21 16:01:37 i.l.c.p.ConnectionWatchdog Cannot reconnect to [localhost/<unresolved>:6379]: Connection refused: getsockopt: localhost/127.0.0.1:6379 
+25-10-21 16:01:54 o.s.d.r.c.RepositoryConfigurationDelegate Multiple Spring Data modules found, entering strict repository configuration mode 
+25-10-21 16:01:54 o.s.d.r.c.RepositoryConfigurationDelegate Bootstrapping Spring Data Redis repositories in DEFAULT mode. 
+25-10-21 16:01:54 o.s.d.r.c.RepositoryConfigurationDelegate Finished Spring Data repository scanning in 30 ms. Found 0 Redis repository interfaces. 
+25-10-21 16:01:58 o.r.Version Redisson 3.27.2 
+25-10-21 16:01:58 o.r.c.ConnectionsHolder 1 connections initialized for localhost/127.0.0.1:6379 
+25-10-21 16:01:58 o.r.c.ConnectionsHolder 24 connections initialized for localhost/127.0.0.1:6379 
+25-10-21 16:01:59 c.z.h.HikariDataSource HikariPool-1 - Starting... 
+25-10-21 16:01:59 i.o.a.GlobalOpenTelemetry AutoConfiguredOpenTelemetrySdk found on classpath but automatic configuration is disabled. To enable, run your JVM with -Dotel.java.global-autoconfigure.enabled=true 
+25-10-21 16:01:59 c.z.h.p.HikariPool HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@6d7772d3 
+25-10-21 16:01:59 c.z.h.HikariDataSource HikariPool-1 - Start completed. 
+25-10-21 16:02:00 o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer Global AuthenticationManager configured with UserDetailsService bean with name customUserDetailsService 
+25-10-21 16:02:00 o.s.b.a.e.w.EndpointLinksResolver Exposing 1 endpoint beneath base path '/actuator' 

@@ -24,4 +24,5 @@ public class CaptchaController {
         boolean ok = captchaService.verify(req.getToken(), req.getAnswer());
         return ResponseEntity.ok(new CaptchaDto.VerifyResponse(ok));
     }
+
 }

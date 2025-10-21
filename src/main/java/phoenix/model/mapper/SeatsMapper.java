@@ -7,7 +7,6 @@ import java.util.Map;
 
 @Mapper
 public interface SeatsMapper {
-
         // 전 경기 공통 좌석 템플릿 (좌석명만)
         @Select("""
         SELECT seatName

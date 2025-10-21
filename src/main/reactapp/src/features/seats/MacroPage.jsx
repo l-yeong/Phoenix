@@ -16,6 +16,7 @@ export default function MacroPage() {
   const navigate = useNavigate();
   const { state } = useLocation();
 
+
   // ✅ mno/gno 로 받기 (state 우선, 없으면 sessionStorage fallback)
   const [mno, setMno] = useState(() => {
     if (typeof state?.mno === "number") return state.mno;

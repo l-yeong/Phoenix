@@ -87,5 +87,4 @@ public class GateController {   // class start
         return ResponseEntity.ok(Map.of("position", pos == null ? -1 : pos));
     }   // func end
 
-
 }   // class end

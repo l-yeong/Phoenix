@@ -9,6 +9,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class GameService {
 
+
     private final FileService fileService;
 
     public List<GameDto> findAll() {

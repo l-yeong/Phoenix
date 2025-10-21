@@ -77,6 +77,7 @@ public class SeatLockService {  // class start
                 .set(true, 6, TimeUnit.HOURS);
     }   // func end
 
+
     @PostConstruct
     public void initSeatListCache() {
         try {
