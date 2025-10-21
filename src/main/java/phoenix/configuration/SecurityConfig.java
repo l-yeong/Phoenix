@@ -136,6 +136,7 @@ public class SecurityConfig {
                                 "/gate/**",
                                 "/captcha/**",
                                 "/game/**",
+                                "/captcha/**",
                                 "/tickets/**",
                                 "/uploads/**", // QR이미지 허용
                                 "/reserve/**",
