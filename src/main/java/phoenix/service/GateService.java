@@ -6,8 +6,7 @@ import org.redisson.api.*;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import phoenix.model.dto.GameDto;
-import phoenix.model.dto.GateDto;
+
 import phoenix.util.RedisKeys;
 
 import java.util.concurrent.TimeUnit;
@@ -43,7 +42,7 @@ import java.util.concurrent.TimeUnit;
 @EnableScheduling // @Scheduled로 세션 만료 회수를 주기적으로 수행
 public class GateService {
     // 의존성 추가
-    // private final GameService gameService;
+    private final GameService gameService;
     private final RedissonClient redisson;
 
     // 동시 입장 허용 인원 (3명까지만 동시에 예매 페이지 접근 가능)
@@ -102,9 +101,9 @@ public class GateService {
     public EnqueueResult enqueue(int mno, int gno) {
 
         // 1️⃣ 예매 가능 여부 확인 (보안)
-        //if (!gameService.isReservable(gno)) {
-        //    return new EnqueueResult(false, 0);
-        //}
+        if (!gameService.isReservable(gno)) {
+            return new EnqueueResult(false, 0);
+        }   // if end
 
         // 이미 예매한 사용자인 경우 즉시 차단함 ===> 매크로등 쓸데 없는 대기열 점유를 방지한다.
         if (hasUserAlreadyBooked(mno, gno)) {

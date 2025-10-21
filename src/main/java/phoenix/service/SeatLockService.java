@@ -79,20 +79,17 @@ public class SeatLockService {  // class start
     @PostConstruct
     public void initSeatListCache() {
         try {
-            Map<Integer, List<String>> seatByGame = seatsMapper.findAllSeatNamesGroupedByGame();
-            if (seatByGame == null || seatByGame.isEmpty()) {
+            List<String> template = seatsMapper.findAllSeatNames();
+            if (template == null || template.isEmpty()) {
                 System.out.println("[SeatLockService] 초기화: 좌석 데이터 없음");
                 return;
             }
 
-            for (Map.Entry<Integer, List<String>> entry : seatByGame.entrySet()) {
-                String gno = String.valueOf(entry.getKey());
-                RSet<String> allSeats = redisson.getSet("allSeats:" + gno); // 네 구조 그대로 사용 가능
-                if (allSeats.isEmpty()) {
-                    allSeats.addAll(entry.getValue());
-                }
+            RSet<String> templateSet = redisson.getSet("allSeats:TEMPLATE");
+            if (templateSet.isEmpty()) {
+                templateSet.addAll(template);
             }
-            System.out.println("[SeatLockService] 좌석 목록 캐시 완료");
+            System.out.println("[SeatLockService] 좌석 템플릿 캐시 완료 (size=" + templateSet.size() + ")");
 
         } catch (Exception e) {
             System.out.println("[SeatLockService] 좌석 목록 초기화 실패: " + e.getMessage());
@@ -283,34 +280,32 @@ public class SeatLockService {  // class start
 
     public Map<String, String> getSeatStatusMap(int gno, int mno) {
         String showKey = String.valueOf(gno);
-        RSet<String> allSeats = redisson.getSet("allSeats:" + showKey);
-        RSet<String> soldSet = soldSet(showKey);
-        RMapCache<String, String> holdMap = holdMap();
+
+        // ✅ 경기별 세트 대신 템플릿을 사용
+        RSet<String> allSeatsTemplate = redisson.getSet("allSeats:TEMPLATE");
+
+        RSet<String> soldSet = soldSet(showKey);                 // gno별 매진 좌석
+        RMapCache<String, String> holdMap = holdMap();           // gno:sno -> mno
 
         Map<String, String> result = new LinkedHashMap<>();
 
-        for (String seatName : allSeats) {
+        for (String seatName : allSeatsTemplate) {
             String seatKey = seatKey(showKey, seatName);
 
-            // SOLD
             if (soldSet.contains(seatName)) {
                 result.put(seatName, "SOLD");
                 continue;
-            }   // if end
-
-            // HELD / HELD_BY_ME
+            }
             String holder = holdMap.get(seatKey);
             if (holder != null) {
                 result.put(seatName, holder.equals(String.valueOf(mno)) ? "HELD_BY_ME" : "HELD");
                 continue;
-            }   // if end
-
-            // AVAILABLE
+            }
             result.put(seatName, "AVAILABLE");
-        }   // for end
-
+        }
         return result;
-    }   // func end
+    }
+
 
 
 
