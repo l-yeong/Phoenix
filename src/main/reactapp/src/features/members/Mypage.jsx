@@ -63,12 +63,9 @@ export default function Mypage() {
             {mode === "reservation" && (
                 <>
                     <h3>예매 내역</h3>
-<img
-  src={toImageSrc(t.ticket_code)}
-  alt="QR 이미지"
-  style={{ width: 200, height: 200, objectFit: "contain" }}
-  onError={(e) => { e.currentTarget.alt = "이미지를 불러오지 못했습니다."; }}
-/>
+                     <div style={{ margin: "20px 0" }}>
+                                <TicketQR />
+                      </div>
                     {reservations.length === 0 ? (
                         <p>예매 내역이 없습니다.</p>
                     ) : (
@@ -88,8 +85,8 @@ export default function Mypage() {
                                     <tr key={idx}>
                                         <td>{r?.reservation?.rno ?? "-"}</td>
                                         <td>{r?.reservation?.sno ?? "-"}</td>
-                                        <td>{r?.game?.homeTeam ?? "-"}</td>  
-                                        <td>{r?.game?.awayTeam ?? "-"}</td>  
+                                        <td>{r?.game?.homeTeam ?? "-"}</td>  {/* null-safe */}
+                                        <td>{r?.game?.awayTeam ?? "-"}</td>  {/* null-safe */}
                                         <td>
                                             {r?.game?.date ?? "-"} {r?.game?.time ?? ""}
                                         </td>
