@@ -36,12 +36,12 @@ public class ReservationExchangesController {
     /**
      * 로그인한 회원한테 온 요청목록 조회
      *
-     * @param to_rno 로그인한 회원 얘매번호
+     * @param rno 로그인한 회원 얘매번호
      * @return List<ReservationExchangesDto> 요청목록
      */
     @GetMapping("/find")
-    public ResponseEntity<List<ReservationExchangesDto>> getAllRequest(@RequestParam int to_rno){
-        List<ReservationExchangesDto> list = redisService.getAllRequest(to_rno);
+    public ResponseEntity<List<ReservationExchangesDto>> getAllRequest(@RequestParam int rno){
+        List<ReservationExchangesDto> list = redisService.getAllRequest(rno);
         return ResponseEntity.ok(list);
     }// func end
 
