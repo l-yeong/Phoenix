@@ -1,6 +1,6 @@
 [
   {
-    "id": "centerZone",
+    "id": "center",             "zno": 10005,
     "label": "중앙테이블석",
     "points_pct": [
       { "xPct": 46.7777, "yPct": 78.8766 },
@@ -10,7 +10,7 @@
     ]
   },
   {
-    "id": "gyeoreZone",
+    "id": "gyeore",             "zno": 10002,
     "label": "겨레석",
     "points_pct": [
       { "xPct": 70.5471, "yPct": 52.7939 },
@@ -20,7 +20,7 @@
     ]
   },
   {
-    "id": "yeonwooZone",
+    "id": "yeonwoo",            "zno": 10001,
     "label": "연우석",
     "points_pct": [
       { "xPct": 34.6916, "yPct": 75.8912 },
@@ -30,7 +30,7 @@
     ]
   },
   {
-    "id": "seonghoZone",
+    "id": "seongho",            "zno": 10004,
     "label": "성호석",
     "points_pct": [
       { "xPct": 23.5455, "yPct": 57.3505 },
@@ -40,7 +40,7 @@
     ]
   },
   {
-    "id": "chanyeongZone",
+    "id": "chanyeong",          "zno": 10003,
     "label": "찬영석",
     "points_pct": [
       { "xPct": 21.9341, "yPct": 54.0509 },
@@ -52,7 +52,7 @@
     ]
   },
   {
-    "id": "outfieldZone",
+    "id": "outfield",           "zno": 10006,
     "label": "외야자유석",
     "points_pct": [
       { "xPct": 20.1883, "yPct": 22.8878 },

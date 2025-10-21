@@ -1,203 +1,315 @@
-// src/pages/seats/SeatsMapPage.jsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import axios from "axios";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import "../../styles/zone-seats.css";
 
 const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+const api = axios.create({ baseURL: API, withCredentials: true });
 
-const COLOR = {
-  AVAILABLE: "bg-green-500 hover:bg-green-600 text-white",
-  HELD_BY_ME: "bg-blue-500 hover:bg-blue-600 text-white",
-  HELD: "bg-gray-300 text-gray-600 cursor-not-allowed",
-  SOLD: "bg-gray-400 text-gray-700 cursor-not-allowed",
-};
+const HOLD_TTL_SECONDS = 120;
 
-export default function SeatsMapPage() {
+export default function ZoneDemoPage() {
+  const { zno } = useParams();          // /zone/:zno
+  const znoNum = Number(zno);
+  const { state } = useLocation();      // { gno, zoneId, zoneLabel }
   const navigate = useNavigate();
-  const { state } = useLocation();
-  const api = useMemo(() => axios.create({ baseURL: API }), []);
 
-  // ✅ Gate/Macro로부터 받은 mno/gno (+ 새로고침 복구)
-  const [mno] = useState(() => {
-    if (typeof state?.mno === "number") return state.mno;
-    const saved = sessionStorage.getItem("gate_mno");
-    return saved ? Number(saved) : undefined;
-  });
-  const [gno] = useState(() => {
-    if (typeof state?.gno === "number") return state.gno;
-    const saved = sessionStorage.getItem("gate_gno");
-    return saved ? Number(saved) : undefined;
-  });
+  const gno = state?.gno ?? Number(sessionStorage.getItem("gate_gno") || 0);
+  const zoneLabel = state?.zoneLabel ?? `ZNO ${zno}`;
 
-  // ✅ 서버에서 내려준 좌석맵 { [sno]: "AVAILABLE" | "HELD" | "HELD_BY_ME" | "SOLD" }
-  const [seatMap, setSeatMap] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [fetchErr, setFetchErr] = useState("");
-
-  // ─────────────────────────────────────────
-  // 1) 게이트 세션 검증 (없으면 /gate로)
-  // ─────────────────────────────────────────
+  // ✅ Gate + 파라미터 가드
   useEffect(() => {
-    if (!mno || !gno) {
-      navigate("/gate", { replace: true });
-      return;
+    if (!Number.isInteger(znoNum)) {
+      alert("잘못된 존 URL입니다."); navigate("/gate", { replace: true }); return;
     }
+    if (!Number.isInteger(Number(gno))) {
+      navigate("/gate", { replace: true }); return;
+    }
+    sessionStorage.setItem("gate_gno", String(gno));
+    let cancelled = false;
     (async () => {
       try {
-        const { data } = await api.get(`/gate/check/${encodeURIComponent(mno)}`);
-        if (!data?.ready) navigate("/gate", { replace: true });
+        const { data } = await api.get(`/gate/check/${encodeURIComponent(gno)}`);
+        if (!cancelled && (!data || data.ready === false)) navigate("/gate", { replace: true });
       } catch {
-        navigate("/gate", { replace: true });
+        if (!cancelled) navigate("/gate", { replace: true });
       }
     })();
-  }, [api, mno, gno, navigate]);
+    return () => { cancelled = true; };
+  }, [gno, znoNum, navigate]);
 
-  // ─────────────────────────────────────────
-  // 2) 좌석 맵 로드 (SeatsController.getMap 사용)
-  //    엔드포인트 예시: GET /seats/map?gno=123&mno=20001
-  //    응답 예시: { "A-1": "AVAILABLE", "A-2": "SOLD", ... }
-  // ─────────────────────────────────────────
-  const loadMap = async () => {
-    setLoading(true);
-    setFetchErr("");
+  // ✅ 좌석 메타
+  const [seatsMeta, setSeatsMeta] = useState([]); // [{ sno, seatName }]
+  const [metaErr, setMetaErr] = useState("");
+  const loadSeatsMeta = useCallback(async () => {
     try {
-      const { data } = await api.get("/seats/map", { params: { gno, mno } });
-      setSeatMap(data || {});
-    } catch (e) {
-      setFetchErr("좌석 지도를 불러오지 못했습니다.");
+      setMetaErr("");
+      const { data } = await api.get(`/zone/${encodeURIComponent(znoNum)}/seats`);
+      setSeatsMeta(Array.isArray(data?.seats) ? data.seats : []);
+    } catch {
+      setMetaErr("좌석 목록을 불러오지 못했습니다.");
+      setSeatsMeta([]);
+    }
+  }, [znoNum]);
+  useEffect(() => { loadSeatsMeta(); }, [loadSeatsMeta]);
+
+  // ✅ 상태
+  const [statusBySno, setStatusBySno] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+  const [onlyAvailable, setOnlyAvailable] = useState(false);
+
+  const loadStatus = useCallback(async () => {
+    if (!Number.isInteger(Number(gno)) || !Number.isInteger(znoNum)) return;
+    if (seatsMeta.length === 0) return;
+    setLoading(true);
+    setErr("");
+    try {
+      const seatsPayload = seatsMeta.map((s) => ({ zno: znoNum, sno: s.sno }));
+      const { data } = await api.post("/seat/status", { gno, seats: seatsPayload });
+      setStatusBySno(data?.statusBySno || {});
+    } catch {
+      setErr("좌석 상태를 불러오지 못했습니다.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [gno, znoNum, seatsMeta]);
+
+  useEffect(() => { loadStatus(); }, [loadStatus]);
+
+  // ✅ 로컬 TTL(2분) — 서버 TTL과 동기화(재방문/새로고침 시 복원)
+  const [myTtlBySno, setMyTtlBySno] = useState({});
+  useEffect(() => {
+    const t = setInterval(() => {
+      setMyTtlBySno((prev) => {
+        const next = {};
+        for (const [k, v] of Object.entries(prev)) {
+          const nv = Math.max(0, Number(v) - 1);
+          if (nv > 0) next[k] = nv;
+        }
+        return next;
+      });
+    }, 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const startLocalTtl = useCallback((sno) => {
+    setMyTtlBySno((prev) => ({ ...prev, [sno]: HOLD_TTL_SECONDS }));
+    sessionStorage.setItem(`holdStartedAt:${gno}:${sno}`, String(Date.now()));
+  }, [gno]);
+
+  const clearLocalTtl = useCallback((sno) => {
+    setMyTtlBySno((prev) => {
+      const next = { ...prev };
+      delete next[sno];
+      return next;
+    });
+    sessionStorage.removeItem(`holdStartedAt:${gno}:${sno}`);
+  }, [gno]);
 
   useEffect(() => {
-    if (mno && gno) loadMap();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mno, gno]);
+    if (seatsMeta.length === 0) return;
+    const now = Date.now();
+    const restored = {};
+    for (const s of seatsMeta) {
+      const key = `holdStartedAt:${gno}:${s.sno}`;
+      const started = Number(sessionStorage.getItem(key) || 0);
+      if (started > 0 && statusBySno[String(s.sno)] === "HELD_BY_ME") {
+        const elapsed = Math.floor((now - started) / 1000);
+        const remain = HOLD_TTL_SECONDS - elapsed;
+        if (remain > 0) restored[s.sno] = remain;
+        else sessionStorage.removeItem(key);
+      }
+    }
+    if (Object.keys(restored).length) {
+      setMyTtlBySno((prev) => ({ ...prev, ...restored }));
+    }
+  }, [gno, seatsMeta, statusBySno]);
 
-  // ─────────────────────────────────────────
-  // 3) 좌석 선택/해제 (백엔드 규약에 맞게 sno 사용)
-  //    - 선택:  POST /seats/select  { mno, gno, sno }
-  //    - 해제:  POST /seats/release { mno, gno, sno }
-  //    - SeatLockService.tryLockSeat 반환 코드(-1~)에 맞춰 메시지 처리
-  // ─────────────────────────────────────────
-  const toggleSeat = async (sno) => {
-    const status = seatMap[sno];
-    if (status === "SOLD" || status === "HELD") return;
+  // ✅ 표시용 리스트
+  const gridSeats = useMemo(() => {
+    const byName = [...seatsMeta].sort((a, b) => {
+      const [ar, ac] = [a.seatName[0], Number(a.seatName.slice(1))];
+      const [br, bc] = [b.seatName[0], Number(b.seatName.slice(1))];
+      if (ar === br) return ac - bc;
+      return ar.localeCompare(br);
+    });
+    return byName
+      .map((s) => {
+        const st = statusBySno[String(s.sno)] || "AVAILABLE";
+        const ttl = st === "HELD_BY_ME" ? (myTtlBySno[String(s.sno)] ?? 0) : 0;
+        return { ...s, st, ttl };
+      })
+      .filter((s) => (onlyAvailable ? s.st === "AVAILABLE" : true));
+  }, [seatsMeta, statusBySno, myTtlBySno, onlyAvailable]);
 
-    if (status === "HELD_BY_ME") {
-      // 해제
+  // ✅ 토글
+  const toggleSeat = async ({ sno, st }) => {
+    if (st === "SOLD" || st === "HELD") return;
+
+    if (st === "HELD_BY_ME") {
       try {
-        const { data } = await api.post("/seats/release", { mno, gno, sno });
-        if (data?.ok) {
-          // 서버 최신 반영 위해 새로 조회
-          await loadMap();
-        } else {
-          alert(data?.msg || "해제 실패");
-        }
+        const { data } = await api.post("/seat/release", { gno, zno: znoNum, sno });
+        if (!data?.ok) return alert("해제 실패");
+        clearLocalTtl(sno);
+        await loadStatus();
       } catch {
         alert("네트워크 오류로 해제 실패");
       }
       return;
     }
 
-    // 선택 (AVAILABLE)
     try {
-      const { data } = await api.post("/seats/select", { mno, gno, sno });
-      if (data?.ok) {
-        await loadMap();
-      } else {
+      const { data } = await api.post("/seat/select", { gno, zno: znoNum, sno });
+      if (!data?.ok) {
         const msg =
-          data?.code === -1 ? "세션이 없습니다." :
-          data?.code === -2 ? "이미 해당 경기 예매 완료자입니다." :
-          data?.code === -3 ? "이미 홀드/매진된 좌석입니다." :
-          data?.code === -4 ? "좌석 선택 한도(4개)를 초과했습니다." :
+          data?.code === -1 ? "세션 없음" :
+          data?.code === -2 ? "이미 해당 경기 예매됨" :
+          data?.code === -3 ? "이미 홀드/매진" :
+          data?.code === -4 ? "선택 한도(4개) 초과" :
+          data?.code === -5 ? "유효하지 않은 좌석" :
           data?.msg || "선택 실패";
-        alert(msg);
+        return alert(msg);
       }
+      startLocalTtl(sno);
+      await loadStatus();
     } catch {
       alert("네트워크 오류로 선택 실패");
     }
   };
 
-  // ─────────────────────────────────────────
-  // 4) 보기 좋게 정렬/그룹핑
-  //    - sno 형태가 "A-1" 처럼 구역-번호면 구역별 그룹핑
-  //    - 아니면 전체를 알파벳/숫자 순으로 정렬해서 평면 출력
-  // ─────────────────────────────────────────
-  const grouped = useMemo(() => {
-    const byZone = {};
-    Object.entries(seatMap).forEach(([sno, st]) => {
-      const [zone] = sno.split("-");
-      const key = zone || "기타";
-      if (!byZone[key]) byZone[key] = [];
-      byZone[key].push({ sno, st });
-    });
-    // 각 구역 내 정렬
-    Object.values(byZone).forEach(list =>
-      list.sort((a, b) => a.sno.localeCompare(b.sno, "ko", { numeric: true }))
-    );
-    return Object.entries(byZone).sort(([a], [b]) => a.localeCompare(b, "ko", { numeric: true }));
-  }, [seatMap]);
+  // ✅ 결제(초기: Redis만 반영)
+  const myHeldSnos = useMemo(() => {
+    return seatsMeta.map(s => s.sno).filter(sno => statusBySno[String(sno)] === "HELD_BY_ME");
+  }, [seatsMeta, statusBySno]);
+
+  // 🔁 기존 confirmSeats 함수를 아래로 교체
+const confirmSeats = async () => {
+  if (!myHeldSnos.length) {
+    alert("임시 보유한 좌석이 없습니다.");
+    return;
+  }
+  // eslint-disable-next-line no-restricted-globals
+  const ok = window.confirm(`${myHeldSnos.length}개 좌석을 결제(확정)하시겠습니까?`);
+  if (!ok) return;
+
+  try {
+    // 1) 결제(확정)
+    const { data } = await api.post("/seat/confirm", { gno, snos: myHeldSnos });
+
+    if (data?.ok) {
+      alert("결제(확정) 완료!");
+
+      // 2) 로컬 TTL/표시 초기화
+      setMyTtlBySno({});
+      myHeldSnos.forEach((sno) => sessionStorage.removeItem(`holdStartedAt:${gno}:${sno}`));
+
+      // 3) 게이트 퇴장(퍼밋 반환)
+      try {
+        await api.post("/gate/leave", null, { params: { gno } });
+      } catch (e) {
+        // leave 실패해도 치명적이지 않으니 콘솔만
+        console.warn("[ZoneDemoPage] gate/leave 실패:", e?.message);
+      } finally {
+        // 새로고침 복구 방지
+        sessionStorage.removeItem("gate_gno");
+      }
+
+      // 4) 홈으로 이동
+      navigate("/home", { replace: true });
+      return;
+    }
+
+    // 실패 시 메시지
+    alert(`결제 실패: ${data?.reason || "원인 불명"}`);
+    await loadStatus();
+  } catch {
+    alert("네트워크 오류로 결제에 실패했습니다.");
+  }
+};
+
+  // ✅ 요약
+  const summary = useMemo(() => {
+    let avail = 0, mine = 0, sold = 0;
+    for (const [, st] of Object.entries(statusBySno)) {
+      if (st === "AVAILABLE") avail++;
+      else if (st === "HELD_BY_ME") mine++;
+      else if (st === "SOLD") sold++;
+    }
+    return { avail, mine, sold };
+  }, [statusBySno]);
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-2xl font-bold">좌석 선택</h2>
-          <p className="text-sm text-gray-500">경기 번호: {gno} · 회원: {mno}</p>
+    <div className="zone-page">
+      <div className="zone-header">
+        <div className="zone-header__left">
+          <h2 className="zone-title">좌석 선택 — {zoneLabel}</h2>
+          <div className="zone-sub">경기 {gno} · 존 ZNO {zno}</div>
         </div>
-        <div className="flex gap-2">
-          <button
-            onClick={loadMap}
-            className="px-3 py-1 border rounded hover:bg-gray-100"
-            disabled={loading}
-          >
+        <div className="zone-header__right">
+          <button onClick={loadStatus} className="btn btn--ghost" disabled={loading}>
             {loading ? "불러오는 중…" : "새로고침"}
+          </button>
+          <button onClick={() => navigate(-1)} className="btn btn--ghost">뒤로</button>
+          <button onClick={confirmSeats} className="btn btn--primary" disabled={!myHeldSnos.length}>
+            결제(확정) · {myHeldSnos.length}석
           </button>
         </div>
       </div>
 
-      {/* 로딩/에러 */}
-      {fetchErr && <div className="text-red-600 mb-3 text-sm">{fetchErr}</div>}
-      {!fetchErr && Object.keys(seatMap).length === 0 && (
-        <div className="text-gray-600 mb-3 text-sm">좌석 데이터가 없습니다.</div>
+      <div className="zone-toolbar">
+        <Legend swatch="legend__swatch--green" label="선택 가능" />
+        <Legend swatch="legend__swatch--blue"  label="내 임시 좌석" />
+        <Legend swatch="legend__swatch--hold"  label="다른사람 홀드" />
+        <Legend swatch="legend__swatch--sold"  label="매진" />
+        <div className="zone-toolbar__spacer" />
+        <div className="zone-filter">
+          <label className="checkbox">
+            <input
+              type="checkbox"
+              checked={onlyAvailable}
+              onChange={(e) => setOnlyAvailable(e.target.checked)}
+            />
+            <span>선택 가능만</span>
+          </label>
+          <div className="zone-summary">
+            남은 {summary.avail} · 내 임시 {summary.mine} · 매진 {summary.sold}
+          </div>
+        </div>
+      </div>
+
+      {(metaErr || err) && <div className="zone-error">{metaErr || err}</div>}
+
+      {loading && (
+        <div className="seat-grid">
+          {Array.from({ length: 30 }).map((_, i) => (
+            <div key={i} className="seat-skeleton" />
+          ))}
+        </div>
       )}
 
-      {/* 범례 */}
-      <div className="flex flex-wrap gap-4 text-sm mb-5">
-        <Legend swatch="bg-green-500" label="선택 가능" />
-        <Legend swatch="bg-blue-500" label="내 좌석(임시)" />
-        <Legend swatch="bg-gray-300" label="다른사람 홀드" />
-        <Legend swatch="bg-gray-400" label="매진" />
-      </div>
+      {!loading && (
+        <div className="seat-grid">
+          {gridSeats.map(({ sno, seatName, st, ttl }) => (
+            <button
+              key={sno}
+              onClick={() => toggleSeat({ sno, st })}
+              disabled={st === "SOLD" || st === "HELD"}
+              title={`${seatName} · ${st}`}
+              className={`seat-chip seat-chip--${st.toLowerCase()}`}
+            >
+              <span className="seat-label">{seatName}</span>
+              {(st === "HELD_BY_ME") && (ttl ?? 0) > 0 && (
+                <span className="ttl-badge ttl-badge--mine">{ttl}s</span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
 
-      {/* 좌석 그리드: 구역별 묶음 */}
-      <div className="space-y-6">
-        {grouped.map(([zone, seats]) => (
-          <div key={zone}>
-            <div className="font-semibold mb-2">{zone}</div>
-            <div className="flex flex-wrap gap-2">
-              {seats.map(({ sno, st }) => (
-                <button
-                  key={sno}
-                  onClick={() => toggleSeat(sno)}
-                  disabled={st === "SOLD" || st === "HELD"}
-                  title={`${sno} · ${st}`}
-                  className={`px-3 py-2 rounded text-xs font-semibold ${COLOR[st] || "bg-gray-200"}`}
-                >
-                  {sno}
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* 하단 안내 */}
-      <div className="mt-5 text-xs text-gray-500 leading-5">
-        • 임시 보유(HELD_BY_ME)는 서버 TTL(예: 120초) 후 자동 해제됩니다. <br />
-        • 예매 완료 시에는 해당 좌석이 <b>SOLD</b>로 전환됩니다.
+      <div className="zone-footer-note">
+        • 임시 보유는 2분 후 자동 해제됩니다. (표시 시간은 클라이언트 기준, 새로고침 시 서버와 동기화) <br />
+        • 게이트 세션이 만료되면 선택/확정이 차단됩니다.
       </div>
     </div>
   );
@@ -205,9 +317,9 @@ export default function SeatsMapPage() {
 
 function Legend({ swatch, label }) {
   return (
-    <div className="flex items-center gap-2">
-      <span className={`inline-block w-4 h-4 rounded ${swatch}`} />
-      <span>{label}</span>
+    <div className="legend">
+      <span className={`legend__swatch ${swatch}`} />
+      <span className="legend__label">{label}</span>
     </div>
   );
 }

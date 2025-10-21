@@ -1,223 +1,182 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 
 /**
- * ZoomableSvgOverlay (반응형 버전)
- *
- * 역할:
- *  - 배경 이미지 위에 비율 기반 폴리곤을 그리고
- *  - 마우스/터치로 줌·패닝·리셋 기능 제공
- *  - 부모에서 전달한 onZoneClick / onZoneHover 등 이벤트 반영
- *
- * 변경점:
- *  - w-full + aspect-video 적용 (반응형)
- *  - 모바일 pinch-zoom 및 터치 드래그 지원
- *  - 툴팁 등 화면 경계 보정
+ * zones: [{ id, label, zno?, points_pct: [{xPct, yPct}, ...] }]
+ * props:
+ *  - backgroundUrl
+ *  - zones, onZoneClick, onZoneHover, onZoneLeave
+ *  - minZoom=0.75, maxZoom=4, initialZoom=1
  */
-
 export default function ZoomableSvgOverlay({
   backgroundUrl,
-  zones,
-  selected = new Set(),
+  zones = [],
   onZoneClick,
   onZoneHover,
   onZoneLeave,
-  badge = true,
+  minZoom = 0.75,
+  maxZoom = 4,
+  initialZoom = 1,
 }) {
-  const wrapperRef = useRef(null);
-  const [zoom, setZoom] = useState(1);
-  const [tx, setTx] = useState(0);
-  const [ty, setTy] = useState(0);
-  const [panning, setPanning] = useState(false);
-  const [start, setStart] = useState({ x: 0, y: 0 });
+  const [nat, setNat] = useState({ w: 100, h: 100 });
+  const svgRef = useRef(null);
 
-  // ───────────────────────────────────────────────
-  // 1️⃣ 줌 (마우스 휠)
-  // ───────────────────────────────────────────────
-  const onWheel = (e) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? -0.1 : 0.1;
-    setZoom((z) => Math.min(4, Math.max(0.6, z + delta)));
-  };
+  // 줌/이동 상태
+  const [state, setState] = useState({ s: initialZoom, tx: 0, ty: 0 });
 
-  // ───────────────────────────────────────────────
-  // 2️⃣ 패닝 (마우스 드래그)
-  // ───────────────────────────────────────────────
-  const clientToSvgRatio = () => {
-    const el = wrapperRef.current;
-    if (!el) return 1;
-    const rect = el.getBoundingClientRect();
-    return 100 / rect.width;
-  };
+  // 드래그 제스처 관리
+  const gesture = useRef({
+    active: false,        // 실제 팬 중인지
+    pointerId: null,
+    startX: 0,
+    startY: 0,
+    lastX: 0,
+    lastY: 0,
+    moved: false,         // 클릭 vs 드래그 구분
+  });
+  const DRAG_THRESHOLD = 3; // 3px 이하면 클릭으로 간주
 
-  const onMouseDown = (e) => {
-    setPanning(true);
-    setStart({ x: e.clientX, y: e.clientY });
-  };
-
-  const onMouseMove = (e) => {
-    if (!panning) return;
-    const ratio = clientToSvgRatio();
-    setTx((prev) => prev + (e.clientX - start.x) * ratio);
-    setTy((prev) => prev + (e.clientY - start.y) * ratio);
-    setStart({ x: e.clientX, y: e.clientY });
-  };
-
-  const endPan = () => setPanning(false);
-
-  // ───────────────────────────────────────────────
-  // 3️⃣ 터치 이벤트 (모바일 pinch / drag)
-  // ───────────────────────────────────────────────
+  // 원본 크기 로드
   useEffect(() => {
-    const el = wrapperRef.current;
-    if (!el) return;
+    if (!backgroundUrl) return;
+    const img = new Image();
+    img.onload = () => setNat({ w: img.naturalWidth || 100, h: img.naturalHeight || 100 });
+    img.src = backgroundUrl;
+  }, [backgroundUrl]);
 
-    let lastDist = null;
-    let lastTouch = null;
+  const aspect = useMemo(() => (nat.h ? nat.w / nat.h : 1), [nat.w, nat.h]);
 
-    const getDist = (t1, t2) => Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+  // 퍼센트 → 픽셀
+  const toPoints = (pts = []) =>
+    pts.map(({ xPct, yPct }) => `${(xPct / 100) * nat.w},${(yPct / 100) * nat.h}`).join(" ");
 
-    const onTouchMove = (e) => {
-      if (e.touches.length === 2) {
-        // pinch zoom
-        const dist = getDist(e.touches[0], e.touches[1]);
-        if (lastDist) {
-          const delta = dist - lastDist;
-          setZoom((z) => Math.min(4, Math.max(0.6, z + delta * 0.002)));
-        }
-        lastDist = dist;
-      } else if (e.touches.length === 1 && lastTouch) {
-        // drag
-        const ratio = clientToSvgRatio();
-        const dx = e.touches[0].clientX - lastTouch.x;
-        const dy = e.touches[0].clientY - lastTouch.y;
-        setTx((prev) => prev + dx * ratio);
-        setTy((prev) => prev + dy * ratio);
-        lastTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  // 화면좌표 → SVG 좌표
+  const clientToSvgPoint = (clientX, clientY) => {
+    const svg = svgRef.current;
+    if (!svg) return { x: 0, y: 0 };
+    const pt = svg.createSVGPoint();
+    pt.x = clientX;
+    pt.y = clientY;
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return { x: 0, y: 0 };
+    const inv = ctm.inverse();
+    const sp = pt.matrixTransform(inv);
+    const { s, tx, ty } = state;
+    return { x: (sp.x - tx) / s, y: (sp.y - ty) / s };
+  };
+
+  // Wheel 줌 (커서 기준)
+  const handleWheel = (e) => {
+    e.preventDefault();
+    const delta = Math.sign(e.deltaY);
+    const zoomFactor = delta > 0 ? 0.9 : 1.1;
+
+    const { s, tx, ty } = state;
+    let newScale = Math.max(minZoom, Math.min(maxZoom, s * zoomFactor));
+    if (newScale === s) return;
+
+    const svgP = clientToSvgPoint(e.clientX, e.clientY);
+    const newTx = tx + svgP.x * (s - newScale);
+    const newTy = ty + svgP.y * (s - newScale);
+
+    setState({ s: newScale, tx: newTx, ty: newTy });
+  };
+
+  // Pointer (팬)
+  const onPointerDown = (e) => {
+    if (e.button !== 0) return;
+    gesture.current = {
+      active: false,           // 아직 팬 시작 안 함
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      lastX: e.clientX,
+      lastY: e.clientY,
+      moved: false,
+    };
+    // ⚠ 캡처는 바로 하지 않음 (클릭 유지)
+  };
+
+  const onPointerMove = (e) => {
+    const g = gesture.current;
+    if (g.pointerId !== e.pointerId) return;
+
+    const dx = e.clientX - g.lastX;
+    const dy = e.clientY - g.lastY;
+    g.lastX = e.clientX;
+    g.lastY = e.clientY;
+
+    // 아직 팬 시작 전: 임계치 넘으면 팬 시작 + 포인터 캡처
+    if (!g.active) {
+      const totalDx = e.clientX - g.startX;
+      const totalDy = e.clientY - g.startY;
+      if (Math.hypot(totalDx, totalDy) > DRAG_THRESHOLD) {
+        g.active = true;
+        g.moved = true;
+        svgRef.current?.setPointerCapture?.(g.pointerId);
+      } else {
+        return; // 클릭 임계 전에는 아무 것도 안 함
       }
-    };
+    }
 
-    const onTouchStart = (e) => {
-      if (e.touches.length === 1)
-        lastTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      else if (e.touches.length === 2) lastDist = getDist(e.touches[0], e.touches[1]);
-    };
+    // 팬 중이면 이동
+    setState((st) => ({ ...st, tx: st.tx + dx, ty: st.ty + dy }));
+  };
 
-    const onTouchEnd = () => {
-      lastTouch = null;
-      lastDist = null;
-    };
+  const onPointerUp = (e) => {
+    const g = gesture.current;
+    if (g.pointerId !== e.pointerId) return;
+    // 캡처 해제
+    svgRef.current?.releasePointerCapture?.(g.pointerId);
+    // 팬이 아니고 moved=false면 클릭으로 간주 → polygon onClick이 정상 동작
+    gesture.current = { active: false, pointerId: null, startX: 0, startY: 0, lastX: 0, lastY: 0, moved: false };
+  };
 
-    el.addEventListener("touchstart", onTouchStart);
-    el.addEventListener("touchmove", onTouchMove);
-    el.addEventListener("touchend", onTouchEnd);
+  const onDoubleClick = () => setState({ s: initialZoom, tx: 0, ty: 0 });
 
-    return () => {
-      el.removeEventListener("touchstart", onTouchStart);
-      el.removeEventListener("touchmove", onTouchMove);
-      el.removeEventListener("touchend", onTouchEnd);
-    };
-  }, []);
-
-  // ───────────────────────────────────────────────
-  // 4️⃣ 렌더링
-  // ───────────────────────────────────────────────
   return (
-    <div
-      ref={wrapperRef}
-      onWheel={onWheel}
-      onMouseDown={onMouseDown}
-      onMouseMove={onMouseMove}
-      onMouseUp={endPan}
-      onMouseLeave={() => {
-        endPan();
-        onZoneLeave?.();
-      }}
-      className="relative w-full max-w-6xl aspect-video border rounded-md overflow-hidden select-none bg-gray-50"
-      style={{ touchAction: "none", margin: "0 auto" }}
-    >
-      {/* 배경 이미지 */}
-      <img
-        src={backgroundUrl}
-        alt="seats"
-        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-        draggable={false}
-      />
-
-      {/* SVG 오버레이 */}
-      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-        <g transform={`translate(${tx}, ${ty}) scale(${zoom})`}>
-          {zones.map((z) => {
-            const points = z.points_pct.map((p) => `${p.xPct},${p.yPct}`).join(" ");
-            const isSel = selected.has(z.id);
-            return (
-              <g key={z.id} style={{ cursor: "pointer" }}>
-                <polygon
-                  points={points}
-                  fill={isSel ? "rgba(0,150,255,0.6)" : "rgba(255,0,0,0.28)"}
-                  stroke={isSel ? "blue" : "red"}
-                  strokeWidth="0.3"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onZoneClick?.(z);
-                  }}
-                  onMouseEnter={(e) =>
-                    onZoneHover?.(z, {
-                      clientX: Math.min(window.innerWidth - 120, e.clientX + 10),
-                      clientY: e.clientY + 10,
-                    })
-                  }
-                  onMouseMove={(e) =>
-                    onZoneHover?.(z, {
-                      clientX: Math.min(window.innerWidth - 120, e.clientX + 10),
-                      clientY: e.clientY + 10,
-                    })
-                  }
-                  onMouseLeave={() => onZoneLeave?.()}
-                />
-                {badge && (
-                  <text
-                    x={z.points_pct.reduce((a, b) => a + b.xPct, 0) / z.points_pct.length}
-                    y={z.points_pct.reduce((a, b) => a + b.yPct, 0) / z.points_pct.length}
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    fontSize="3"
-                    fill="#111"
-                    style={{ userSelect: "none", pointerEvents: "none" }}
-                  >
-                    {z.label}
-                  </text>
-                )}
-              </g>
-            );
-          })}
+    <div className="relative mx-auto" style={{ width: "100%", maxWidth: "1200px", aspectRatio: aspect }}>
+      <svg
+        ref={svgRef}
+        viewBox={`0 0 ${nat.w} ${nat.h}`}
+        preserveAspectRatio="xMidYMid meet"
+        className="absolute inset-0"
+        style={{ width: "100%", height: "100%", display: "block", touchAction: "none" }}
+        onWheel={handleWheel}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onDoubleClick={onDoubleClick}
+      >
+        <g transform={`translate(${state.tx} ${state.ty}) scale(${state.s})`}>
+          <image
+            href={backgroundUrl}
+            x="0"
+            y="0"
+            width={nat.w}
+            height={nat.h}
+            preserveAspectRatio="xMidYMid meet"
+            style={{ pointerEvents: "none", userSelect: "none" }}
+          />
+          {zones.map((z) => (
+            <polygon
+              key={z.id}
+              points={toPoints(z.points_pct)}
+              onClick={(e) => onZoneClick?.(z, e)}       // ✅ 클릭 통과
+              onMouseMove={(e) => onZoneHover?.(z, e)}
+              onMouseLeave={() => onZoneLeave?.()}
+              style={{
+                fill: "rgba(255,255,255,0.22)",
+                stroke: "rgba(0,0,0,0.35)",
+                strokeWidth: Math.max(nat.w, nat.h) * 0.002,
+                cursor: "pointer",
+                transition: "fill .12s ease",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.fill = "rgba(255,255,255,0.36)")}
+              onMouseOut={(e) => (e.currentTarget.style.fill = "rgba(255,255,255,0.22)")}
+            />
+          ))}
         </g>
       </svg>
-
-      {/* 하단 컨트롤 버튼 */}
-      <div className="absolute right-3 bottom-3 flex flex-col gap-2">
-        <button
-          className="bg-white/80 border rounded px-2 py-1 shadow hover:bg-white"
-          onClick={() => setZoom((z) => Math.min(4, z + 0.2))}
-        >
-          +
-        </button>
-        <button
-          className="bg-white/80 border rounded px-2 py-1 shadow hover:bg-white"
-          onClick={() => setZoom((z) => Math.max(0.6, z - 0.2))}
-        >
-          –
-        </button>
-        <button
-          className="bg-white/80 border rounded px-2 py-1 shadow hover:bg-white"
-          onClick={() => {
-            setZoom(1);
-            setTx(0);
-            setTy(0);
-          }}
-        >
-          reset
-        </button>
-      </div>
     </div>
   );
 }

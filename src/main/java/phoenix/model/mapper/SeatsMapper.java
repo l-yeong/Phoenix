@@ -4,30 +4,63 @@ import org.apache.ibatis.annotations.*;
 import java.util.List;
 import java.util.Map;
 
-
 @Mapper
 public interface SeatsMapper {
-        // 전 경기 공통 좌석 템플릿 (좌석명만)
-        @Select("""
-        SELECT seatName
-        FROM seats
-        ORDER BY zno, seatName
-    """)
-        List<String> findAllSeatNames();
 
-        // (선택) 이미 예약된 좌석을 gno별로 보고 싶을 때: 리스트로 받고 서비스에서 groupBy
+        /* ===== SOLD 복구용 ===== */
         @Select("""
-        SELECT r.gno AS gno, s.seatName AS seatName
-        FROM reservations r
-        JOIN seats s ON r.sno = s.sno
-        WHERE r.status = 'reserved'
-        ORDER BY r.gno, s.seatName
-    """)
-        List<ReservedSeatRow> findReservedSeatRows();
+            SELECT DISTINCT gno
+            FROM reservations
+            WHERE status = 'reserved'
+            """)
+        List<Integer> findAllGnosHavingReserved();
 
-        class ReservedSeatRow {
-                public int gno;
-                public String seatName;
-        }
+        @Select("""
+            SELECT sno
+            FROM reservations
+            WHERE gno = #{gno}
+              AND status = 'reserved'
+            """)
+        List<Integer> findReservedSnosByGno(@Param("gno") int gno);
+
+        /* ===== 무결성/보안 체크 ===== */
+        // sno가 실제 존재하는가
+        @Select("""
+            SELECT EXISTS(
+                SELECT 1 FROM seats
+                WHERE sno = #{sno}
+            )
+            """)
+        boolean existsSeatBySno(@Param("sno") int sno);
+
+        // sno가 해당 zno에 속하는가 (클라 변조 방지)
+        @Select("""
+            SELECT EXISTS(
+                SELECT 1 FROM seats
+                WHERE sno = #{sno}
+                  AND zno = #{zno}
+            )
+            """)
+        boolean existsSeatInZone(@Param("zno") int zno, @Param("sno") int sno);
+
+        /** zno 존재 여부 */
+        @Select("""
+            SELECT EXISTS(
+              SELECT 1 FROM zones WHERE zno = #{zno}
+            )
+            """)
+        boolean existsZone(@Param("zno") int zno);
+
+        /** 특정 존의 좌석 목록 (정렬 보장) */
+        @Select("""
+            SELECT
+              s.sno AS sno,
+              s.seatName AS seatName
+            FROM seats s
+            WHERE s.zno = #{zno}
+            ORDER BY 
+              LEFT(s.seatName, 1),                 -- 행(A/B/C)
+              CAST(SUBSTRING(s.seatName, 2) AS UNSIGNED)  -- 열(1..10)
+            """)
+        List<Map<String, Object>> findSeatsByZone(@Param("zno") int zno);
 }
-

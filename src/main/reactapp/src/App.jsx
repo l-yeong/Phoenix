@@ -43,7 +43,7 @@ function App() {
           <Route path="/gate" element={<GatePage />} />
           <Route path="/macro" element={<MacroPage />} />
           <Route path="/seats" element={<SeatsPolygonPage />} />
-          <Route path="/zone/:zoneId" element={<ZoneDemoPage />} />
+          <Route path="/zone/:zno" element={<ZoneDemoPage />} />
         </Routes>
         <Footer />
 
