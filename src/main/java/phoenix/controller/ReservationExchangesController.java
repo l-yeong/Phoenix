@@ -2,14 +2,17 @@ package phoenix.controller;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import phoenix.model.dto.MembersDto;
 import phoenix.model.dto.ReservationExchangesDto;
 import phoenix.service.MembersService;
 import phoenix.service.RedisService;
 import phoenix.service.ReservationExchangesService;
 
 import java.util.List;
+import java.util.Map;
 
 @RequestMapping("/seat")
 @RestController
@@ -27,7 +30,12 @@ public class ReservationExchangesController {
      */
     @PostMapping("/change")
     public ResponseEntity<?> saveRequest(ReservationExchangesDto dto){
-        int mno = membersService.getLoginMember().getMno();
+        MembersDto loginMember = membersService.getLoginMember();
+        int mno = loginMember.getMno();
+        if (loginMember == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "로그인 정보가 없습니다."));
+        }
         dto.setFrom_mno(mno);
         int result = reservationexchangesService.requestChange(dto);
         return ResponseEntity.ok(result);
@@ -72,7 +80,12 @@ public class ReservationExchangesController {
      */
     @PostMapping("/accept")
     public ResponseEntity<?> acceptChange(@RequestParam int rno ){
-        int mno = membersService.getLoginMember().getMno();
+        MembersDto loginMember = membersService.getLoginMember();
+        int mno = loginMember.getMno();
+        if (loginMember == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "로그인 정보가 없습니다."));
+        }
         ReservationExchangesDto dto = redisService.getRequest(rno);
         boolean result = reservationexchangesService.acceptChange(mno, rno);
         if (result){
