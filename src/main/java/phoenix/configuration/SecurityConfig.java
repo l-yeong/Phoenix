@@ -124,7 +124,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth // URL별 인가 규칙 시작
                         .requestMatchers(HttpMethod.OPTIONS , "/**").permitAll() // 프리플라이트 요청 허용
                         .requestMatchers("/members/social/**").permitAll() // 소셜 로그인/회원가입 경로 허용
-                        .requestMatchers("/socket/**").permitAll()               // ✅ WebSocket 연결 허용 추가
+                        .requestMatchers("/socket/**").permitAll()               // WebSocket 연결 허용 추가
                         .requestMatchers(                                       // requestMatchers(...).permitAll() : 나열한 경로는 "인증 없이" 접근 허용
                                 "/members/signup",
                                 "/members/login",
@@ -133,6 +133,8 @@ public class SecurityConfig {
                                 "/members/token/refresh",
                                 "/members/logout",
                                 "/tickets/**",
+                                "/reserve/**",
+                                "/seat/**",
                                 "/oauth/**" // 소셜 로그인 허용
 
                         ).permitAll()
