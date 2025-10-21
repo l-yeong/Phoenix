@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
+import TicketQR from "../tickets/TicketQR";
 
 export default function Mypage() {
     const [mode, setMode] = useState("reservation"); // "edit" or "reservation"
@@ -62,6 +63,9 @@ export default function Mypage() {
             {mode === "reservation" && (
                 <>
                     <h3>예매 내역</h3>
+                     <div style={{ margin: "20px 0" }}>
+                                <TicketQR />
+                      </div>
                     {reservations.length === 0 ? (
                         <p>예매 내역이 없습니다.</p>
                     ) : (
