@@ -54,7 +54,7 @@ from members m;
 create table seats(
     sno int auto_increment primary key,       -- 좌석 고유번호(PK)
     zno int not null,                         -- 구역 번호
-    seat_no int not null,                     -- 좌석 번호
+    seatName varchar(30) not null,                     -- 좌석 이름
     senior boolean default false,             -- 시니어 전용 여부
     foreign key(zno) references zones(zno)
 );
@@ -151,30 +151,79 @@ insert into members (
 
 
 -- 좌석
-insert into seats(zno, seat_no, senior) values
-(10001,101,false),
-(10001,102,false),
-(10002,201,false),
-(10002,202,false),
-(10003,301,false),
-(10004,401,false),
-(10005,501,false),
-(10006,601,true),
-(10007,701,false),
-(10008,801,false);
+-- 겨레석 (zno = 10001)
+insert into seats(zno, seatName, senior) values
+(10001,'A1',true),(10001,'A2',true),(10001,'A3',true),(10001,'A4',true),(10001,'A5',true),
+(10001,'A6',true),(10001,'A7',true),(10001,'A8',true),(10001,'A9',true),(10001,'A10',true),
+(10001,'B1',false),(10001,'B2',false),(10001,'B3',false),(10001,'B4',false),(10001,'B5',false),
+(10001,'B6',false),(10001,'B7',false),(10001,'B8',false),(10001,'B9',false),(10001,'B10',false),
+(10001,'C1',false),(10001,'C2',false),(10001,'C3',false),(10001,'C4',false),(10001,'C5',false),
+(10001,'C6',false),(10001,'C7',false),(10001,'C8',false),(10001,'C9',false),(10001,'C10',false);
+
+-- 연우석 (zno = 10002)
+insert into seats(zno, seatName, senior) values
+(10002,'A1',true),(10002,'A2',true),(10002,'A3',true),(10002,'A4',true),(10002,'A5',true),
+(10002,'A6',true),(10002,'A7',true),(10002,'A8',true),(10002,'A9',true),(10002,'A10',true),
+(10002,'B1',false),(10002,'B2',false),(10002,'B3',false),(10002,'B4',false),(10002,'B5',false),
+(10002,'B6',false),(10002,'B7',false),(10002,'B8',false),(10002,'B9',false),(10002,'B10',false),
+(10002,'C1',false),(10002,'C2',false),(10002,'C3',false),(10002,'C4',false),(10002,'C5',false),
+(10002,'C6',false),(10002,'C7',false),(10002,'C8',false),(10002,'C9',false),(10002,'C10',false);
+
+-- 성호석 (zno = 10003)
+insert into seats(zno, seatName, senior) values
+(10003,'A1',true),(10003,'A2',true),(10003,'A3',true),(10003,'A4',true),(10003,'A5',true),
+(10003,'A6',true),(10003,'A7',true),(10003,'A8',true),(10003,'A9',true),(10003,'A10',true),
+(10003,'B1',false),(10003,'B2',false),(10003,'B3',false),(10003,'B4',false),(10003,'B5',false),
+(10003,'B6',false),(10003,'B7',false),(10003,'B8',false),(10003,'B9',false),(10003,'B10',false),
+(10003,'C1',false),(10003,'C2',false),(10003,'C3',false),(10003,'C4',false),(10003,'C5',false),
+(10003,'C6',false),(10003,'C7',false),(10003,'C8',false),(10003,'C9',false),(10003,'C10',false);
+
+-- 찬영석 (zno = 10004)
+insert into seats(zno, seatName, senior) values
+(10004,'A1',true),(10004,'A2',true),(10004,'A3',true),(10004,'A4',true),(10004,'A5',true),
+(10004,'A6',true),(10004,'A7',true),(10004,'A8',true),(10004,'A9',true),(10004,'A10',true),
+(10004,'B1',false),(10004,'B2',false),(10004,'B3',false),(10004,'B4',false),(10004,'B5',false),
+(10004,'B6',false),(10004,'B7',false),(10004,'B8',false),(10004,'B9',false),(10004,'B10',false),
+(10004,'C1',false),(10004,'C2',false),(10004,'C3',false),(10004,'C4',false),(10004,'C5',false),
+(10004,'C6',false),(10004,'C7',false),(10004,'C8',false),(10004,'C9',false),(10004,'C10',false);
+
+-- 중앙테이블석 (zno = 10005)
+insert into seats(zno, seatName, senior) values
+(10005,'A1',true),(10005,'A2',true),(10005,'A3',true),(10005,'A4',true),(10005,'A5',true),
+(10005,'A6',true),(10005,'A7',true),(10005,'A8',true),(10005,'A9',true),(10005,'A10',true),
+(10005,'B1',false),(10005,'B2',false),(10005,'B3',false),(10005,'B4',false),(10005,'B5',false),
+(10005,'B6',false),(10005,'B7',false),(10005,'B8',false),(10005,'B9',false),(10005,'B10',false),
+(10005,'C1',false),(10005,'C2',false),(10005,'C3',false),(10005,'C4',false),(10005,'C5',false),
+(10005,'C6',false),(10005,'C7',false),(10005,'C8',false),(10005,'C9',false),(10005,'C10',false);
+
+-- 외야자유석 (zno = 10006)
+insert into seats(zno, seatName, senior) values
+(10006,'A1',true),(10006,'A2',true),(10006,'A3',true),(10006,'A4',true),(10006,'A5',true),
+(10006,'A6',true),(10006,'A7',true),(10006,'A8',true),(10006,'A9',true),(10006,'A10',true),
+(10006,'B1',false),(10006,'B2',false),(10006,'B3',false),(10006,'B4',false),(10006,'B5',false),
+(10006,'B6',false),(10006,'B7',false),(10006,'B8',false),(10006,'B9',false),(10006,'B10',false),
+(10006,'C1',false),(10006,'C2',false),(10006,'C3',false),(10006,'C4',false),(10006,'C5',false),
+(10006,'C6',false),(10006,'C7',false),(10006,'C8',false),(10006,'C9',false),(10006,'C10',false);
 
 -- 예매
-insert into reservations(mno, sno, status ,gno) values
-(20001,30001,'reserved',101),
-(20002,30002,'reserved',102),
-(20003,30003,'reserved',103),
-(20004,30004,'reserved',104),
-(20005,30005,'reserved',104),
-(20006,30006,'reserved',105),
-(20007,30007,'reserved',105),
-(20008,30008,'reserved',106),
-(20009,30009,'reserved',107),
-(20010,30010,'cancelled',108);
+insert into reservations (mno, sno, gno, status) values
+-- 회원 20001 (3건, 1건 취소)
+(20001, 30001, 1, 'reserved'),     -- 겨레석 A1
+(20001, 30002, 1, 'cancelled'),    -- 겨레석 A2 (취소됨)
+(20001, 30003, 1, 'reserved'),     -- 겨레석 A3
+
+-- 회원 20002 (3건, 1건 취소)
+(20002, 30031, 2, 'reserved'),     -- 연우석 A1
+(20002, 30032, 2, 'reserved'),     -- 연우석 A2
+(20002, 30033, 2, 'cancelled'),    -- 연우석 A3 (취소됨)
+
+-- 회원 20003 (3건, 1건 취소)
+(20003, 30061, 3, 'reserved'),     -- 성호석 A1
+(20003, 30062, 3, 'cancelled'),    -- 성호석 A2 (취소됨)
+(20003, 30063, 3, 'reserved'),     -- 성호석 A3
+
+-- 회원 20004 (1건)
+(20004, 30091, 4, 'reserved');     -- 찬영석 A1
 
 -- 티켓
 insert into tickets(rno, ticket_code, valid, price) values

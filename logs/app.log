@@ -650,3 +650,125 @@ java.lang.IllegalArgumentException: 비밀번호가 비어있습니다.
 	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:658)
 	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63)
 	at java.base/java.lang.Thread.run(Thread.java:840)
+25-10-21 14:36:14 o.s.d.r.c.RepositoryConfigurationDelegate Multiple Spring Data modules found, entering strict repository configuration mode 
+25-10-21 14:36:14 o.s.d.r.c.RepositoryConfigurationDelegate Bootstrapping Spring Data Redis repositories in DEFAULT mode. 
+25-10-21 14:36:14 o.s.d.r.c.RepositoryConfigurationDelegate Finished Spring Data repository scanning in 21 ms. Found 0 Redis repository interfaces. 
+25-10-21 14:36:18 o.r.Version Redisson 3.27.2 
+25-10-21 14:36:18 o.r.c.ConnectionsHolder 1 connections initialized for localhost/127.0.0.1:6379 
+25-10-21 14:36:18 o.r.c.ConnectionsHolder 24 connections initialized for localhost/127.0.0.1:6379 
+25-10-21 14:36:19 c.z.h.HikariDataSource HikariPool-1 - Starting... 
+25-10-21 14:36:19 i.o.a.GlobalOpenTelemetry AutoConfiguredOpenTelemetrySdk found on classpath but automatic configuration is disabled. To enable, run your JVM with -Dotel.java.global-autoconfigure.enabled=true 
+25-10-21 14:36:19 c.z.h.p.HikariPool HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@9734cae 
+25-10-21 14:36:19 c.z.h.HikariDataSource HikariPool-1 - Start completed. 
+25-10-21 14:36:20 o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer Global AuthenticationManager configured with UserDetailsService bean with name customUserDetailsService 
+25-10-21 14:36:21 o.s.b.a.e.w.EndpointLinksResolver Exposing 1 endpoint beneath base path '/actuator' 
+25-10-21 14:38:03 o.s.s.c.b.BCryptPasswordEncoder Encoded password does not look like BCrypt 
+25-10-21 14:44:43 o.s.d.r.c.RepositoryConfigurationDelegate Multiple Spring Data modules found, entering strict repository configuration mode 
+25-10-21 14:44:43 o.s.d.r.c.RepositoryConfigurationDelegate Bootstrapping Spring Data Redis repositories in DEFAULT mode. 
+25-10-21 14:44:43 o.s.d.r.c.RepositoryConfigurationDelegate Finished Spring Data repository scanning in 21 ms. Found 0 Redis repository interfaces. 
+25-10-21 14:44:48 o.r.Version Redisson 3.27.2 
+25-10-21 14:44:49 o.r.c.ConnectionsHolder 1 connections initialized for localhost/127.0.0.1:6379 
+25-10-21 14:44:49 o.r.c.ConnectionsHolder 24 connections initialized for localhost/127.0.0.1:6379 
+25-10-21 14:44:49 c.z.h.HikariDataSource HikariPool-1 - Starting... 
+25-10-21 14:44:50 i.o.a.GlobalOpenTelemetry AutoConfiguredOpenTelemetrySdk found on classpath but automatic configuration is disabled. To enable, run your JVM with -Dotel.java.global-autoconfigure.enabled=true 
+25-10-21 14:44:50 c.z.h.p.HikariPool HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@c79915a 
+25-10-21 14:44:50 c.z.h.HikariDataSource HikariPool-1 - Start completed. 
+25-10-21 14:44:51 o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer Global AuthenticationManager configured with UserDetailsService bean with name customUserDetailsService 
+25-10-21 14:44:51 o.s.b.a.e.w.EndpointLinksResolver Exposing 1 endpoint beneath base path '/actuator' 
+25-10-21 14:47:08 o.s.d.r.c.RepositoryConfigurationDelegate Multiple Spring Data modules found, entering strict repository configuration mode 
+25-10-21 14:47:08 o.s.d.r.c.RepositoryConfigurationDelegate Bootstrapping Spring Data Redis repositories in DEFAULT mode. 
+25-10-21 14:47:08 o.s.d.r.c.RepositoryConfigurationDelegate Finished Spring Data repository scanning in 23 ms. Found 0 Redis repository interfaces. 
+25-10-21 14:47:11 o.r.Version Redisson 3.27.2 
+25-10-21 14:47:11 o.r.c.ConnectionsHolder 1 connections initialized for localhost/127.0.0.1:6379 
+25-10-21 14:47:11 o.r.c.ConnectionsHolder 24 connections initialized for localhost/127.0.0.1:6379 
+25-10-21 14:47:12 c.z.h.HikariDataSource HikariPool-1 - Starting... 
+25-10-21 14:47:12 i.o.a.GlobalOpenTelemetry AutoConfiguredOpenTelemetrySdk found on classpath but automatic configuration is disabled. To enable, run your JVM with -Dotel.java.global-autoconfigure.enabled=true 
+25-10-21 14:47:12 c.z.h.p.HikariPool HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@49654a35 
+25-10-21 14:47:12 c.z.h.HikariDataSource HikariPool-1 - Start completed. 
+25-10-21 14:47:12 o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer Global AuthenticationManager configured with UserDetailsService bean with name customUserDetailsService 
+25-10-21 14:47:13 o.s.b.a.e.w.EndpointLinksResolver Exposing 1 endpoint beneath base path '/actuator' 
+25-10-21 14:56:43 o.s.d.r.c.RepositoryConfigurationDelegate Multiple Spring Data modules found, entering strict repository configuration mode 
+25-10-21 14:56:43 o.s.d.r.c.RepositoryConfigurationDelegate Bootstrapping Spring Data Redis repositories in DEFAULT mode. 
+25-10-21 14:56:43 o.s.d.r.c.RepositoryConfigurationDelegate Finished Spring Data repository scanning in 18 ms. Found 0 Redis repository interfaces. 
+25-10-21 14:56:45 o.r.Version Redisson 3.27.2 
+25-10-21 14:56:46 o.r.c.ConnectionsHolder 1 connections initialized for localhost/127.0.0.1:6379 
+25-10-21 14:56:46 o.r.c.ConnectionsHolder 24 connections initialized for localhost/127.0.0.1:6379 
+25-10-21 14:56:46 c.z.h.HikariDataSource HikariPool-1 - Starting... 
+25-10-21 14:56:46 i.o.a.GlobalOpenTelemetry AutoConfiguredOpenTelemetrySdk found on classpath but automatic configuration is disabled. To enable, run your JVM with -Dotel.java.global-autoconfigure.enabled=true 
+25-10-21 14:56:47 c.z.h.p.HikariPool HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@19c06762 
+25-10-21 14:56:47 c.z.h.HikariDataSource HikariPool-1 - Start completed. 
+25-10-21 14:56:47 o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer Global AuthenticationManager configured with UserDetailsService bean with name customUserDetailsService 
+25-10-21 14:56:48 o.s.b.a.e.w.EndpointLinksResolver Exposing 1 endpoint beneath base path '/actuator' 
+25-10-21 14:59:42 o.s.d.r.c.RepositoryConfigurationDelegate Multiple Spring Data modules found, entering strict repository configuration mode 
+25-10-21 14:59:42 o.s.d.r.c.RepositoryConfigurationDelegate Bootstrapping Spring Data Redis repositories in DEFAULT mode. 
+25-10-21 14:59:42 o.s.d.r.c.RepositoryConfigurationDelegate Finished Spring Data repository scanning in 58 ms. Found 0 Redis repository interfaces. 
+25-10-21 14:59:47 o.r.Version Redisson 3.27.2 
+25-10-21 14:59:47 o.r.c.ConnectionsHolder 1 connections initialized for localhost/127.0.0.1:6379 
+25-10-21 14:59:47 o.r.c.ConnectionsHolder 24 connections initialized for localhost/127.0.0.1:6379 
+25-10-21 14:59:48 c.z.h.HikariDataSource HikariPool-1 - Starting... 
+25-10-21 14:59:48 i.o.a.GlobalOpenTelemetry AutoConfiguredOpenTelemetrySdk found on classpath but automatic configuration is disabled. To enable, run your JVM with -Dotel.java.global-autoconfigure.enabled=true 
+25-10-21 14:59:48 c.z.h.p.HikariPool HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@5169db2f 
+25-10-21 14:59:48 c.z.h.HikariDataSource HikariPool-1 - Start completed. 
+25-10-21 14:59:49 o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer Global AuthenticationManager configured with UserDetailsService bean with name customUserDetailsService 
+25-10-21 14:59:49 o.s.b.a.e.w.EndpointLinksResolver Exposing 1 endpoint beneath base path '/actuator' 
+25-10-21 15:01:19 o.s.d.r.c.RepositoryConfigurationDelegate Multiple Spring Data modules found, entering strict repository configuration mode 
+25-10-21 15:01:19 o.s.d.r.c.RepositoryConfigurationDelegate Bootstrapping Spring Data Redis repositories in DEFAULT mode. 
+25-10-21 15:01:19 o.s.d.r.c.RepositoryConfigurationDelegate Finished Spring Data repository scanning in 19 ms. Found 0 Redis repository interfaces. 
+25-10-21 15:01:21 o.r.Version Redisson 3.27.2 
+25-10-21 15:01:22 o.r.c.ConnectionsHolder 1 connections initialized for localhost/127.0.0.1:6379 
+25-10-21 15:01:22 o.r.c.ConnectionsHolder 24 connections initialized for localhost/127.0.0.1:6379 
+25-10-21 15:01:22 c.z.h.HikariDataSource HikariPool-1 - Starting... 
+25-10-21 15:01:22 i.o.a.GlobalOpenTelemetry AutoConfiguredOpenTelemetrySdk found on classpath but automatic configuration is disabled. To enable, run your JVM with -Dotel.java.global-autoconfigure.enabled=true 
+25-10-21 15:01:23 c.z.h.p.HikariPool HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@5c552f08 
+25-10-21 15:01:23 c.z.h.HikariDataSource HikariPool-1 - Start completed. 
+25-10-21 15:01:23 o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer Global AuthenticationManager configured with UserDetailsService bean with name customUserDetailsService 
+25-10-21 15:01:24 o.s.b.a.e.w.EndpointLinksResolver Exposing 1 endpoint beneath base path '/actuator' 
+25-10-21 15:06:11 o.s.d.r.c.RepositoryConfigurationDelegate Multiple Spring Data modules found, entering strict repository configuration mode 
+25-10-21 15:06:11 o.s.d.r.c.RepositoryConfigurationDelegate Bootstrapping Spring Data Redis repositories in DEFAULT mode. 
+25-10-21 15:06:11 o.s.d.r.c.RepositoryConfigurationDelegate Finished Spring Data repository scanning in 20 ms. Found 0 Redis repository interfaces. 
+25-10-21 15:06:14 o.r.Version Redisson 3.27.2 
+25-10-21 15:06:14 o.r.c.ConnectionsHolder 1 connections initialized for localhost/127.0.0.1:6379 
+25-10-21 15:06:15 o.r.c.ConnectionsHolder 24 connections initialized for localhost/127.0.0.1:6379 
+25-10-21 15:06:15 c.z.h.HikariDataSource HikariPool-1 - Starting... 
+25-10-21 15:06:15 i.o.a.GlobalOpenTelemetry AutoConfiguredOpenTelemetrySdk found on classpath but automatic configuration is disabled. To enable, run your JVM with -Dotel.java.global-autoconfigure.enabled=true 
+25-10-21 15:06:15 c.z.h.p.HikariPool HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@23e573e 
+25-10-21 15:06:15 c.z.h.HikariDataSource HikariPool-1 - Start completed. 
+25-10-21 15:06:16 o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer Global AuthenticationManager configured with UserDetailsService bean with name customUserDetailsService 
+25-10-21 15:06:16 o.s.b.a.e.w.EndpointLinksResolver Exposing 1 endpoint beneath base path '/actuator' 
+25-10-21 15:08:47 o.s.w.s.m.s.DefaultHandlerExceptionResolver Resolved [org.springframework.web.HttpRequestMethodNotSupportedException: Request method 'POST' is not supported] 
+25-10-21 15:12:50 o.s.d.r.c.RepositoryConfigurationDelegate Multiple Spring Data modules found, entering strict repository configuration mode 
+25-10-21 15:12:50 o.s.d.r.c.RepositoryConfigurationDelegate Bootstrapping Spring Data Redis repositories in DEFAULT mode. 
+25-10-21 15:12:50 o.s.d.r.c.RepositoryConfigurationDelegate Finished Spring Data repository scanning in 24 ms. Found 0 Redis repository interfaces. 
+25-10-21 15:12:53 o.r.Version Redisson 3.27.2 
+25-10-21 15:12:53 o.r.c.ConnectionsHolder 1 connections initialized for localhost/127.0.0.1:6379 
+25-10-21 15:12:53 o.r.c.ConnectionsHolder 24 connections initialized for localhost/127.0.0.1:6379 
+25-10-21 15:12:53 c.z.h.HikariDataSource HikariPool-1 - Starting... 
+25-10-21 15:12:54 i.o.a.GlobalOpenTelemetry AutoConfiguredOpenTelemetrySdk found on classpath but automatic configuration is disabled. To enable, run your JVM with -Dotel.java.global-autoconfigure.enabled=true 
+25-10-21 15:12:54 c.z.h.p.HikariPool HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@748aa7dc 
+25-10-21 15:12:54 c.z.h.HikariDataSource HikariPool-1 - Start completed. 
+25-10-21 15:12:54 o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer Global AuthenticationManager configured with UserDetailsService bean with name customUserDetailsService 
+25-10-21 15:12:55 o.s.b.a.e.w.EndpointLinksResolver Exposing 1 endpoint beneath base path '/actuator' 
+25-10-21 15:14:03 o.s.d.r.c.RepositoryConfigurationDelegate Multiple Spring Data modules found, entering strict repository configuration mode 
+25-10-21 15:14:03 o.s.d.r.c.RepositoryConfigurationDelegate Bootstrapping Spring Data Redis repositories in DEFAULT mode. 
+25-10-21 15:14:03 o.s.d.r.c.RepositoryConfigurationDelegate Finished Spring Data repository scanning in 18 ms. Found 0 Redis repository interfaces. 
+25-10-21 15:14:06 o.r.Version Redisson 3.27.2 
+25-10-21 15:14:06 o.r.c.ConnectionsHolder 1 connections initialized for localhost/127.0.0.1:6379 
+25-10-21 15:14:07 o.r.c.ConnectionsHolder 24 connections initialized for localhost/127.0.0.1:6379 
+25-10-21 15:14:07 c.z.h.HikariDataSource HikariPool-1 - Starting... 
+25-10-21 15:14:07 i.o.a.GlobalOpenTelemetry AutoConfiguredOpenTelemetrySdk found on classpath but automatic configuration is disabled. To enable, run your JVM with -Dotel.java.global-autoconfigure.enabled=true 
+25-10-21 15:14:07 c.z.h.p.HikariPool HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@56351c02 
+25-10-21 15:14:07 c.z.h.HikariDataSource HikariPool-1 - Start completed. 
+25-10-21 15:14:08 o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer Global AuthenticationManager configured with UserDetailsService bean with name customUserDetailsService 
+25-10-21 15:14:08 o.s.b.a.e.w.EndpointLinksResolver Exposing 1 endpoint beneath base path '/actuator' 
+25-10-21 15:17:32 o.s.d.r.c.RepositoryConfigurationDelegate Multiple Spring Data modules found, entering strict repository configuration mode 
+25-10-21 15:17:32 o.s.d.r.c.RepositoryConfigurationDelegate Bootstrapping Spring Data Redis repositories in DEFAULT mode. 
+25-10-21 15:17:32 o.s.d.r.c.RepositoryConfigurationDelegate Finished Spring Data repository scanning in 19 ms. Found 0 Redis repository interfaces. 
+25-10-21 15:17:35 o.r.Version Redisson 3.27.2 
+25-10-21 15:17:36 o.r.c.ConnectionsHolder 1 connections initialized for localhost/127.0.0.1:6379 
+25-10-21 15:17:36 o.r.c.ConnectionsHolder 24 connections initialized for localhost/127.0.0.1:6379 
+25-10-21 15:17:36 c.z.h.HikariDataSource HikariPool-1 - Starting... 
+25-10-21 15:17:36 i.o.a.GlobalOpenTelemetry AutoConfiguredOpenTelemetrySdk found on classpath but automatic configuration is disabled. To enable, run your JVM with -Dotel.java.global-autoconfigure.enabled=true 
+25-10-21 15:17:37 c.z.h.p.HikariPool HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@e08d871 
+25-10-21 15:17:37 c.z.h.HikariDataSource HikariPool-1 - Start completed. 
+25-10-21 15:17:37 o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer Global AuthenticationManager configured with UserDetailsService bean with name customUserDetailsService 
+25-10-21 15:17:38 o.s.b.a.e.w.EndpointLinksResolver Exposing 1 endpoint beneath base path '/actuator' 
