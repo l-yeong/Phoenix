@@ -1,17 +1,17 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import api from "../api/axiosInstance"; // axios 인스턴스 (withCredentials 설정된 버전)
+import api from "../api/axiosInstance"; // withCredentials:true 설정된 axios
 
 const AuthContext = createContext();
 
 /**
  * AuthProvider
- * - 앱 전역에서 로그인 상태를 관리
- * - JWT 쿠키 기반 인증 구조에 맞게 서버와 통신
+ * - 세션 기반(Spring Security) 인증 구조
+ * - 서버의 SecurityContextHolder 상태와 동기화
  */
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null); // 로그인한 회원 정보
   const [loading, setLoading] = useState(true); // 초기 로딩 상태
-  const [loggedOut, setLoggedOut] = useState(false);
+  const [loggedOut, setLoggedOut] = useState(false); // 로그아웃 감지 플래그
 
   /** 로그인 성공 시 상태 갱신 */
   const login = (userData) => {
@@ -19,13 +19,13 @@ export const AuthProvider = ({ children }) => {
     setUser(userData);
   };
 
-  // 회원정보 자동 요청
+  /** 세션 기반 회원 정보 자동 요청 */
   useEffect(() => {
-    if (loggedOut) return; // 로그아웃 후엔 자동으로 /info 요청 막기
+    if (loggedOut) return; // 로그아웃 중에는 요청하지 않음
 
     const fetchUser = async () => {
       try {
-        const res = await api.get("/members/info");
+        const res = await api.get("/members/info"); // 세션 쿠키 포함됨
         if (res.data.success) {
           setUser(res.data.data);
         } else {
@@ -38,19 +38,20 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
       }
     };
-    fetchUser();
-  }, [loggedOut]); // 🔧 loggedOut 바뀔 때만 재요청
 
-  // 로그아웃 함수 수정
+    fetchUser();
+  }, [loggedOut]);
+
+  /** 로그아웃 처리 */
   const logout = async () => {
-    setLoggedOut(true); // 🔧 먼저 true로 설정해서 fetchUser 중단
+    setLoggedOut(true);
     try {
-      await api.post("/members/logout");
+      await api.post("/members/logout"); // 세션 무효화 요청
     } catch (e) {
       console.error("로그아웃 요청 실패:", e);
     } finally {
-      setUser(null); // 🔧 즉시 헤더 UI에서 사용자 정보 제거
-      window.location.href = "/"; // 새로고침으로 쿠키·세션 싹 정리
+      setUser(null);
+      window.location.href = "/"; // 세션 쿠키 초기화 & 새로고침
     }
   };
 
@@ -66,8 +67,5 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-/**
- * useAuth 훅
- * - 어디서든 AuthContext 접근 가능
- */
+/** useAuth 훅 (전역 상태 접근용) */
 export const useAuth = () => useContext(AuthContext);
