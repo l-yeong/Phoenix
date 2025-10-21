@@ -13,6 +13,8 @@ import phoenix.model.dto.MembersDto;
 
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 /*
 *   JWT 토큰 생성 및 검증 유틸 클래스
@@ -43,6 +45,7 @@ public class JwtUtil {
                 .issuedAt(now)  // 토큰 발급 시간(iat)
                 .expiration(expiry) // 토큰 만료 시간(exp)
                 .claim("mno" , member.getMno()) // claim() : 커스텀 정보 꺼낼 수 있는 메소드
+                .claim("pno" , member.getPno()) // pno 추가
                 .signWith(Keys.hmacShaKeyFor(secret.getBytes())) // 서명(Signature) : secret 값을 HMAC-SHA256용 Key로 변환해서 서명
                 .compact(); // 최종적으로 JWT 문자열로 변환 (header.payload.signature 구조)
     } // func e
@@ -140,10 +143,13 @@ public class JwtUtil {
 
         String mid = claims.getSubject(); // JWT의 subject(사용자 식별자)
         Integer mno = claims.get("mno" , Integer.class); // JWT claim에서 회원번호 꺼냄
+        Integer pno = claims.get("pno" , Integer.class); // 선호 선수 추가
 
         MembersDto member = new MembersDto();
         member.setMno(mno);
         member.setMid(mid);
+        member.setPno(pno);
+
 
         // 기본 권한 설정(ROLE_USER)
         UserDetails userDetails = new User(mid ,"" , Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")));
@@ -152,7 +158,12 @@ public class JwtUtil {
         UsernamePasswordAuthenticationToken auth =
                 new UsernamePasswordAuthenticationToken( userDetails , "" , userDetails.getAuthorities());
 
-        auth.setDetails(mno);
+        // 부가정보로 mno , pno 함께 저장
+        Map<String , Object> details = new HashMap<>();
+        details.put("mno" , mno);
+        details.put("pno" , pno);
+        auth.setDetails(details);
+
 
         // 비밀번호 없이 UsernamePasswordAuthenticationToken 생성
         return auth;
