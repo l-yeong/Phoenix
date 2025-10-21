@@ -42,24 +42,6 @@ const HomeMain = () => {
           </Box>
         </Grid>
 
-        {/* 자동 예매 */}
-        <Grid item xs={12} md={3.5}>
-          <Box className={styles.card}>
-            <Typography variant="h4" className={styles.cardTitle}>
-              자동 예매
-            </Typography>
-            <Typography className={styles.cardDesc}>
-              선호 구역을 등록하면 자동으로 좌석을 배정받습니다.
-            </Typography>
-            <Button
-              className={styles.cardButton}
-              onClick={() => navigate("/auto-reserve")}
-            >
-              바로가기 →
-            </Button>
-          </Box>
-        </Grid>
-
         {/* 시니어 예매 */}
         <Grid item xs={12} md={3.5}>
           <Box className={styles.card}>

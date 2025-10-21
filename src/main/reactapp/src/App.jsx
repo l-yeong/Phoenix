@@ -3,7 +3,6 @@ import Home from "./pages/Home";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import HomeMain from "./pages/HomeMain";
-import AutoReserve from "./pages/AutoReserve";
 import SeniorReserve from "./pages/SeniorReserve";
 import LoginPage from "./pages/LoginPage";
 import SignUpPage from "./pages/SignUpPage";
@@ -24,9 +23,6 @@ function App() {
 
           {/* ⚾ 일반 예매 */}
           <Route path="/home" element={<Home />} />
-
-          {/* ⚙️ 자동 예매 */}
-          <Route path="/auto-reserve" element={<AutoReserve />} />
 
           {/* 👴 시니어 예매 */}
           <Route path="/senior-reserve" element={<SeniorReserve />} />
