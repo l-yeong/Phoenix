@@ -172,6 +172,7 @@ public class GateService {
 
     // 프론트에서 확인할 입장했는지 확인용 메소드
     public boolean isEntered(int mno) {
+
         return redisson.getBucket(RedisKeys.SESSION_PREFIX + mno).isExists();
     }   // func end
 
