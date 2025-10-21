@@ -19,21 +19,20 @@ import Mypage from "./features/members/Mypage.jsx";
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-
+    <BrowserRouter>
+      <AuthProvider>
         <Header />
         <Routes>
-          {/* 🔴 메인 선택 페이지 */}
+          {/* 메인 선택 페이지 */}
           <Route path="/" element={<HomeMain />} />
 
-          {/* ⚾ 일반 예매 */}
+          {/* 일반 예매 */}
           <Route path="/home" element={<Home />} />
 
-          {/* 👴 시니어 예매 */}
+          {/* 시니어 예매 */}
           <Route path="/senior-reserve" element={<SeniorReserve />} />
 
-          {/* 🧩 회원 관련 */}
+          {/* 회원 관련 */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignUpPage />} />
           <Route path="/social/success" element={<SocialSuccess />} />
@@ -47,8 +46,9 @@ function App() {
         </Routes>
         <Footer />
 
-      </BrowserRouter>
-    </AuthProvider>
+
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 
