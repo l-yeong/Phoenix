@@ -57,7 +57,8 @@ public class ReservationsController {
      */
     @PutMapping("/update")
     public ResponseEntity<Boolean> reserveUpdate(@RequestBody ReservationsDto dto ){
-        int mno = membersService.getLoginMember().getMno();
+        MembersDto loginMember = membersService.getLoginMember();
+        int mno = loginMember.getMno();
         boolean result = reservationsService.reserveUpdate(dto.getSno(),dto.getRno(),mno);
         return ResponseEntity.ok().body(result);
     }// func end
@@ -70,7 +71,8 @@ public class ReservationsController {
      */
     @PutMapping("/cancle")
     public ResponseEntity<Boolean> reserveCancle(@RequestParam int rno ){
-        int mno = membersService.getLoginMember().getMno();
+        MembersDto loginMember = membersService.getLoginMember();
+        int mno = loginMember.getMno();
         boolean result = reservationsService.reserveCancle(rno , mno);
         return ResponseEntity.ok().body(result);
     }// func end

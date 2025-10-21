@@ -1,11 +1,13 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 import TicketQR from "../tickets/TicketQR";
+import { useNavigate } from "react-router-dom";
 
 export default function Mypage() {
     const [mode, setMode] = useState("reservation"); // "edit" or "reservation"
     const [reservations, setReservations] = useState([]);
     const [form, setForm] = useState({ mname: "", mphone: "", birthdate: "" });
+    const navigate = useNavigate();
 
     // 예매내역 조회
     const reservePrint = async () => {
@@ -63,12 +65,9 @@ export default function Mypage() {
             {mode === "reservation" && (
                 <>
                     <h3>예매 내역</h3>
-<img
-  src={toImageSrc(t.ticket_code)}
-  alt="QR 이미지"
-  style={{ width: 200, height: 200, objectFit: "contain" }}
-  onError={(e) => { e.currentTarget.alt = "이미지를 불러오지 못했습니다."; }}
-/>
+                     <div style={{ margin: "20px 0" }}>
+                                <TicketQR />
+                      </div>
                     {reservations.length === 0 ? (
                         <p>예매 내역이 없습니다.</p>
                     ) : (
@@ -85,20 +84,20 @@ export default function Mypage() {
                             </thead>
                             <tbody>
                                 {reservations.map((r, idx) => (
-                                    <tr key={idx}>
-                                        <td>{r?.reservation?.rno ?? "-"}</td>
-                                        <td>{r?.reservation?.sno ?? "-"}</td>
-                                        <td>{r?.game?.homeTeam ?? "-"}</td>  
-                                        <td>{r?.game?.awayTeam ?? "-"}</td>  
+                                    <tr key={idx} onClick={() => navigate(`/reservation/${r.reservation.rno}`)} style={{ cursor: "pointer" }}>
+                                        <td>{r.reservation.rno}</td>
+                                        <td>{r.reservation?.sno}</td>
+                                        <td>{r.game.homeTeam}</td>
+                                        <td>{r.game.awayTeam}</td>
                                         <td>
-                                            {r?.game?.date ?? "-"} {r?.game?.time ?? ""}
+                                            {r.game.date} {r.game.time}
                                         </td>
                                         <td>
-                                            {r?.reservation?.status === "reserved"
+                                            {r.reservation.status === "reserved"
                                                 ? "예매완료"
-                                                : r?.reservation?.status === "cancelled"
+                                                : r.reservation.status === "cancelled"
                                                     ? "예매취소"
-                                                    : r?.reservation?.status ?? "-"}
+                                                    : r.reservation.status}
                                         </td>
                                     </tr>
                                 ))}
