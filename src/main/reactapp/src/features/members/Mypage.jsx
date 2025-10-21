@@ -1,11 +1,13 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 import TicketQR from "../tickets/TicketQR";
+import { useNavigate } from "react-router-dom";
 
 export default function Mypage() {
     const [mode, setMode] = useState("reservation"); // "edit" or "reservation"
     const [reservations, setReservations] = useState([]);
     const [form, setForm] = useState({ mname: "", mphone: "", birthdate: "" });
+    const navigate = useNavigate();
 
     // 예매내역 조회
     const reservePrint = async () => {
@@ -82,20 +84,20 @@ export default function Mypage() {
                             </thead>
                             <tbody>
                                 {reservations.map((r, idx) => (
-                                    <tr key={idx}>
-                                        <td>{r?.reservation?.rno ?? "-"}</td>
-                                        <td>{r?.reservation?.sno ?? "-"}</td>
-                                        <td>{r?.game?.homeTeam ?? "-"}</td>  {/* null-safe */}
-                                        <td>{r?.game?.awayTeam ?? "-"}</td>  {/* null-safe */}
+                                    <tr key={idx} onClick={() => navigate(`/reservation/${r.reservation.rno}`)} style={{ cursor: "pointer" }}>
+                                        <td>{r.reservation.rno}</td>
+                                        <td>{r.reservation?.sno}</td>
+                                        <td>{r.game.homeTeam}</td>
+                                        <td>{r.game.awayTeam}</td>
                                         <td>
-                                            {r?.game?.date ?? "-"} {r?.game?.time ?? ""}
+                                            {r.game.date} {r.game.time}
                                         </td>
                                         <td>
-                                            {r?.reservation?.status === "reserved"
+                                            {r.reservation.status === "reserved"
                                                 ? "예매완료"
-                                                : r?.reservation?.status === "cancelled"
+                                                : r.reservation.status === "cancelled"
                                                     ? "예매취소"
-                                                    : r?.reservation?.status ?? "-"}
+                                                    : r.reservation.status}
                                         </td>
                                     </tr>
                                 ))}

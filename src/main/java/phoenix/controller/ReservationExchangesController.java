@@ -2,14 +2,17 @@ package phoenix.controller;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import phoenix.model.dto.MembersDto;
 import phoenix.model.dto.ReservationExchangesDto;
 import phoenix.service.MembersService;
 import phoenix.service.RedisService;
 import phoenix.service.ReservationExchangesService;
 
 import java.util.List;
+import java.util.Map;
 
 @RequestMapping("/seat")
 @RestController
@@ -27,7 +30,12 @@ public class ReservationExchangesController {
      */
     @PostMapping("/change")
     public ResponseEntity<?> saveRequest(ReservationExchangesDto dto){
-        int mno = membersService.getLoginMember().getMno();
+        MembersDto loginMember = membersService.getLoginMember();
+        int mno = loginMember.getMno();
+        if (loginMember == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "로그인 정보가 없습니다."));
+        }
         dto.setFrom_mno(mno);
         int result = reservationexchangesService.requestChange(dto);
         return ResponseEntity.ok(result);
@@ -36,25 +44,25 @@ public class ReservationExchangesController {
     /**
      * 로그인한 회원한테 온 요청목록 조회
      *
-     * @param to_rno 로그인한 회원 얘매번호
+     * @param rno 로그인한 회원 얘매번호
      * @return List<ReservationExchangesDto> 요청목록
      */
     @GetMapping("/find")
-    public ResponseEntity<List<ReservationExchangesDto>> getAllRequest(@RequestParam int to_rno){
-        List<ReservationExchangesDto> list = redisService.getAllRequest(to_rno);
+    public ResponseEntity<List<ReservationExchangesDto>> getAllRequest(@RequestParam int rno){
+        List<ReservationExchangesDto> list = redisService.getAllRequest(rno);
         return ResponseEntity.ok(list);
     }// func end
 
     /**
      * 교환요청 거절
      *
-     * @param from_rno 요청자 예매번호
+     * @param rno 요청자 예매번호
      * @return boolean 성공 : true , 실패 : false
      */
     @DeleteMapping("")
-    public ResponseEntity<?> rejectChange(@RequestParam int from_rno){
-        ReservationExchangesDto dto = redisService.getRequest(from_rno);
-        boolean result = reservationexchangesService.rejectChange(from_rno);
+    public ResponseEntity<?> rejectChange(@RequestParam int rno){
+        ReservationExchangesDto dto = redisService.getRequest(rno);
+        boolean result = reservationexchangesService.rejectChange(rno);
         if (result){
             if (dto != null){
                 String msg = "좌석 교환 요청이 거절되었습니다.";
@@ -67,14 +75,19 @@ public class ReservationExchangesController {
     /**
      * 교환요청 수락
      *
-     * @param from_rno 요청자 예매번호
+     * @param rno 요청자 예매번호
      * @return boolean 성공 : true , 실패 : false0
      */
     @PostMapping("/accept")
-    public ResponseEntity<?> acceptChange(@RequestParam int from_rno ){
-        int mno = membersService.getLoginMember().getMno();
-        ReservationExchangesDto dto = redisService.getRequest(from_rno);
-        boolean result = reservationexchangesService.acceptChange(mno, from_rno);
+    public ResponseEntity<?> acceptChange(@RequestParam int rno ){
+        MembersDto loginMember = membersService.getLoginMember();
+        int mno = loginMember.getMno();
+        if (loginMember == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "로그인 정보가 없습니다."));
+        }
+        ReservationExchangesDto dto = redisService.getRequest(rno);
+        boolean result = reservationexchangesService.acceptChange(mno, rno);
         if (result){
             if (dto != null){
                 String msg = "좌석 교환 요청이 수락되었습니다.";

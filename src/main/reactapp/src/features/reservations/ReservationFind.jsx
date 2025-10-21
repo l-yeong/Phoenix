@@ -9,24 +9,23 @@ export default function reservationFind( props ){
     const [ exchange , setExchange ] = useState([]);
     // [*] 예매번호 URL에서 추출
     const {rno} = useParams();
+    // 현재시간
+    const now = new Date();
     // [1] 예매 상세내역 조회
     const reserveInfo = async () => {
         try{            
             const response = await axios.get(`http://localhost:8080/reserve/info?rno=${rno}`);
             setReservation(response.data);
             console.log(response.data);
+            // 경기날짜+시간
+            const gameDate = reservation?.game ? new Date(`${reservation.game.date}T${reservation.game.time}`) : null;
+            // 취소 여부 체크
+            const cancel = gameDate ? now < gameDate : false;
         }catch(e){
             console.log(e);
         }// try end
     }// func end
-
-    // 현재시간
-    const now = new Date();
-    // 경기날짜+시간
-    const gameDate = reservation ? new Date(`${reservation.game.date}T${reservation.game.time}`) : null;
-    // 취소 여부 체크
-    const cancel = now < gameDate;
-
+      
     // [2] 예매 취소 
     const reserveCancle = async() => {
         try{
@@ -89,23 +88,33 @@ export default function reservationFind( props ){
     return (
         <>
         <h2> 예매 상세내역 </h2>
-        {!reservation.reservation || !reservation.game ? (
+        {!reservation || !reservation.reservation || !reservation.game ? (
             <p> 예매 정보를 불러오는중... </p>
         ) : (
-            <div>
+            (() => {
+            // 렌더링 시점에 계산
+            const now = new Date();
+            const gameDate = new Date(`${reservation.game.date}T${reservation.game.time}`);
+            const cancel = now < gameDate;
+
+            return (
+                <div>
                 <ul>
-                    <li>예매번호 : {reservation.reservation.rno}</li>
-                    <li>좌석번호 : {reservation.reservation.sno}</li>
-                    <li>홈팀 : {reservation.game.homeTeam}</li>
-                    <li>홈팀 선발투수 : {reservation.game.homePitcher}</li>
-                    <li>어웨이팀 : {reservation.game.awayTeam}</li>
-                    <li>어웨이팀 선발투수 : {reservation.game.awayPitcher}</li>
-                    <li>경기날짜 : {reservation.game.date}</li>
-                    <li>경기시간 : {reservation.game.time}</li>
-                    <li>취소여부 : {cancel ? "취소 가능" : "취소 불가"}</li>
+                    <li>예매번호 : {reservation.reservation?.rno ?? "-"}</li>
+                    <li>좌석번호 : {reservation.reservation?.sno ?? "-"}</li>
+                    <li>홈팀 : {reservation.game?.homeTeam ?? "-"}</li>
+                    <li>홈팀 선발투수 : {reservation.game?.homePitcher ?? "-"}</li>
+                    <li>어웨이팀 : {reservation.game?.awayTeam ?? "-"}</li>
+                    <li>어웨이팀 선발투수 : {reservation.game?.awayPitcher ?? "-"}</li>
+                    <li>경기날짜 : {reservation.game?.date ?? "-"}</li>
+                    <li>경기시간 : {reservation.game?.time ?? "-"}</li>
+                    <li>취소가능여부 : {cancel ? "취소 가능" : "취소 불가"}</li>
                 </ul>
-                <button disabled={!cancel}> 좌석교환 </button> <button onClick={reserveCancle} disabled={!cancel}> 예매취소 </button>
-            </div>
+                <button disabled={!cancel}>좌석교환</button>
+                <button onClick={reserveCancle} disabled={!cancel}>예매취소</button>
+                </div>
+            );
+            })()
         )}
         <h2> 교환 요청 받은 목록 </h2>
         {exchange.length === 0 ? (
@@ -113,9 +122,10 @@ export default function reservationFind( props ){
         ) : (
             <ul>
                 {exchange.map( (ex) => {
+                    return ( 
                     <li key={ex.fromRno}>{ex.fromSeat} 번 좌석에서 좌석 교환 요청을 보냈습니다. 
                     <button onClick={ (e) => {acceptChange(ex.fromRno)} }>수락</button> <button onClick={(e) => {rejectChange(ex.fromRno)} }>거절</button></li>
-                })}
+                )})}
             </ul>
         )
         }
