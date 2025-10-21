@@ -26,10 +26,10 @@ const LoginForm = () => {
     e.preventDefault();
 
     try {
-      const response = await api.post("/members/login", {
-        mid,
-        password_hash: password,
-      });
+      const response = await api.post("/members/login", 
+        { mid, password_hash: password,} ,
+        { withCredentials : true }
+    );
 
       const resData = response.data.data;
       if (!resData) {
@@ -41,9 +41,22 @@ const LoginForm = () => {
       alert(`${resData.mid}님 환영합니다!`);
       navigate("/");
     } catch (error) {
-      console.error("로그인 실패:", error);
-      alert("아이디 또는 비밀번호를 확인해주세요.");
+    console.error("로그인 실패:", error);
+
+    // ✅ 응답 상태별 처리 (302는 더 이상 안뜰 예정, 대신 401/400)
+    if (error.response) {
+      const { status } = error.response;
+      if (status === 401) {
+        alert("인증되지 않은 요청입니다. 다시 로그인해주세요.");
+      } else if (status === 400) {
+        alert("아이디 또는 비밀번호를 확인해주세요.");
+      } else {
+        alert("서버 오류가 발생했습니다.");
+      }
+    } else {
+      alert("서버에 연결할 수 없습니다.");
     }
+  }
   };
 
   /** 소셜 로그인 리디렉션 */
