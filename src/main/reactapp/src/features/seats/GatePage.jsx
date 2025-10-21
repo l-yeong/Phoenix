@@ -14,6 +14,7 @@ export default function GatePage() {
   const [mno, setMno] = useState(Number(sessionStorage.getItem("gate_mno")) || 20001);
   const [gno, setGno] = useState(Number(sessionStorage.getItem("gate_gno")) || 143);
 
+
   const [queued, setQueued] = useState(sessionStorage.getItem("gate_queued") === "1");
   const [waitingCount, setWaitingCount] = useState(0);
   const [myPosition, setMyPosition] = useState(null);

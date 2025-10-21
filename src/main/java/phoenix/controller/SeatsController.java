@@ -27,6 +27,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class SeatsController {  // class start
 
+
     // 의존성 주입
     private final SeatLockService seatService;
 

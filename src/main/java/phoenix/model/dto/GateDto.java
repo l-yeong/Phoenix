@@ -24,7 +24,6 @@ public class GateDto {
         private boolean queued;   // true면 큐 등록, false면(이미 예매 등) 차단
         private int waiting;      // 현재 대기열 길이
     }
-
     /** 입장 확정 요청 */
     @Data
     public static class EnterRequest {
