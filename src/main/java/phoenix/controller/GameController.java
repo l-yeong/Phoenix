@@ -18,6 +18,7 @@ public class GameController {
     @GetMapping("/all")
     public ResponseEntity<List<GameDto>> all() {
         return ResponseEntity.ok(gameService.findAll());
+
     }
 
     // ✅ 단일 경기 예매 가능 여부 (최종 확인)
