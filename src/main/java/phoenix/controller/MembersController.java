@@ -1,15 +1,23 @@
 package phoenix.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import phoenix.model.dto.MembersDto;
+import phoenix.security.JwtUtil;
 import phoenix.service.MembersService;
 import phoenix.util.ApiResponseUtil;
+import phoenix.util.PasswordUtil;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -22,6 +30,7 @@ import java.util.Map;
 public class MembersController {
 
     private final MembersService membersService;
+    private final JwtUtil jwtUtil;
 
 
     /**
@@ -69,30 +78,43 @@ public class MembersController {
      * }
      * */
     @PostMapping("/login")
-    public ResponseEntity<ApiResponseUtil<?>> login(@RequestBody Map< String , String > request){
+    public ResponseEntity<ApiResponseUtil<?>> login(@RequestBody Map<String, String> request,
+                                                    HttpServletRequest httpRequest) {
         String mid = request.get("mid");
         String password = request.get("password_hash");
-        String token = membersService.login(mid , password );
 
-        if( token != null ){
-
-            // 회원 정보 조회 (mno , mid 포함)
-            MembersDto member = membersService.findByMid(mid);
-
-            Map<String , Object> data = Map.of(
-                    "accessToken" , token,
-                    "mid" , member.getMid(),
-                    "mno" , member.getMno()
-            );
-
+        // 1. 기존 membersService.login() 은 JWT 발급 로직이지만, 비밀번호 검증은 그대로 사용
+        MembersDto member = membersService.findByMid(mid);
+        if (member == null || !PasswordUtil.matches(password, member.getPassword_hash())) {
             return ResponseEntity
-                    .ok() // 200 OK
-                    .body(new ApiResponseUtil<>(true , "로그인 성공" , data));
-        } else {
-            return ResponseEntity
-                    .status(HttpStatus.UNAUTHORIZED) // 401 Unauthorized
-                    .body(new ApiResponseUtil<>(false, "로그인 실패", null));
-        } // if e
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponseUtil<>(false, "아이디 또는 비밀번호가 일치하지 않습니다.", null));
+        }
+
+        // 2. Authentication 객체 생성
+        UsernamePasswordAuthenticationToken authenticationToken =
+                new UsernamePasswordAuthenticationToken(mid, null,
+                        List.of(new SimpleGrantedAuthority("ROLE_USER")));
+
+        // 3. SecurityContext 에 등록
+        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+
+        // 4. 세션에 인증정보 저장 (Spring Security가 세션기반 인증 유지 가능하게)
+        HttpSession session = httpRequest.getSession(true);
+        session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
+
+        // 5. JWT 발급은 유지 — Redis 통계나 추후 로그아웃용으로만
+        String token = jwtUtil.generateToken(member);
+
+        Map<String, Object> data = Map.of(
+                "mid", member.getMid(),
+                "mno", member.getMno()
+                // 필요 시 accessToken도 함께 내려보낼 수 있음 (디버깅용 or 참고용)
+        );
+
+        return ResponseEntity
+                .ok(new ApiResponseUtil<>(true, "로그인 성공 (세션 저장 완료)", data));
+
     } // func e
 
     /**
