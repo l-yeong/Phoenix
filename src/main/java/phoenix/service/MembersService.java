@@ -2,6 +2,9 @@ package phoenix.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,6 +20,7 @@ import phoenix.util.PasswordUtil;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -108,6 +112,14 @@ public class MembersService {
 
             // Redis에 Refresh Token 저장 (7일 TTL)
             tokenService.saveRefreshToken(member.getMid(), refreshToken, Duration.ofDays(7).toMinutes());
+
+            // 세션 기반 인증 정보 수동 저장
+            Authentication authentication = new UsernamePasswordAuthenticationToken(
+                    member, // Principal
+                    null, // Credentials
+                    List.of(new SimpleGrantedAuthority("ROLE_USER"))
+            );
+            SecurityContextHolder.getContext().setAuthentication(authentication);
 
             return accessToken;
         }
@@ -306,51 +318,60 @@ public class MembersService {
     } // func e
 
     /**
-     * 현재 로그인한 회원 정보 반환( 세션 기반 )
-     * - 일반 로그인 (UserDetails)
-     * - 소셜 로그인 (DefaultOauth2User)
-     * - 비로그인 상태면 null 반환
+     * 현재 로그인한 회원 정보 반환(세션 기반)
+     * - 일반 로그인(UserDetails)
+     * - 소셜 로그인(DefaultOAuth2User)
+     * - 직접 저장한 MembersDto
      */
-    public MembersDto getLoginMember(){
-        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    public MembersDto getLoginMember() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) return null;
+
+        Object principal = auth.getPrincipal();
 
         // 비로그인 상태
-        if(principal.equals("anonymousUser")){
-            return null;
-        } // if e
+        if (principal.equals("anonymousUser")) return null;
 
-        // 일반 로그인 회원
-        if(principal instanceof UserDetails userDetails){
-            String mid = userDetails.getUsername(); // LoadUserByUsername 에서 반환된 mid
-            return membersMapper.findByMid(mid);
-        } // if e
-
-        // 소셜 로그인 회원
-        else if (principal instanceof DefaultOAuth2User oAuth2User) {
-            String provider = (String) oAuth2User.getAttribute("provider");
-            if(provider == null){
-                // provider가 attributes에 없는 경우 , ReqistrationId로 보정
-                Object registration = oAuth2User.getAttributes().get("iss");
-                if(registration != null && registration.toString().contains("google")) provider = "google";
-                else if (oAuth2User.getAttributes().containsKey("login")) provider = "github";
-                else provider = "facebook"; // fallback
-            }
-
-            // provider별 고유 ID 추출
-            String providerId = null;
-            if(oAuth2User.getAttributes().get("sub") != null){
-                providerId = oAuth2User.getAttributes().get("sub").toString(); // Google
-            } else if (oAuth2User.getAttributes().get("id") != null) {
-                providerId = oAuth2User.getAttributes().get("id").toString(); // github , facebook
-            }
-
-            return membersMapper.findByProvider(provider , providerId);
+        // 소셜 로그인 시 principal에 MembersDto로 저장한 경우
+        if (principal instanceof MembersDto memberDto) {
+            return memberDto;
         }
-        // 기타 예외처리
+
+        // 일반 로그인
+        if (principal instanceof UserDetails userDetails) {
+            String mid = userDetails.getUsername();
+            return membersMapper.findByMid(mid);
+        }
+
+        // OAuth2 로그인(DefaultOAuth2User)
+        if (principal instanceof DefaultOAuth2User oAuth2User) {
+            String provider = (String) oAuth2User.getAttribute("provider");
+
+            if (provider == null) {
+                Object registration = oAuth2User.getAttributes().get("iss");
+                if (registration != null && registration.toString().contains("google")) provider = "google";
+                else if (oAuth2User.getAttributes().containsKey("login")) provider = "github";
+                else provider = "facebook";
+            }
+
+            String providerId = null;
+            if (oAuth2User.getAttributes().get("sub") != null)
+                providerId = oAuth2User.getAttributes().get("sub").toString();
+            else if (oAuth2User.getAttributes().get("id") != null)
+                providerId = oAuth2User.getAttributes().get("id").toString();
+
+            return membersMapper.findByProvider(provider, providerId);
+        }
+
+        // principal이 String(mid)인 경우 (혹시 남아있을 때 대비)
+        if (principal instanceof String mid) {
+            return membersMapper.findByMid(mid);
+        }
+
         return null;
 
-
     } // func e
+
 
 
 
