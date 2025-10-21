@@ -103,7 +103,7 @@ public class TicketsService {
      * - GET /tickets/print?mno={mno}
      */
     @Transactional(readOnly = true)
-    public List<String> findPayloads(int mno) {
+    public List<Map<String,Object>> findPayloads(int mno) {
         return ticketsMapper.findPayloads(mno);
     }//func end
 
