@@ -2,9 +2,12 @@ package phoenix.controller;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import phoenix.model.dto.MembersDto;
 import phoenix.model.dto.ReservationsDto;
+import phoenix.service.MembersService;
 import phoenix.service.ReservationsService;
 
 import java.util.List;
@@ -15,6 +18,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ReservationsController {
     private final ReservationsService reservationsService;
+    private final MembersService membersService;
 
     /**
      * 예매내역조회
@@ -24,7 +28,12 @@ public class ReservationsController {
      */
     @GetMapping("/print")
     public ResponseEntity<?> reservePrint(HttpSession session){
-        int mno = (int) session.getAttribute("logMno");
+        MembersDto loginMember = membersService.getLoginMember();
+        int mno = loginMember.getMno();
+        if (loginMember == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "로그인 정보가 없습니다."));
+        }
         List<Map<String,Object>> list = reservationsService.reservePrint(mno);
         return ResponseEntity.ok().body(list);
     }// func end

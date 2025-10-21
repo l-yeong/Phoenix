@@ -1,57 +1,139 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 
-export default function Mypage( props ){
-    // 예매내역 상태
-    const [ reservations , setReservations ] = useState([]);
-        
-    // [1] 예매내역 전체조회 ( 회원번호 쿼리스트링으로 전달 )
-    const reservePrint = async() => {        
-        try{
-            const response = await axios.get("http://localhost:8080/reserve/print");
-            setReservations(response.data); // 상태 업데이트
-            console.log(response.data);
-        }catch(e){
-            console.log(e);
-        }// try end
-    }// func end
+export default function Mypage() {
+    const [mode, setMode] = useState("reservation"); // "edit" or "reservation"
+    const [reservations, setReservations] = useState([]);
+    const [form, setForm] = useState({ mname: "", mphone: "", birthdate: "" });
 
-    // [2] 컴포넌트 처음 렌더링 때 호출
-    useEffect( () => {
-        reservePrint();
-    },[]); 
+    // 예매내역 조회
+    const reservePrint = async () => {
+        try {
+            const response = await axios.get("http://localhost:8080/reserve/print", {
+                withCredentials: true,
+            });
+            setReservations(response.data);
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    // 회원정보 로드
+    const memberInfo = async () => {
+        try {
+            const response = await axios.get("http://localhost:8080/members/info", {
+                withCredentials: true,
+            });
+            setForm(response.data.data);
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    // 수정 저장
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            await axios.put("http://localhost:8080/members/update", form, {
+                withCredentials: true,
+            });
+            alert("회원정보 수정 완료!");
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    useEffect(() => {
+        if (mode === "reservation") reservePrint();
+        else memberInfo();
+    }, [mode]);
+
     return (
-        <>
-        <h2> 예매 내역 </h2>
-        {reservations.length == 0 ? (
-            <p> 예매 내역이 없습니다. </p>
-        ) : (
-            <table>
-                <thead>
-                    <tr>
-                        <th>예매번호</th>
-                        <th>좌석번호</th>
-                        <th>홈팀</th>
-                        <th>어웨이팀</th>
-                        <th>경기날짜</th> 
-                        <th>예매현황</th>                       
-                    </tr>
-                </thead>
-                <tbody>
-                    {reservations.map( (r) => {
-                        return (
-                            <tr key={r.reservation.rno}>
-                                <td><Link to={`/reservationFind/${r.reservation.rno}`}>{r.reservation.rno}</Link></td>
-                                <td>{r.reservation.sno}</td>
-                                <td>{r.game.homeTeam}</td>
-                                <td>{r.game.awayTeam}</td>
-                                <td>{r.game.date} {r.game.time}</td>
-                                <td>{r.reservation.status === "reserved" ? "예매완료" : r.reservation.status === "cancelled" ? "예매취소" : r.reservation.status}</td>
-                            </tr>
-                        )})}
-                </tbody>
-            </table>
-        )}
-        </>
-    )
-}// func end
+        <div>
+            <h2>마이페이지</h2>
+
+            {/* 🔸 탭 메뉴 */}
+            <div style={{ marginBottom: "20px" }}>
+                <button onClick={() => setMode("reservation")}>예매 내역</button>
+                <button onClick={() => setMode("edit")}>회원정보 수정</button>
+            </div>
+
+            {/* 🔹 예매내역 */}
+            {mode === "reservation" && (
+                <>
+                    <h3>예매 내역</h3>
+                    {reservations.length === 0 ? (
+                        <p>예매 내역이 없습니다.</p>
+                    ) : (
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>예매번호</th>
+                                    <th>좌석번호</th>
+                                    <th>홈팀</th>
+                                    <th>어웨이팀</th>
+                                    <th>경기날짜</th>
+                                    <th>예매현황</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {reservations.map((r, idx) => (
+                                    <tr key={idx}>
+                                        <td>{r?.reservation?.rno ?? "-"}</td>
+                                        <td>{r?.reservation?.sno ?? "-"}</td>
+                                        <td>{r?.game?.homeTeam ?? "-"}</td>  {/* null-safe */}
+                                        <td>{r?.game?.awayTeam ?? "-"}</td>  {/* null-safe */}
+                                        <td>
+                                            {r?.game?.date ?? "-"} {r?.game?.time ?? ""}
+                                        </td>
+                                        <td>
+                                            {r?.reservation?.status === "reserved"
+                                                ? "예매완료"
+                                                : r?.reservation?.status === "cancelled"
+                                                    ? "예매취소"
+                                                    : r?.reservation?.status ?? "-"}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
+                </>
+            )}
+
+            {/* 🔹 회원정보 수정 */}
+            {mode === "edit" && (
+                <>
+                    <h3>회원정보 수정</h3>
+                    <form onSubmit={handleSubmit}>
+                        <label>이름</label>
+                        <input
+                            name="mname"
+                            value={form.mname}
+                            onChange={(e) =>
+                                setForm({ ...form, mname: e.target.value })
+                            }
+                        />
+                        <label>전화번호</label>
+                        <input
+                            name="mphone"
+                            value={form.mphone}
+                            onChange={(e) =>
+                                setForm({ ...form, mphone: e.target.value })
+                            }
+                        />
+                        <label>생년월일</label>
+                        <input
+                            name="birthdate"
+                            value={form.birthdate}
+                            onChange={(e) =>
+                                setForm({ ...form, birthdate: e.target.value })
+                            }
+                        />
+                        <button type="submit">수정하기</button>
+                    </form>
+                </>
+            )}
+        </div>
+    );
+}
