@@ -89,9 +89,8 @@ public class SeatsController {  // class start
     @PostMapping("/getMap")
     public ResponseEntity<SeatsDto.MapResponse> getSeatMap(@RequestBody SeatsDto.MapRequest dto) {
 
-        Map<String, String> statusBySeat = seatService.getSeatStatusMap(dto.getGno(), dto.getUno());
+        Map<String, String> statusBySeat = seatService.getSeatStatusMap(dto.getGno(), dto.getMno());
 
         return ResponseEntity.ok(new SeatsDto.MapResponse(statusBySeat));
     }   // func end
 }   // class end
-

@@ -14,8 +14,8 @@ public class GateDto {
     /** 대기열 등록 요청 */
     @Data
     public static class EnqueueRequest {
-        private String uno;
-        private String gno; // 같은 공연 중복 예매 사전 차단용
+        private int mno;
+        private int gno; // 같은 공연 중복 예매 사전 차단용
     }
 
     /** 대기열 등록 응답 */
@@ -28,9 +28,9 @@ public class GateDto {
     /** 입장 확정 요청 */
     @Data
     public static class EnterRequest {
-        private String uno;
+        private int mno;
         private String token;
-        private String gno; // 입장 시에도 중복 예매 재확인
+        private int gno; // 입장 시에도 중복 예매 재확인
     }
 
     /** 입장 확정 응답 */
@@ -43,7 +43,7 @@ public class GateDto {
     /** 퇴장 요청 */
     @Data
     public static class LeaveRequest {
-        private String uno;
+        private int mno;
     }
 
     /** 퇴장 응답 */

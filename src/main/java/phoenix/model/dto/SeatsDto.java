@@ -35,8 +35,8 @@ public class SeatsDto {
      */
     @Data
     public static class SelectRequest {
-        private String mno;
-        private String gno;
+        private int mno;
+        private int gno;
         private String sno;
     }
 
@@ -75,8 +75,8 @@ public class SeatsDto {
      */
     @Data
     public static class ReleaseRequest {
-        private String mno;
-        private String gno;
+        private int mno;
+        private int gno;
         private String sno;
     }
 
@@ -110,8 +110,8 @@ public class SeatsDto {
      */
     @Data
     public static class ConfirmRequest {
-        private String mno;
-        private String gno;
+        private int mno;
+        private int gno;
         private List<String> seats;
     }
 
@@ -158,7 +158,7 @@ public class SeatsDto {
     // SeatsDto.java 내부에 추가
     @Data @AllArgsConstructor @NoArgsConstructor
     public static class MapRequest {
-        private int uno;
+        private int mno;
         private int gno;
 
     }

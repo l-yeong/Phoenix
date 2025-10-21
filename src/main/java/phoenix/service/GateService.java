@@ -6,6 +6,8 @@ import org.redisson.api.*;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import phoenix.model.dto.GameDto;
+import phoenix.model.dto.GateDto;
 import phoenix.util.RedisKeys;
 
 import java.util.concurrent.TimeUnit;
@@ -27,7 +29,7 @@ import java.util.concurrent.TimeUnit;
  * 기술 요소
  * - Redisson RSemaphore : 동시 입장 인원(퍼밋) 제어
  * - Redisson RBlockingQueue : 대기열(FIFO)
- * - Redisson RBucket : 세션 상태(uno), 토큰 저장(token → uno)
+ * - Redisson RBucket : 세션 상태(mno), 토큰 저장(token → mno)
  * - Redisson RSet : 현재 활성 사용자 목록 관리
 
  * TTL 설정
@@ -40,7 +42,8 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 @EnableScheduling // @Scheduled로 세션 만료 회수를 주기적으로 수행
 public class GateService {
-
+    // 의존성 추가
+    private final GameService gameService;
     private final RedissonClient redisson;
 
     // 동시 입장 허용 인원 (3명까지만 동시에 예매 페이지 접근 가능)
@@ -59,12 +62,12 @@ public class GateService {
     private RSemaphore semaphore() { return redisson.getSemaphore(RedisKeys.GATE_SEMAPHORE); }
 
     // 대기열 큐 => 대기자를 순차적으로 들여보냄 , 분산 대기열임.
-    private RBlockingQueue<String> queue() { return redisson.getBlockingQueue(RedisKeys.WAITING_QUEUE); }
+    private RBlockingQueue<Integer> queue() { return redisson.getBlockingQueue(RedisKeys.WAITING_QUEUE); }
 
     // 현재 게이트 안에 있는 사용자 Set 집합
-    private RSet<String> activeSet() {return redisson.getSet(RedisKeys.ACTIVE_SET);}
+    private RSet<Integer> activeSet() {return redisson.getSet(RedisKeys.ACTIVE_SET);}
     // 대기 명단
-    private RSet<String> waitingSet() { return redisson.getSet(RedisKeys.WAITING_SET); }
+    private RSet<Integer> waitingSet() { return redisson.getSet(RedisKeys.WAITING_SET); }
 
 
     // 초기화 로직 ==> 앱 스타트 시 3개의 퍼밋만 세팅
@@ -83,8 +86,8 @@ public class GateService {
     // 그것을 .get()해서 Redis 타입을 자동 파싱해서 자바 형식으로 가져와 true 인지 false 인지 확인한다.
     // Boolean 타입인 이유는 가져온 Bucket이 null일 경우 nullPointException이 일어날 수 있기 때문에
     // 안전하게 처리한다. 암튼 가져와서 비교하고 이미 예약 되어있으면 false를 반환한다.
-    private boolean hasUserAlreadyBooked(String uno, String gno) {
-        RBucket<Boolean> b = redisson.getBucket("user_booking:" + uno + ":" + gno);
+    private boolean hasUserAlreadyBooked(int mno, int gno) {
+        RBucket<Boolean> b = redisson.getBucket("user_booking:" + mno + ":" + gno);
         return Boolean.TRUE.equals(b.get());
     }   // func end
 
@@ -96,17 +99,23 @@ public class GateService {
      * 2 아직 예매하지 않았다면 대기열에 추가
      * 3. 빈 자리가 있으면 assignNextIfPossible()로 토큰 발급 시도
      */
-    public EnqueueResult enqueue(String uno, String gno) {
+    public EnqueueResult enqueue(int mno, int gno) {
+
+        // 1️⃣ 예매 가능 여부 확인 (보안)
+        if (!gameService.isReservable(gno)) {
+            return new EnqueueResult(false, 0);
+        }
+
         // 이미 예매한 사용자인 경우 즉시 차단함 ===> 매크로등 쓸데 없는 대기열 점유를 방지한다.
-        if (hasUserAlreadyBooked(uno, gno)) {
+        if (hasUserAlreadyBooked(mno, gno)) {
             return new EnqueueResult(false, 0);
         }   // if end
 
         // 이미 대기중이면 재등록하지 않음
-        if (!waitingSet().add(uno)) return new EnqueueResult(true, queue().size());
+        if (!waitingSet().add(mno)) return new EnqueueResult(true, queue().size());
 
         // 대기열(큐)에 유저를 추가한다.
-        queue().add(uno);
+        queue().add(mno);
 
         // 빈 슬롯이 있다면 즉시 다음 사람을 입장시킴
         // 아래에 메소드 호출임 오해 금지.
@@ -132,7 +141,7 @@ public class GateService {
             if (semaphore().availablePermits() <= 0) return;
 
             // 대기열에서 맨 앞 유저를 꺼냄
-            String nextUser = queue().poll();
+            Integer nextUser = queue().poll();
             // 대기하는 인원이 존재하지 않으면 그냥 종료
             if (nextUser == null) return;
             // 이미 활성 유저라면 재입장 방지 로 인하여 그냥 종료
@@ -148,7 +157,7 @@ public class GateService {
                 return;
             }   // if end
 
-            // Redis에 토큰 uno를 저장한다 ==> 30초 TTL를 준다
+            // Redis에 토큰 mno를 저장한다 ==> 30초 TTL를 준다
             redisson.getBucket(RedisKeys.SESSION_PREFIX + nextUser)
                     .set("alive", SESSION_MINUTES, TimeUnit.MINUTES);
 
@@ -163,25 +172,25 @@ public class GateService {
     }   // func end
 
     // 프론트에서 확인할 입장했는지 확인용 메소드
-    public boolean isEntered(String uno) {
-        return redisson.getBucket(RedisKeys.SESSION_PREFIX + uno).isExists();
+    public boolean isEntered(int mno) {
+        return redisson.getBucket(RedisKeys.SESSION_PREFIX + mno).isExists();
     }   // func end
 
 
     // [퇴장 처리용 메소드 => 사용자가 예매를 끝내거나 퇴장할 때 실행.
     /**
      사용자가 예매를 마치거나 직접 퇴장할 때 호출됨.
-     session:{uno} 키 삭제
+     session:{mno} 키 삭제
      activeSet 에서 제거
      세마포어 퍼밋 1개 반환 후 다음 대기자에게 기회 부여
      */
-    public boolean leave(String uno) {
+    public boolean leave(int mno) {
         // 세션 및 활성 사용자 제거
         // delete() => 해당 버켓 제거
-        redisson.getBucket(RedisKeys.SESSION_PREFIX + uno).delete();
+        redisson.getBucket(RedisKeys.SESSION_PREFIX + mno).delete();
 
         // 지금 입장 중인 유저 목록(activeSet) 에서 빼고, 원래 들어있었는지 결과를 wasActive로 받음 (있었으면 true)
-        boolean wasActive = activeSet().remove(uno);
+        boolean wasActive = activeSet().remove(mno);
 
         // 세마포어에 있는 퍼밋을 제거함
         if (wasActive) {
@@ -215,19 +224,19 @@ public class GateService {
     // 1분 연장 하는 메소드
     /**
      사용자가 "연장하기" 버튼을 눌렀을 때 호출됨.
-     session:{uno} 의 TTL(남은 수명)을 1분 더 늘려준다.
+     session:{mno} 의 TTL(남은 수명)을 1분 더 늘려준다.
      연장은 최대 N회로 제한할 수도 있음 (원하면 구현 가능)
      */
-    public int extendSession(String uno) {
+    public int extendSession(int mno) {
         try {
             // 세션 버킷을 가져옴
-            RBucket<String> sessionBucket = redisson.getBucket(RedisKeys.SESSION_PREFIX + uno);
+            RBucket<String> sessionBucket = redisson.getBucket(RedisKeys.SESSION_PREFIX + mno);
 
             // 세션이 존재하지 않으면 (만료된 경우) 연장이 불가능
             if (!sessionBucket.isExists()) return 0;
 
             // 연장 횟수 카운트 버킷 가져오기
-            RBucket<Integer> countBucket = redisson.getBucket("gate:extendCount:" + uno);
+            RBucket<Integer> countBucket = redisson.getBucket("gate:extendCount:" + mno);
             // null 값이 뜰 수도 있고 그냥 Integer로 가져옴
             Integer count = countBucket.get();
             // 만약 null 이면 0으로 함
@@ -248,7 +257,7 @@ public class GateService {
             // 연장 횟수 +1 저장 (TTL은 세션과 동일하게 설정)
             countBucket.set(count + 1, SESSION_MINUTES, TimeUnit.MINUTES);
 
-            System.out.println("[GateService] " + uno + " 님 세션 연장 (" + (count + 1) + "/2)");
+            System.out.println("[GateService] " + mno + " 님 세션 연장 (" + (count + 1) + "/2)");
 
             return count + 1; // 연장 성공
         } catch (Exception e) {
@@ -263,15 +272,15 @@ public class GateService {
      * [reapExpiredSessions]
      * - 2초마다 실행(@Scheduled)
      * - activeSet(현재 입장자 목록)을 순회하면서
-     *   session:{uno} TTL이 만료된 사용자를 제거한다.
+     *   session:{mno} TTL이 만료된 사용자를 제거한다.
      * - 세션이 사라진 사용자는 자동으로 퍼밋이 반환되어
      *   다음 대기자가 입장 가능하게 된다.
      */
     @Scheduled(fixedDelay = 2000)
     public void reapExpiredSessions() {
         try {
-            for (String uid : activeSet()) {
-                // session:{uno} 키가 여전히 존재하는지 검사하기 위해 버켓을 가져옴.
+            for (Integer uid : activeSet()) {
+                // session:{mno} 키가 여전히 존재하는지 검사하기 위해 버켓을 가져옴.
                 boolean alive = redisson.getBucket(RedisKeys.SESSION_PREFIX + uid).isExists();
 
                 // 존재하지 않으면 TTL 만료된 것 → 회수 처리
@@ -290,15 +299,15 @@ public class GateService {
     }   // func end
 
     // 내가 몇 번째 순번인지 알려주는 메소드
-    public Integer positionOf(String uno) {
+    public Integer positionOf(int mno) {
         // 이미 입장(세션 alive)이면 0으로 표기하거나 null 반환 등 정책 선택
-        if (isEntered(uno)) return 0;
+        if (isEntered(mno)) return 0;
 
         // 현재 대기열에서 1-base 순번 계산 (O(n))
-        RBlockingQueue<String> q = queue();
+        RBlockingQueue<Integer> q = queue();
         int idx = 1;
-        for (String uid : q) {
-            if (uid.equals(uno)) return idx; // 1,2,3,...
+        for (Integer uid : q) {
+            if (uid.equals(mno)) return idx; // 1,2,3,...
             idx++;
         }
         // 큐에 없으면 null (대기열 미등록/활성 유저 등)

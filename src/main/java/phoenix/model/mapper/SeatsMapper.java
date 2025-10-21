@@ -9,14 +9,14 @@ import java.util.Map;
 public interface SeatsMapper {
 
         @Select("""
-    SELECT r.gno, s.seat_name
-    FROM reservations r
-    JOIN seats s ON r.sno = s.sno
-    GROUP BY r.gno, s.seat_name
-    ORDER BY r.gno, s.seat_name
-""")
+        SELECT r.gno, s.seatName
+        FROM reservations r
+        JOIN seats s ON r.sno = s.sno
+        WHERE r.status = 'reserved'
+        GROUP BY r.gno, s.seatName
+        ORDER BY r.gno, s.seatName
+    """)
         @MapKey("gno")
         Map<Integer, List<String>> findAllSeatNamesGroupedByGame();
-
 
 }//inter end
