@@ -8,18 +8,12 @@ const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 export default function GatePage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const api = useMemo(
-    () => axios.create({ baseURL: API /*, withCredentials: true*/ }),
-    []
-  );
+  const api = useMemo(() => axios.create({ baseURL: API }), []);
 
-  // ✅ mno / gno (정수) — 이름/타입을 백엔드와 일치시키기
-  const [mno, setMno] = useState(
-    Number(sessionStorage.getItem("gate_mno")) || 20001 // 데모용 기본값
-  );
-  const [gno, setGno] = useState(
-    Number(sessionStorage.getItem("gate_gno")) || 143   // 데모용 기본값
-  );
+  // ✅ mno / gno는 모두 "정수"
+  const [mno, setMno] = useState(Number(sessionStorage.getItem("gate_mno")) || 20001);
+  const [gno, setGno] = useState(Number(sessionStorage.getItem("gate_gno")) || 143);
+
 
   const [queued, setQueued] = useState(sessionStorage.getItem("gate_queued") === "1");
   const [waitingCount, setWaitingCount] = useState(0);
@@ -32,35 +26,32 @@ export default function GatePage() {
   useEffect(() => sessionStorage.setItem("gate_mno", String(mno)), [mno]);
   useEffect(() => sessionStorage.setItem("gate_gno", String(gno)), [gno]);
 
-  // ✅ 다른 페이지에서 navigate("/gate", { state: { mno, gno } })로 넘어온 경우 자동 세팅/등록
+  // 다른 페이지에서 넘어온 state 적용
   useEffect(() => {
     if (location.state?.mno) setMno(Number(location.state.mno));
     if (location.state?.gno) setGno(Number(location.state.gno));
   }, [location.state]);
 
+  // state로 받은 값이 있고 아직 큐 미등록이면 자동 등록
   useEffect(() => {
-    // location.state로 받은 둘 다 있으면 자동 등록(선택사항)
     if (location.state?.mno && location.state?.gno && !queued) {
       enqueue();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state, mno, gno]);
 
-  // ✅ 대기열 등록：백엔드가 요구하는 키/타입으로!
+  // ✅ 대기열 등록
   const enqueue = async () => {
     setLoading(true);
     setMsg("");
     try {
-      const payload = { mno: Number(mno), gno: Number(gno) }; // ← 중요
+      const payload = { mno: Number(mno), gno: Number(gno) }; // ← 백엔드 DTO와 동일 키/타입
       const { data } = await api.post("/gate/enqueue", payload);
-      setQueued(Boolean(data?.queued));
-      sessionStorage.setItem("gate_queued", data?.queued ? "1" : "0");
+      const q = Boolean(data?.queued);
+      setQueued(q);
+      sessionStorage.setItem("gate_queued", q ? "1" : "0");
       setWaitingCount(Number(data?.waiting) || 0);
-      setMsg(
-        data?.queued
-          ? `대기열 등록 완료! (현재 ${data.waiting}명 대기 중)`
-          : "이미 예매했거나 등록할 수 없습니다."
-      );
+      setMsg(q ? `대기열 등록 완료! (현재 ${data.waiting}명 대기 중)` : "이미 예매했거나 등록 불가합니다.");
     } catch (e) {
       console.error(e);
       setMsg("대기열 등록 중 오류가 발생했습니다.");
@@ -69,35 +60,35 @@ export default function GatePage() {
     }
   };
 
-  // ✅ 2초마다 상태 확인 (내 순번 + 입장 여부)
+  // ✅ 1초마다 상태 폴링 (세션 alive + 내 순번 + 대기열 길이)
   useEffect(() => {
     if (!queued) return;
     const timer = setInterval(async () => {
       try {
-        // 1) 게이트 세션 확인
         const { data: check } = await api.get(`/gate/check/${encodeURIComponent(mno)}`);
         const isReady = Boolean(check?.ready);
         setReady(isReady);
-        if (isReady) {
-          // 좌석 페이지나 매크로 페이지로 이동
-          navigate("/macro", { state: { mno, gno } });
-          return;
-        }
+        // console.log("[GATE] ready=", isReady);
 
-        // 2) 내 순번 조회
         const { data: pos } = await api.get(`/gate/position/${encodeURIComponent(mno)}`);
         if (typeof pos?.position === "number") setMyPosition(pos.position);
 
-        // 3) 현재 대기열 길이
         const { data: status } = await api.get("/gate/status");
         setWaitingCount(Number(status?.waiting) || 0);
       } catch (e) {
         // 네트워크 오류는 일시 무시
-        // console.warn(e);
       }
-    }, 2000);
+    }, 1000); // ← 1s 폴링
     return () => clearInterval(timer);
-  }, [api, queued, mno, gno, navigate]);
+  }, [api, queued, mno]);
+
+  // ✅ 보강: ready가 true로 변하는 "순간" 강제 리디렉트
+  useEffect(() => {
+    if (ready) {
+      // replace: 뒤로가기 시 대기실로 못 돌아오게 하려면 true 유지
+      navigate("/macro", { replace: true, state: { mno, gno } });
+    }
+  }, [ready, navigate, mno, gno]);
 
   return (
     <div className="gate-wrap">
@@ -144,7 +135,7 @@ export default function GatePage() {
             <span>
               내 상태:{" "}
               {ready ? (
-                <span className="gate-ready">입장 준비 완료!</span>
+                <span className="gate-ready">입장 준비 완료! 곧 이동합니다…</span>
               ) : (
                 <span className="gate-wait">대기 중...</span>
               )}
@@ -162,13 +153,13 @@ export default function GatePage() {
           </div>
 
           <div className="gate-msg">
-            순서가 되면 자동으로 <b>보안 검증 페이지</b>로 이동합니다.
+            순서가 되면 자동으로 <b>/macro</b> 페이지로 이동합니다.
           </div>
         </div>
       )}
 
       <div className="gate-foot">
-        • “대기열 입장” 후 2초마다 내 순번이 자동 갱신됩니다. <br />
+        • “대기열 입장” 후 1초마다 내 순번이 자동 갱신됩니다. <br />
         • 입장 준비 완료 시 자동으로 <b>/macro</b> 페이지로 이동합니다.
       </div>
     </div>

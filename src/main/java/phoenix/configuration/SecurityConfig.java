@@ -19,6 +19,8 @@ import phoenix.handler.OAuth2SuccessHandler;
 import phoenix.service.CustomOAuth2UserService;
 import phoenix.service.MembersService;
 
+import java.util.List;
+
 /**
  * <h2>SecurityConfig</h2>
  * <p>
@@ -110,6 +112,16 @@ public class SecurityConfig {
                 .logout(logout -> logout.disable()) // 로그아웃 비활성화 추가
                 .cors(cors -> {}) // CORS 설정과 통합(CorsConfig 반영)
 
+                // OAuth2 요청까지 포함해 CORS 허용
+                .cors(cors -> cors.configurationSource(request -> {
+                    var config = new org.springframework.web.cors.CorsConfiguration();
+                    config.setAllowedOriginPatterns(List.of("http://localhost:5173"));
+                    config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                    config.setAllowedHeaders(List.of("*"));
+                    config.setAllowCredentials(true);
+                    return config;
+                }))
+
                 // =============================
                 // 세션 관리 정책
                 // =============================
@@ -136,11 +148,12 @@ public class SecurityConfig {
                                 "/gate/**",
                                 "/captcha/**",
                                 "/game/**",
+                                "/captcha/**",
                                 "/tickets/**",
-                                "/uploads/**", // QR이미지 허용
+                                "/upload/**", // QR이미지 허용
                                 "/reserve/**",
                                 "/seat/**",
-                                "/oauth/**" // 소셜 로그인 허용
+                                "/oauth2/**" // 소셜 로그인 허용
 
                         ).permitAll()
                         .anyRequest().authenticated() // 나머지는 전부 인증필요(JWT 또는 OAuth2 로그인 성공 상태)
@@ -152,7 +165,7 @@ public class SecurityConfig {
                 .oauth2Login(oauth2 -> oauth2 // oauth2Login : OAuth2 클라이언트 로그인 활성화
                         .userInfoEndpoint(user -> user.userService(customOAuth2UserService)) // provider(gogle, git , facebook)에서 받아온 사용자 프로필 커스텀 로직으로 가공
                         .successHandler(oAuth2SuccessHandler) // 로그인 성공 시 직접 토큰 발급/리다이렉트 등 후처리 , 이 핸들러가 우선 응답 완료하면 defaultSuccessUrl은 실행되지 않을 수 있음
-                        .failureUrl("/oauth/failure") // 실패 시 이동경로
+                        .failureUrl("/oauth2/failure") // 실패 시 이동경로
                 );
 
                 // =============================

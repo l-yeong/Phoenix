@@ -65,9 +65,12 @@ export default function Mypage() {
             {mode === "reservation" && (
                 <>
                     <h3>예매 내역</h3>
-                     <div style={{ margin: "20px 0" }}>
-                                <TicketQR />
-                      </div>
+<img
+  src={toImageSrc(t.ticket_code)}
+  alt="QR 이미지"
+  style={{ width: 200, height: 200, objectFit: "contain" }}
+  onError={(e) => { e.currentTarget.alt = "이미지를 불러오지 못했습니다."; }}
+/>
                     {reservations.length === 0 ? (
                         <p>예매 내역이 없습니다.</p>
                     ) : (

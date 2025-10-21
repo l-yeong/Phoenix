@@ -66,6 +66,7 @@ public class SeatLockService {  // class start
         return Boolean.TRUE.equals(b.get());
     }   // func end
 
+
     // 예매 완료 시 기록
     private void markUserAsBooked(int mno, int gno) {
         // 6시간 캐시 (원하면 공연 시작 시각까지 남은 시간으로 설정)
@@ -75,6 +76,7 @@ public class SeatLockService {  // class start
         redisson.getBucket("user_booking:" + mno + ":" + gno)
                 .set(true, 6, TimeUnit.HOURS);
     }   // func end
+
 
     @PostConstruct
     public void initSeatListCache() {
