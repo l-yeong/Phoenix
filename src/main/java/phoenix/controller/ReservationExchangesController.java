@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import phoenix.model.dto.ReservationExchangesDto;
+import phoenix.service.MembersService;
 import phoenix.service.RedisService;
 import phoenix.service.ReservationExchangesService;
 
@@ -16,6 +17,7 @@ import java.util.List;
 public class ReservationExchangesController {
     private final ReservationExchangesService reservationexchangesService;
     private final RedisService redisService;
+    private final MembersService membersService;
 
     /**
      * 교환요청 등록
@@ -24,8 +26,8 @@ public class ReservationExchangesController {
      * @return int 성공 : 1 , 요청중인사람존재 : 2 , 요청자가 다른좌석에 요청중 : 0
      */
     @PostMapping("/change")
-    public ResponseEntity<?> saveRequest(ReservationExchangesDto dto , HttpSession session){
-        int mno = (int) session.getAttribute("logMno");
+    public ResponseEntity<?> saveRequest(ReservationExchangesDto dto){
+        int mno = membersService.getLoginMember().getMno();
         dto.setFrom_mno(mno);
         int result = reservationexchangesService.requestChange(dto);
         return ResponseEntity.ok(result);
@@ -69,8 +71,8 @@ public class ReservationExchangesController {
      * @return boolean 성공 : true , 실패 : false0
      */
     @PostMapping("/accept")
-    public ResponseEntity<?> acceptChange(@RequestParam int from_rno , HttpSession session){
-        int mno = (int) session.getAttribute("logMno");
+    public ResponseEntity<?> acceptChange(@RequestParam int from_rno ){
+        int mno = membersService.getLoginMember().getMno();
         ReservationExchangesDto dto = redisService.getRequest(from_rno);
         boolean result = reservationexchangesService.acceptChange(mno, from_rno);
         if (result){
