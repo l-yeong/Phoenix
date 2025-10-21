@@ -133,6 +133,7 @@ public class SecurityConfig {
                                 "/members/token/refresh",
                                 "/members/logout",
                                 "/tickets/**",
+                                "/uploads/**", // QR이미지 허용
                                 "/reserve/**",
                                 "/seat/**",
                                 "/oauth/**" // 소셜 로그인 허용
