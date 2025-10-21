@@ -1,7 +1,14 @@
-import { useState } from "react";
-import { Box, TextField, Button, Typography, FormControlLabel, Checkbox, MenuItem } from "@mui/material";
+import React, { useState } from "react";
+import {
+  TextField,
+  Button,
+  MenuItem,
+  Typography,
+  FormControlLabel,
+  Checkbox,
+  Box,
+} from "@mui/material";
 import api from "../api/axiosInstance";
-import styles from "../styles/Auth.module.css";
 
 const SignUpPage = () => {
   const [form, setForm] = useState({
@@ -11,12 +18,21 @@ const SignUpPage = () => {
     mphone: "",
     email: "",
     birthdate: "",
-    pno: "", // 선호 선수
-    exchange: false, // 예매 교환 여부
+    pno: "",
+    exchange: false,
   });
   const [emailCode, setEmailCode] = useState("");
   const [emailVerified, setEmailVerified] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const playerList = [
+    { id: 1, name: "박찬호" },
+    { id: 2, name: "류현진" },
+    { id: 3, name: "이정후" },
+    { id: 4, name: "오타니 쇼헤이" },
+    { id: 5, name: "추신수" },
+    { id: 6, name: "김하성" },
+  ];
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -25,10 +41,14 @@ const SignUpPage = () => {
 
   // 이메일 인증 코드 전송
   const sendEmailCode = async () => {
+    if (!form.email) {
+      alert("이메일을 입력해주세요.");
+      return;
+    }
     try {
       setLoading(true);
-      const response = await api.post("/members/email/send", { email: form.email });
-      alert(response.data ? "인증코드가 이메일로 전송되었습니다." : "전송 실패");
+      const res = await api.post("/members/email/send", { email: form.email });
+      alert(res.data ? "인증코드가 이메일로 전송되었습니다." : "전송 실패");
     } catch (err) {
       alert("이메일 전송 실패");
     } finally {
@@ -39,11 +59,11 @@ const SignUpPage = () => {
   // 인증 코드 확인
   const verifyEmail = async () => {
     try {
-      const response = await api.post("/members/verify-email", {
+      const res = await api.post("/members/verify-email", {
         email: form.email,
         code: emailCode,
       });
-      if (response.data.success) {
+      if (res.data.success) {
         alert("이메일 인증 완료!");
         setEmailVerified(true);
       } else {
@@ -58,79 +78,146 @@ const SignUpPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!emailVerified) {
-      alert("이메일 인증을 먼저 완료해주세요.");
+      alert("이메일 인증을 완료해주세요.");
       return;
     }
 
     try {
-      const response = await api.post("/members/signup", {
+      const res = await api.post("/members/signup", {
         ...form,
         provider: null,
         provider_id: null,
         status: "active",
         email_verified: true,
       });
-      if (response.data.success) {
+      if (res.data.success) {
         alert("회원가입 성공!");
       } else {
         alert("회원가입 실패");
       }
     } catch (err) {
-      alert("회원가입 중 오류 발생");
+      alert("회원가입 중 오류가 발생했습니다.");
     }
   };
 
   return (
-    <Box className={styles.container}>
-      <Typography variant="h4" mb={3}>회원가입</Typography>
-
-      <TextField fullWidth label="아이디" name="mid" value={form.mid} onChange={handleChange} margin="normal" />
-      <TextField fullWidth label="비밀번호" type="password" name="password_hash" value={form.password_hash} onChange={handleChange} margin="normal" />
-      <TextField fullWidth label="이름" name="mname" value={form.mname} onChange={handleChange} margin="normal" />
-      <TextField fullWidth label="전화번호" name="mphone" value={form.mphone} onChange={handleChange} margin="normal" />
-      <TextField fullWidth label="생년월일" name="birthdate" type="date" value={form.birthdate} onChange={handleChange} margin="normal" InputLabelProps={{ shrink: true }} />
-
-      {/* 이메일 + 인증 */}
-      <Box display="flex" gap={2} alignItems="center" mt={2}>
-        <TextField fullWidth label="이메일" name="email" value={form.email} onChange={handleChange} />
-        <Button onClick={sendEmailCode} disabled={loading}>인증코드 전송</Button>
-      </Box>
-
-      <Box display="flex" gap={2} alignItems="center" mt={2}>
-        <TextField fullWidth label="인증코드 입력" value={emailCode} onChange={(e) => setEmailCode(e.target.value)} />
-        <Button onClick={verifyEmail}>인증확인</Button>
-      </Box>
-
-      {/* 선호 선수 / 교환 여부 */}
-      <TextField
-        select
-        fullWidth
-        label="선호 선수"
-        name="pno"
-        value={form.pno}
-        onChange={handleChange}
-        margin="normal"
+    <div
+      style={{
+        textAlign: "center",
+        marginTop: "100px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+      }}
+    >
+      <Typography
+        variant="h5"
+        sx={{ mb: 3, color: "#CA2E26", fontWeight: "bold" }}
       >
-        <MenuItem value="1">선수1</MenuItem>
-        <MenuItem value="2">선수2</MenuItem>
-        <MenuItem value="3">선수3</MenuItem>
-      </TextField>
+        📝 회원가입
+      </Typography>
 
-      <FormControlLabel
-        control={<Checkbox checked={form.exchange} onChange={handleChange} name="exchange" />}
-        label="예매 교환 가능"
-      />
-
-      <Button
-        fullWidth
-        variant="contained"
-        color="primary"
-        onClick={handleSubmit}
-        sx={{ mt: 3 }}
+      <Box
+        component="form"
+        onSubmit={handleSubmit}
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+          width: "100%",
+          maxWidth: "400px",
+        }}
       >
-        회원가입
-      </Button>
-    </Box>
+        <TextField label="아이디" name="mid" value={form.mid} onChange={handleChange} fullWidth />
+        <TextField
+          label="비밀번호"
+          type="password"
+          name="password_hash"
+          value={form.password_hash}
+          onChange={handleChange}
+          fullWidth
+        />
+        <TextField label="이름" name="mname" value={form.mname} onChange={handleChange} fullWidth />
+        <TextField label="전화번호" name="mphone" value={form.mphone} onChange={handleChange} fullWidth />
+        <TextField
+          label="생년월일"
+          type="date"
+          name="birthdate"
+          value={form.birthdate}
+          onChange={handleChange}
+          InputLabelProps={{ shrink: true }}
+          fullWidth
+        />
+
+        {/* 이메일 + 인증 */}
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <TextField
+            label="이메일"
+            name="email"
+            value={form.email}
+            onChange={handleChange}
+            fullWidth
+          />
+          <Button
+            variant="outlined"
+            onClick={sendEmailCode}
+            disabled={loading}
+            sx={{ whiteSpace: "nowrap" }}
+          >
+            코드전송
+          </Button>
+        </Box>
+
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <TextField
+            label="인증코드 입력"
+            value={emailCode}
+            onChange={(e) => setEmailCode(e.target.value)}
+            fullWidth
+          />
+          <Button variant="outlined" onClick={verifyEmail}>
+            인증확인
+          </Button>
+        </Box>
+
+        {/* 선호 선수 / 교환 여부 */}
+        <TextField
+          select
+          label="선호 선수"
+          name="pno"
+          value={form.pno}
+          onChange={handleChange}
+          fullWidth
+        >
+          {playerList.map((p) => (
+            <MenuItem key={p.id} value={p.id}>
+              {p.name}
+            </MenuItem>
+          ))}
+        </TextField>
+
+        <FormControlLabel
+          control={
+            <Checkbox checked={form.exchange} onChange={handleChange} name="exchange" />
+          }
+          label="예매 교환 가능"
+        />
+
+        <Button
+          variant="contained"
+          type="submit"
+          sx={{
+            mt: 2,
+            bgcolor: "#CA2E26",
+            color: "white",
+            fontWeight: "bold",
+            "&:hover": { bgcolor: "#b22720" },
+          }}
+        >
+          회원가입
+        </Button>
+      </Box>
+    </div>
   );
 };
 

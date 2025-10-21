@@ -5,11 +5,11 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import phoenix.model.dto.GameDto;
 import phoenix.util.TicketsQR;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -25,6 +25,7 @@ import java.util.*;
 public class FileService {
     private final TicketsQR ticketsQR;
     private Map<String , Map<String ,String >> gameMap;
+
 
 
     private String baseDir = System.getProperty("user.dir"); //루트 디렉터리 경로
@@ -172,5 +173,82 @@ public class FileService {
         }//for end
         return expired;
     }//func end
+
+    private static final String CSV_PATH = "src/main/resources/static/games.csv";
+
+    public List<GameDto> loadGames() {
+        List<GameDto> games = new ArrayList<>();
+
+        try (BufferedReader br = new BufferedReader(
+                new InputStreamReader(new FileInputStream(CSV_PATH), StandardCharsets.UTF_8))) {
+
+            // 1) 헤더 스킵 (+ BOM 방지)
+            String header = br.readLine();
+            if (header != null && header.startsWith("\uFEFF")) {
+                header = header.substring(1); // BOM 제거
+            }
+
+            String line;
+            while ((line = br.readLine()) != null) {
+                // 빈 줄 스킵 + CR 제거
+                line = line.trim();
+                if (line.isEmpty()) continue;
+                if (line.endsWith("\r")) line = line.substring(0, line.length() - 1);
+
+                // ⭐ 뒤쪽 빈 컬럼 보존: `...,17:00,,` 같은 행도 컬럼 9개 보장
+                String[] arr = line.split(",", -1);
+
+                // 컬럼 수 점검(안전)
+                if (arr.length < 9) {
+                    System.out.println("[CSV] 컬럼 부족으로 스킵: " + line);
+                    continue;
+                }
+
+                try {
+                    // trim + "null"/빈문자 → null 정규화 헬퍼
+                    java.util.function.Function<String, String> norm = s -> {
+                        if (s == null) return null;
+                        String v = s.trim();
+                        if (v.isEmpty()) return null;
+                        if ("null".equalsIgnoreCase(v)) return null;
+                        return v;
+                    };
+
+                    Integer gno = Integer.parseInt(arr[0].trim());
+                    String homeTeam     = norm.apply(arr[1]);
+                    String homePitcher  = norm.apply(arr[2]);
+                    String awayTeam     = norm.apply(arr[3]);
+                    String awayPitcher  = norm.apply(arr[4]);
+                    LocalDate date      = LocalDate.parse(arr[5].trim());     // YYYY-MM-DD
+                    LocalTime time      = LocalTime.parse(arr[6].trim());     // HH:mm
+                    String result       = norm.apply(arr[7]);                 // "", "null" → null
+                    String score        = norm.apply(arr[8]);                 // "", "null" → null
+
+                    GameDto game = GameDto.builder()
+                            .gno(gno)
+                            .homeTeam(homeTeam)
+                            .homePitcher(homePitcher)
+                            .awayTeam(awayTeam)
+                            .awayPitcher(awayPitcher)
+                            .date(date)
+                            .time(time)
+                            .result(result)
+                            .score(score)
+                            .build();
+
+                    games.add(game);
+                } catch (Exception e) {
+                    System.out.println("[CSV] 파싱 오류로 스킵: " + line + " | err=" + e.getMessage());
+                }
+            }
+
+            System.out.println("[CSV] 파일로드 완료: " + games.size() + "건");
+        } catch (IOException e) {
+            System.out.println("[CSV] 파일 예외: " + e.getMessage());
+        }
+
+        return games;
+    }
+
 
 }//class end

@@ -1,17 +1,26 @@
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import "../../styles/gate.css";
 
 const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
 export default function GatePage() {
   const navigate = useNavigate();
-  const api = useMemo(() => axios.create({ baseURL: API }), []);
+  const location = useLocation();
+  const api = useMemo(
+    () => axios.create({ baseURL: API /*, withCredentials: true*/ }),
+    []
+  );
 
-  // ✅ uno / gno (사용자 ID, 공연 ID)
-  const [uno, setUno] = useState(sessionStorage.getItem("gate_uno") || "1");
-  const [gno, setGno] = useState(sessionStorage.getItem("gate_gno") || "SHOW-2025-10-16-19:00");
+  // ✅ mno / gno (정수) — 이름/타입을 백엔드와 일치시키기
+  const [mno, setMno] = useState(
+    Number(sessionStorage.getItem("gate_mno")) || 20001 // 데모용 기본값
+  );
+  const [gno, setGno] = useState(
+    Number(sessionStorage.getItem("gate_gno")) || 143   // 데모용 기본값
+  );
+
   const [queued, setQueued] = useState(sessionStorage.getItem("gate_queued") === "1");
   const [waitingCount, setWaitingCount] = useState(0);
   const [myPosition, setMyPosition] = useState(null);
@@ -19,28 +28,41 @@ export default function GatePage() {
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
 
+  // 세션스토리지 동기화
+  useEffect(() => sessionStorage.setItem("gate_mno", String(mno)), [mno]);
+  useEffect(() => sessionStorage.setItem("gate_gno", String(gno)), [gno]);
 
-  // 예매페이지 들어가기전 uno gno 받아야와야함 
+  // ✅ 다른 페이지에서 navigate("/gate", { state: { mno, gno } })로 넘어온 경우 자동 세팅/등록
+  useEffect(() => {
+    if (location.state?.mno) setMno(Number(location.state.mno));
+    if (location.state?.gno) setGno(Number(location.state.gno));
+  }, [location.state]);
 
-  // 세션스토리지에 ID 저장
-  useEffect(() => sessionStorage.setItem("gate_uno", uno), [uno]);
-  useEffect(() => sessionStorage.setItem("gate_gno", gno), [gno]);
+  useEffect(() => {
+    // location.state로 받은 둘 다 있으면 자동 등록(선택사항)
+    if (location.state?.mno && location.state?.gno && !queued) {
+      enqueue();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state, mno, gno]);
 
-  // ✅ 대기열 등록
+  // ✅ 대기열 등록：백엔드가 요구하는 키/타입으로!
   const enqueue = async () => {
     setLoading(true);
     setMsg("");
     try {
-      const { data } = await api.post("/gate/enqueue", { uno, gno });
-      setQueued(Boolean(data.queued));
-      sessionStorage.setItem("gate_queued", data.queued ? "1" : "0");
-      setWaitingCount(Number(data.waiting) || 0);
+      const payload = { mno: Number(mno), gno: Number(gno) }; // ← 중요
+      const { data } = await api.post("/gate/enqueue", payload);
+      setQueued(Boolean(data?.queued));
+      sessionStorage.setItem("gate_queued", data?.queued ? "1" : "0");
+      setWaitingCount(Number(data?.waiting) || 0);
       setMsg(
-        data.queued
+        data?.queued
           ? `대기열 등록 완료! (현재 ${data.waiting}명 대기 중)`
           : "이미 예매했거나 등록할 수 없습니다."
       );
-    } catch {
+    } catch (e) {
+      console.error(e);
       setMsg("대기열 등록 중 오류가 발생했습니다.");
     } finally {
       setLoading(false);
@@ -52,27 +74,30 @@ export default function GatePage() {
     if (!queued) return;
     const timer = setInterval(async () => {
       try {
-        // 1️⃣ 게이트 세션 확인
-        const { data: check } = await api.get(`/gate/check/${encodeURIComponent(uno)}`);
-        setReady(Boolean(check?.ready));
-        if (check?.ready) {
-          navigate("/macro", { state: { uno, gno } });
+        // 1) 게이트 세션 확인
+        const { data: check } = await api.get(`/gate/check/${encodeURIComponent(mno)}`);
+        const isReady = Boolean(check?.ready);
+        setReady(isReady);
+        if (isReady) {
+          // 좌석 페이지나 매크로 페이지로 이동
+          navigate("/macro", { state: { mno, gno } });
           return;
         }
 
-        // 2️⃣ 내 순번 조회
-        const { data: pos } = await api.get(`/gate/position/${encodeURIComponent(uno)}`);
+        // 2) 내 순번 조회
+        const { data: pos } = await api.get(`/gate/position/${encodeURIComponent(mno)}`);
         if (typeof pos?.position === "number") setMyPosition(pos.position);
 
-        // 3️⃣ 대기열 길이 (백엔드에서 관리)
+        // 3) 현재 대기열 길이
         const { data: status } = await api.get("/gate/status");
         setWaitingCount(Number(status?.waiting) || 0);
-      } catch {
-        // 네트워크 오류 시 무시
+      } catch (e) {
+        // 네트워크 오류는 일시 무시
+        // console.warn(e);
       }
     }, 2000);
     return () => clearInterval(timer);
-  }, [api, queued, uno, gno, navigate]);
+  }, [api, queued, mno, gno, navigate]);
 
   return (
     <div className="gate-wrap">
@@ -84,19 +109,23 @@ export default function GatePage() {
       {!queued && (
         <>
           <div className="gate-field">
-            <label className="gate-label">사용자 번호 (uno)</label>
+            <label className="gate-label">사용자 번호 (mno)</label>
             <input
               className="gate-input"
-              value={uno}
-              onChange={(e) => setUno(e.target.value)}
+              value={mno}
+              onChange={(e) => setMno(Number(e.target.value) || 0)}
+              type="number"
+              min="1"
             />
           </div>
           <div className="gate-field">
-            <label className="gate-label">공연 번호 (gno)</label>
+            <label className="gate-label">경기 번호 (gno)</label>
             <input
               className="gate-input"
               value={gno}
-              onChange={(e) => setGno(e.target.value)}
+              onChange={(e) => setGno(Number(e.target.value) || 0)}
+              type="number"
+              min="1"
             />
           </div>
           <div className="gate-actions">
@@ -126,7 +155,9 @@ export default function GatePage() {
                 내 순번: <b>{myPosition}</b>
               </span>
             ) : (
-              <span>대기 중 인원: <b>{waitingCount}</b></span>
+              <span>
+                대기 인원: <b>{waitingCount}</b>
+              </span>
             )}
           </div>
 

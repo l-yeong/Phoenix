@@ -1,12 +1,15 @@
+/* 전체 컨테이너 - 중앙 정렬 + 푸터 밀림 방지 */
 .container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100vh;
+  min-height: calc(100vh - 200px); /* 헤더+푸터 높이 제외 */
   background-color: #fafafa;
+  padding: 40px 0;
 }
 
+/* 폼 카드 */
 .form {
   width: 400px;
   background-color: white;
@@ -15,24 +18,50 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
+/* 타이틀 */
 .title {
   text-align: center;
   color: #ca2e26;
   font-weight: bold;
+  font-size: 1.6rem;
   margin-bottom: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
 }
 
+/* 입력칸 */
 .input {
   margin-bottom: 16px;
 }
 
+/* 버튼 */
 .button {
   width: 100%;
   margin-top: 12px;
   font-weight: bold !important;
   background-color: #ca2e26 !important;
+  color: white !important;
 }
 
+.button:hover {
+  background-color: #b22720 !important;
+}
+
+/* 코드 전송/인증 버튼 */
+.codeButton {
+  white-space: nowrap;
+  border-color: #ca2e26 !important;
+  color: #ca2e26 !important;
+}
+
+.codeButton:hover {
+  background-color: #ca2e26 !important;
+  color: white !important;
+}
+
+/* 소셜 로그인 (옵션) */
 .socialBox {
   display: flex;
   flex-direction: column;

@@ -1,145 +1,74 @@
-import React, { useState } from "react";
-import { QRCodeCanvas } from "qrcode.react";
+import { useEffect, useState } from "react";
+import axios from "axios";
 
-export default function TestTicketAPI() {
-  const baseUrl = "http://localhost:8080/ticket";
-  const [rno, setRno] = useState("");
-  const [mno, setMno] = useState("");
-  const [ticketCode, setTicketCode] = useState("");
-  const [payloads, setPayloads] = useState([]);
-  const [info, setInfo] = useState(null);
-  const [message, setMessage] = useState("");
+export default function TicketQR() {
+  const [tickets, setTickets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState(null);
 
-  // ✅ 1️⃣ 티켓 생성
-  async function handleWrite() {
-    if (!rno) return alert("rno 입력 필수");
-    setMessage("QR 생성 중...");
+  // 회원별 티켓 목록 호출 (ticket_code, valid 포함)
+  const fetchTickets = async () => {
     try {
-      const res = await fetch(`${baseUrl}/write?rno=${rno}`, { method: "POST" });
-      const ok = await res.json();
-      setMessage(ok ? "✅ QR 생성 완료" : "❌ 생성 실패 (예약상태 확인)");
+      setLoading(true);
+      setErr(null);
+      const res = await axios.get("http://localhost:8080/tickets/print", {
+        withCredentials: true,
+      });
+      // 기대 응답: [{ tno, ticket_code, valid, issued_at, price, gno, ... }, ...]
+      setTickets(res.data || []);
     } catch (e) {
       console.error(e);
-      setMessage("❌ 오류 발생: " + e.message);
+      setErr("티켓 정보를 불러오지 못했습니다.");
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
-  // ✅ 2️⃣ 회원별 QR 리스트 조회
-  async function handlePrint() {
-    if (!mno) return alert("mno 입력 필수");
-    setMessage("QR 목록 조회 중...");
-    try {
-      const res = await fetch(`${baseUrl}/print?mno=${mno}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      setPayloads(Array.isArray(data) ? data : []);
-      setMessage(`✅ QR 목록 ${data.length}개 불러옴`);
-    } catch (e) {
-      console.error(e);
-      setMessage("❌ 오류: " + e.message);
-    }
-  }
+  useEffect(() => {
+    fetchTickets();
+  }, []);
 
-  // ✅ 3️⃣ QR 상세정보 조회
-  async function handleQrInfo(code) {
-    setMessage("QR 상세 조회 중...");
-    try {
-      const res = await fetch(`${baseUrl}/qrInfo?ticket_code=${encodeURIComponent(code)}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      setInfo(data);
-      setMessage("✅ 상세정보 불러오기 완료");
-    } catch (e) {
-      console.error(e);
-      setMessage("❌ 오류: " + e.message);
-    }
-  }
+  if (loading) return <div>불러오는 중...</div>;
+  if (err) return <div style={{ color: "crimson" }}>{err}</div>;
+  if (!tickets.length) return <div>표시할 QR 티켓이 없습니다.</div>;
 
   return (
-    <div style={{ padding: 20, fontFamily: "Arial" }}>
-      <h2>🎟 Ticket API 테스트</h2>
+    <div style={{ display: "grid", gap: 16 }}>
+      {tickets.map((t, idx) => {
+        // valid 값이 boolean/number/string 어느 형태로 와도 처리
+        const isValid =
+          t?.valid === true || t?.valid === 1 || t?.valid === "1" || t?.valid === "true";
 
-      <div style={{ marginBottom: 10 }}>
-        <strong>1️⃣ QR 생성 (/ticket/write)</strong>
-        <div>
-          <input
-            placeholder="rno 입력"
-            value={rno}
-            onChange={(e) => setRno(e.target.value)}
-            style={{ marginRight: 8 }}
-          />
-          <button onClick={handleWrite}>QR 생성</button>
-        </div>
-      </div>
-
-      <div style={{ marginBottom: 10 }}>
-        <strong>2️⃣ 회원별 QR 목록 조회 (/ticket/print)</strong>
-        <div>
-          <input
-            placeholder="mno 입력"
-            value={mno}
-            onChange={(e) => setMno(e.target.value)}
-            style={{ marginRight: 8 }}
-          />
-          <button onClick={handlePrint}>QR 목록 보기</button>
-        </div>
-      </div>
-
-      <div style={{ marginTop: 20 }}>
-        {payloads.length > 0 && (
-          <>
-            <h3>QR 목록</h3>
-            <div style={{ display: "grid", gap: 12 }}>
-              {payloads.map((p, i) => (
-                <div
-                  key={i}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    border: "1px solid #ddd",
-                    borderRadius: 6,
-                    padding: 8,
-                  }}
-                >
-                  <QRCodeCanvas value={p} size={120} />
-                  <div>
-                    <div>{p}</div>
-                    <button
-                      onClick={() => {
-                        setTicketCode(p);
-                        handleQrInfo(p);
-                      }}
-                    >
-                      상세보기
-                    </button>
-                  </div>
-                </div>
-              ))}
+        return (
+          <div
+            key={t?.tno ?? idx}
+            style={{
+              border: "1px solid #eee",
+              borderRadius: 12,
+              padding: 16,
+              maxWidth: 260,
+            }}
+          >
+            <div style={{ marginBottom: 8, fontSize: 14, color: "#666" }}>
+              {t?.issued_at ? `발급일: ${t.issued_at}` : null}
             </div>
-          </>
-        )}
-      </div>
 
-      <div style={{ marginTop: 20 }}>
-        {info && (
-          <>
-            <h3>🔍 QR 상세정보</h3>
-            <pre
-              style={{
-                background: "#f5f5f5",
-                padding: 10,
-                borderRadius: 8,
-                whiteSpace: "pre-wrap",
-              }}
-            >
-              {JSON.stringify(info, null, 2)}
-            </pre>
-          </>
-        )}
-      </div>
-
-      <div style={{ marginTop: 20, color: "#333" }}>{message}</div>
+            {isValid ? (
+              // ✅ valid=1(true) → QR 이미지 출력
+              <img
+                src={t?.ticket_code}
+                alt="티켓 QR"
+                style={{ width: 220, height: 220, objectFit: "contain" }}
+              />
+            ) : (
+              // ✅ valid=0(false) → 안내 문구 출력
+              <div style={{ color: "#999", fontWeight: 600, minHeight: 220, display:"flex", alignItems:"center", justifyContent:"center", textAlign:"center", padding:"24px 12px" }}>
+                지난 경기 티켓 입니다.
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
