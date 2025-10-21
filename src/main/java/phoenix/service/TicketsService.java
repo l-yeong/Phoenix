@@ -103,7 +103,7 @@ public class TicketsService {
      * - GET /tickets/print?mno={mno}
      */
     @Transactional(readOnly = true)
-    public List<String> findPayloads(int mno) {
+    public List<Map<String,Object>> findPayloads(int mno) {
         return ticketsMapper.findPayloads(mno);
     }//func end
 
@@ -112,7 +112,7 @@ public class TicketsService {
      * 매일 9시~23시 사이 5분마다 자동 실행 (KST)
      * 반환값 없음(반드시 void), 파라미터 없음(필수)
      */
-    @Scheduled(cron = "0 */5 9-23 * * *",zone = "Asia/Seoul")
+    //@Scheduled(cron = "0 */5 9-23 * * *",zone = "Asia/Seoul")
     public void formerGame(){
         try{
             int updated = formerGameCSV();
