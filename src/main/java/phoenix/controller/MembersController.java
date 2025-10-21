@@ -93,7 +93,7 @@ public class MembersController {
 
         // 2. Authentication 객체 생성
         UsernamePasswordAuthenticationToken authenticationToken =
-                new UsernamePasswordAuthenticationToken(mid, null,
+                new UsernamePasswordAuthenticationToken(member, null,
                         List.of(new SimpleGrantedAuthority("ROLE_USER")));
 
         // 3. SecurityContext 에 등록
@@ -107,13 +107,40 @@ public class MembersController {
         String token = jwtUtil.generateToken(member);
 
         Map<String, Object> data = Map.of(
-                "mid", member.getMid(),
-                "mno", member.getMno()
+                    "member" , member
                 // 필요 시 accessToken도 함께 내려보낼 수 있음 (디버깅용 or 참고용)
         );
 
         return ResponseEntity
-                .ok(new ApiResponseUtil<>(true, "로그인 성공 (세션 저장 완료)", data));
+                .ok(new ApiResponseUtil<>(true, "로그인 성공 (세션 저장 완료)", member));
+
+    } // func e
+
+    /**
+     * 현재 로그인한 회원 정보 반환 (세션 기반)
+     */
+    @GetMapping("/info")
+    public ResponseEntity<ApiResponseUtil<?>> getLoginMemberInfo() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        if (auth == null || !auth.isAuthenticated() || auth.getPrincipal().equals("anonymousUser")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponseUtil<>(false, "로그인 상태가 아닙니다.", null));
+        }
+
+        Object principal = auth.getPrincipal();
+        MembersDto member;
+
+        if (principal instanceof MembersDto dto) {
+            // 로그인 시 MembersDto를 세션에 저장했을 경우
+            member = dto;
+        } else {
+            // 안전장치 — 혹시 문자열만 저장된 경우 DB 재조회
+            String mid = auth.getName();
+            member = membersService.findByMid(mid);
+        }
+
+        return ResponseEntity.ok(new ApiResponseUtil<>(true, "로그인 회원 정보 반환 성공", member));
 
     } // func e
 
