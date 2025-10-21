@@ -1,46 +1,100 @@
-import React, { useEffect, useState } from "react";
+// src/pages/gate/MacroPage.jsx
+import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
+/**
+ * [MacroPage]
+ * - Gate 통과 후 진입하는 "인증(캡차)" 페이지
+ * - GatePage에서 { state: { mno, gno } } 로 전달받음 (정수)
+ * - 새로고침 시 sessionStorage(gate_mno/gate_gno)로 복구
+ * - 게이트 ready 안 된 채로 접근하면 /gate로 자동 복귀
+ * - 캡차 검증 성공 → /seats 로 이동
+ */
 export default function MacroPage() {
   const navigate = useNavigate();
   const { state } = useLocation();
 
-  // ✅ GatePage에서 전달받은 uno / gno
-  const uno = state?.uno;
-  const gno = state?.gno;
+  // ✅ mno/gno 로 받기 (state 우선, 없으면 sessionStorage fallback)
+  const [mno, setMno] = useState(() => {
+    if (typeof state?.mno === "number") return state.mno;
+    const saved = sessionStorage.getItem("gate_mno");
+    return saved ? Number(saved) : undefined;
+  });
+  const [gno, setGno] = useState(() => {
+    if (typeof state?.gno === "number") return state.gno;
+    const saved = sessionStorage.getItem("gate_gno");
+    return saved ? Number(saved) : undefined;
+  });
 
+  // ✅ 캡차 상태
   const [captchaImg, setCaptchaImg] = useState("");
   const [captchaToken, setCaptchaToken] = useState("");
   const [answer, setAnswer] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // ✅ 게이트 미통과 시 되돌리기
+  // 세션스토리지 동기화(새로고침 복구용)
   useEffect(() => {
-    if (!uno || !gno) navigate("/gate");
-  }, [uno, gno, navigate]);
+    if (mno) sessionStorage.setItem("gate_mno", String(mno));
+    if (gno) sessionStorage.setItem("gate_gno", String(gno));
+  }, [mno, gno]);
 
-  // ✅ 캡차 불러오기
-  const loadCaptcha = async () => {
-    setError("");
-    setAnswer("");
-    try {
-      const res = await fetch(`${API_BASE}/captcha/new`);
-      const data = await res.json();
-      setCaptchaImg(data.imageBase64);
-      setCaptchaToken(data.token);
-    } catch {
-      setError("캡차 이미지를 불러오지 못했습니다. 네트워크 상태를 확인해주세요.");
+  // ✅ 게이트 ready 확인: ready 아니면 /gate로 자동 복귀, ready면 머무르며 캡차 진행
+  useEffect(() => {
+    if (!mno || !gno) {
+      navigate("/gate", { replace: true });
+      return;
     }
-  };
 
+    let stop = false;
+    const tick = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/gate/check/${encodeURIComponent(mno)}`);
+        const data = await res.json();
+        if (!data?.ready) {
+          // 아직 게이트 입장 전이면 게이트로 되돌린다.
+          navigate("/gate", { replace: true });
+        }
+        // ready면 그대로 이 페이지에서 캡차 진행
+      } catch (_) {
+        // 네트워크 일시 오류는 무시하고 재시도
+      }
+    };
+
+    // 최초 한 번 즉시 확인 + 1초 후 재확인(짧게)
+    tick();
+    const t = setTimeout(() => !stop && tick(), 1000);
+    return () => {
+      stop = true;
+      clearTimeout(t);
+    };
+  }, [mno, gno, navigate]);
+
+  // ✅ 캡차 새로 받기
+  const loadCaptcha = useMemo(
+    () => async () => {
+      setError("");
+      setAnswer("");
+      try {
+        const res = await fetch(`${API_BASE}/captcha/new`, { method: "GET" });
+        const data = await res.json();
+        setCaptchaImg(data.imageBase64);
+        setCaptchaToken(data.token);
+      } catch {
+        setError("캡차 이미지를 불러오지 못했습니다. 네트워크 상태를 확인해주세요.");
+      }
+    },
+    []
+  );
+
+  // 최초 로딩 시 캡차 발급
   useEffect(() => {
     loadCaptcha();
-  }, []);
+  }, [loadCaptcha]);
 
-  // ✅ 캡차 검증
+  // ✅ 캡차 검증 → 성공 시 좌석 페이지로 이동
   const handleVerify = async () => {
     if (!captchaToken || !answer || submitting) return;
     setSubmitting(true);
@@ -56,12 +110,15 @@ export default function MacroPage() {
 
       if (!data?.ok) {
         setError("문자가 일치하지 않습니다. 다시 시도해주세요.");
-        await loadCaptcha();
+        await loadCaptcha(); // 오답/실패 시 새 캡차 발행
         return;
       }
 
-      // ✅ 성공 → /seats 페이지로 이동
-      navigate("/seats", { state: { uno, gno, token: "local-captcha-ok" } });
+      // ✅ 성공 → /seats 이동 (뒤로가기 방지)
+      navigate("/seats", {
+        replace: true,
+        state: { mno, gno, captchaOk: true },
+      });
     } catch {
       setError("검증 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
     } finally {
@@ -83,11 +140,17 @@ export default function MacroPage() {
       <div className="border rounded-md p-3 bg-white">
         <div className="relative flex items-center justify-center mb-2 min-h-[84px]">
           {captchaImg ? (
-            <img src={captchaImg} alt="캡차 이미지" className="select-none max-w-full" draggable={false} />
+            <img
+              src={captchaImg}
+              alt="캡차 이미지"
+              className="select-none max-w-full"
+              draggable={false}
+            />
           ) : (
             <div className="text-sm text-gray-500">로딩 중…</div>
           )}
 
+          {/* 새로고침 버튼 */}
           <button
             type="button"
             onClick={loadCaptcha}
@@ -104,6 +167,9 @@ export default function MacroPage() {
           placeholder="이미지의 문자를 입력해주세요"
           className="border rounded px-3 py-2 w-full"
           aria-label="캡차 정답 입력"
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleVerify(); // 엔터로 제출
+          }}
         />
       </div>
 

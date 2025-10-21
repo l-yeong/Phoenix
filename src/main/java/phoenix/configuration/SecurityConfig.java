@@ -136,6 +136,7 @@ public class SecurityConfig {
                                 "/gate/**",
                                 "/captcha/**",
                                 "/game/**",
+                                "/captcha/**",
                                 "/tickets/**",
                                 "/oauth/**" // 소셜 로그인 허용
 
