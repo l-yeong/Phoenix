@@ -1,46 +1,47 @@
 import React, { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useAuth } from "../api/loginstate";
+import { useAuth } from "../api/loginstate"; // AuthContext 훅
 
+/**
+ * 소셜 로그인 성공 처리 페이지
+ * - OAuth2SuccessHandler 리다이렉트 URL에서 전달된 mid/mno 파라미터 처리
+ * - JWT는 서버에서 쿠키로 이미 저장됨
+ * - 클라이언트에서는 추가로 localStorage 저장 불필요
+ */
 const SocialSuccess = () => {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  // facebook 리다이렉트 URL '#_=_' 버그 제거해서 프론트에서 제대로 읽게 함
+  /**
+   * 페이스북 '#_=_' 버그 제거
+   */
   useEffect(() => {
-    // location.hash 값이 존재하고 , 그 값이 '#_=_' 인지 검사
     if (window.location.hash && window.location.hash === "#_=_") {
-      // 브라우저가 history API를 지원하면
-      // 주소창에 '#_=_' 제거 하되 페이지 새로고침 없이 처리
       history.replaceState
-        ? history.replaceState(null, null, window.location.href.split("#"[0]))
-        // history API 없으면 그냥 hash 값을 빈 문자열로 덮어쓰기
-        : (window.location.hash = "")
+        ? history.replaceState(null, null, window.location.href.split("#")[0])
+        : (window.location.hash = "");
     }
   }, []);
 
+  /**
+   * 리다이렉트 시 전달된 회원 정보 처리
+   * - 백엔드에서 JWT 쿠키 저장 후 mid, mno만 쿼리스트링으로 전달됨
+   */
   useEffect(() => {
-    const token = params.get("token");
     const mid = params.get("mid");
     const mno = params.get("mno");
 
-    if (localStorage.getItem("accessToken")) {
-      console.log("이미 로그인 처리 완료");
-      return;
-    }
-
-    if (token) {
-      // context , localstorage 동시 갱신
-      login({ token, mid, mno });
-      alert(`${mid || "회원"}님 , 로그인 성공!`);
-      //  3. 홈으로 이동
+    if (mid && mno) {
+      // 토큰은 쿠키에 있으므로 별도 저장 불필요
+      login({ mid, mno });
+      alert(`${mid}님, 로그인 성공!`);
       navigate("/");
     } else {
-      alert("토큰이 존재하지 않습니다. 로그인 실패");
+      alert("로그인 정보가 올바르지 않습니다. 다시 시도해주세요.");
       navigate("/login");
     }
-  }, [navigate, params, login]);
+  }, []);
 
   return (
     <div style={{ textAlign: "center", marginTop: "100px" }}>

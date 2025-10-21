@@ -2,7 +2,10 @@ package phoenix.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PostMapping;
 import phoenix.model.dto.MembersDto;
@@ -301,6 +304,54 @@ public class MembersService {
         redisTemplate.delete("findpwd:verified:" + email);
         return true;
     } // func e
+
+    /**
+     * 현재 로그인한 회원 정보 반환( 세션 기반 )
+     * - 일반 로그인 (UserDetails)
+     * - 소셜 로그인 (DefaultOauth2User)
+     * - 비로그인 상태면 null 반환
+     */
+    public MembersDto getLoginMember(){
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        // 비로그인 상태
+        if(principal.equals("anonymousUser")){
+            return null;
+        } // if e
+
+        // 일반 로그인 회원
+        if(principal instanceof UserDetails userDetails){
+            String mid = userDetails.getUsername(); // LoadUserByUsername 에서 반환된 mid
+            return membersMapper.findByMid(mid);
+        } // if e
+
+        // 소셜 로그인 회원
+        else if (principal instanceof DefaultOAuth2User oAuth2User) {
+            String provider = (String) oAuth2User.getAttribute("provider");
+            if(provider == null){
+                // provider가 attributes에 없는 경우 , ReqistrationId로 보정
+                Object registration = oAuth2User.getAttributes().get("iss");
+                if(registration != null && registration.toString().contains("google")) provider = "google";
+                else if (oAuth2User.getAttributes().containsKey("login")) provider = "github";
+                else provider = "facebook"; // fallback
+            }
+
+            // provider별 고유 ID 추출
+            String providerId = null;
+            if(oAuth2User.getAttributes().get("sub") != null){
+                providerId = oAuth2User.getAttributes().get("sub").toString(); // Google
+            } else if (oAuth2User.getAttributes().get("id") != null) {
+                providerId = oAuth2User.getAttributes().get("id").toString(); // github , facebook
+            }
+
+            return membersMapper.findByProvider(provider , providerId);
+        }
+        // 기타 예외처리
+        return null;
+
+
+    } // func e
+
 
 
 }//func end

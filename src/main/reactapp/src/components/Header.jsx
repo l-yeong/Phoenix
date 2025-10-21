@@ -56,8 +56,8 @@ const Header = () => {
         console.log('WebSocket 연결종료');
       }// func end
 
-    }// if end   
-  } , [user] );  
+    }// if end
+  } , [user] );
   const socketClose = () => {
     logout();
     if(wsRef.current && wsRef.current.readyState === WebSocket.OPEN){
@@ -72,11 +72,11 @@ const Header = () => {
   console.log("현재 user 상태:", user);
 
   return (
-    <AppBar position="relative" color="transaparent" className={styles.appBar}>
+    <AppBar position="relative" color="transparent" className={styles.appBar}>
       <Toolbar className={styles.toolbar}>
         {/* 로고 */}
         <Typography variant="h6" color="inherit" className={styles.logo}
-          onClick= {() => navigate("/")}
+          onClick={() => navigate("/")}
         >
           ⚾ PHOENIX
         </Typography>
@@ -103,7 +103,7 @@ const Header = () => {
                   fontWeight: "500",
                 }}
               >
-                {user.mid}님
+                {user.mid}님 
               </Typography>
               <Button
                 variant="outlined"

@@ -1,8 +1,15 @@
 package phoenix.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.web.bind.annotation.*;
 import phoenix.model.dto.MembersDto;
 import phoenix.security.JwtUtil;
@@ -46,40 +53,25 @@ public class AuthController {
 
 
     /**
-     * 로그아웃 API
-     * @param authHeader
-     * @return
+     * 세션 기반 로그아웃 API (최종 단순화 버전)
+     * - 별도의 쿠키/Redis 삭제 불필요
+     * - SecurityContext 및 세션만 초기화
      */
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponseUtil<?>> logout(@RequestHeader(value = "Authorization" , required = false) String authHeader ) {
+    public ResponseEntity<ApiResponseUtil<?>> logout(HttpServletRequest request) {
+        System.out.println("[LogoutController] 세션 기반 로그아웃 진입");
 
-        System.out.println("[LogoutController] 로그아웃 컨트롤러 진입");
-
-        if(authHeader == null || !authHeader.startsWith("Bearer")){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ApiResponseUtil<>(false , "Authorization 헤더가 없습니다." , null));
+        // 현재 세션 조회
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.invalidate(); // 세션 무효화
+            System.out.println(" 세션 무효화 완료");
         }
 
-        String accessToken = authHeader.substring(7);
-        if(!jwtUtil.validateToken(accessToken)){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ApiResponseUtil<>(false , "유효하지 않은 Access Token입니다.", null));
-        }
+        // SecurityContext도 명시적으로 초기화 (권장)
+        SecurityContextHolder.clearContext();
 
-        // JWT에서 subject 추출 (mid 또는 email)
-        String identifier = jwtUtil.getMid(accessToken);
-
-        if (identifier == null || identifier.isBlank()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ApiResponseUtil<>(false, "토큰에 회원 식별 정보가 없습니다.", null));
-        }
-
-        // Redis RefreshToken 삭제 + AccessToken 블랙리스트 추가
-        tokenService.deleteRefreshToken(identifier);
-        tokenService.addBlacklist(accessToken);
-
-        return ResponseEntity.ok(new ApiResponseUtil<>(true , "로그아웃 완료" , null));
-
+        return ResponseEntity.ok(new ApiResponseUtil<>(true, "로그아웃 완료", null));
     } // func e
 
 } // class e
