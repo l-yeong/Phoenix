@@ -103,7 +103,7 @@ const Header = () => {
                   fontWeight: "500",
                 }}
               >
-                {user.mid}님 
+                {user.mid}님
               </Typography>
               <Button
                 variant="outlined"

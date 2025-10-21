@@ -47,3 +47,4 @@ logs/
 *.gz
 src/main/resources/application.properties
 logs/app.log
+/logs/

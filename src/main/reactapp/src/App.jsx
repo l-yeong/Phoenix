@@ -8,6 +8,11 @@ import LoginPage from "./pages/LoginPage";
 import SignUpPage from "./pages/SignUpPage";
 import SocialSuccess from "./pages/SocialSuccess";
 import SocialSignUp from "./pages/SocialSignUp";
+import GatePage from "./features/seats/GatePage";
+import MacroPage from "./features/seats/MacroPage";
+import SeatsPolygonPage from "./features/seats/SeatsPolygonPage";
+import ZoneDemoPage from "./features/seats/ZoneDemoPage";
+
 import { AuthProvider } from "./api/loginstate.jsx";
 import Mypage from "./features/members/Mypage.jsx";
 
@@ -34,6 +39,11 @@ function App() {
           <Route path="/social/success" element={<SocialSuccess />} />
           <Route path="/social/signup" element={<SocialSignUp />} />
           <Route path="/mypage" element={<Mypage />} />
+
+          <Route path="/gate" element={<GatePage />} />
+          <Route path="/macro" element={<MacroPage />} />
+          <Route path="/seats" element={<SeatsPolygonPage />} />
+          <Route path="/zone/:zoneId" element={<ZoneDemoPage />} />
         </Routes>
         <Footer />
 

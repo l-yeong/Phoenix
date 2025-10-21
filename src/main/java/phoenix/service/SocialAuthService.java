@@ -1,6 +1,10 @@
 package phoenix.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import phoenix.model.dto.MembersDto;
@@ -9,6 +13,7 @@ import phoenix.security.JwtUtil;
 import phoenix.util.SocialUtil;
 
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * SocialAuthService
@@ -39,6 +44,15 @@ public class SocialAuthService {
             // 신규 회원 → 프론트에서 추가정보 입력 유도
             return null;
         }
+
+
+        // 세션 기반 인증 객체 생성
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                member, // Principal: 로그인한 회원 정보
+                null,   // Credentials
+                List.of(new SimpleGrantedAuthority("ROLE_USER"))
+        );
+        SecurityContextHolder.getContext().setAuthentication(authentication);
 
 
         // JWT 토큰 생성
