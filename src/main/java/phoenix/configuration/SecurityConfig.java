@@ -150,7 +150,7 @@ public class SecurityConfig {
                                 "/game/**",
                                 "/captcha/**",
                                 "/tickets/**",
-                                "/uploads/**", // QR이미지 허용
+                                "/upload/**", // QR이미지 허용
                                 "/reserve/**",
                                 "/seat/**",
                                 "/oauth2/**" // 소셜 로그인 허용
