@@ -48,3 +48,4 @@ logs/
 src/main/resources/application.properties
 logs/app.log
 /logs/
+/logs/
