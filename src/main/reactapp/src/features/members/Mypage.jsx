@@ -1,6 +1,5 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
-import TicketQR from "../tickets/TicketQR";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../api/loginstate";
 

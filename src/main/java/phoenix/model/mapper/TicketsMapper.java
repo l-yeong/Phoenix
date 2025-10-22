@@ -13,7 +13,8 @@ public interface TicketsMapper {
     String findTicketdedupe(@Param("rno") int rno);
 
     // 티켓발급 (ticket_code 에는 QR 이미지 경로)
-    @Insert("INSERT INTO tickets (rno, ticket_code, price, valid) VALUES (#{rno}, #{ticket_code}, #{price}, #{valid})")
+    @Insert(" INSERT INTO tickets (rno, ticket_code, valid, price, ticket_uuid) "+
+            " VALUES (#{rno}, #{ticket_code}, #{valid}, #{price},#{ticket_uuid})")
     int ticketWrite(TicketsDto dto);
 
     // 예약기반 정보 조회
@@ -36,5 +37,14 @@ public interface TicketsMapper {
             " AND (t.valid = 1)")
     int formerGame(@Param("gnoList")String gnoList);
 
+    // uuid로 rno만 조회
+    @Select("SELECT rno FROM tickets WHERE ticket_uuid = #{uuid} LIMIT 1")
+    int TicketUrlUuid(@Param("uuid") String uuid);
+
+    // uuid로 바로 예매표시용 정보 조회 (reserveInfo와 동일 스키마)
+    @Select("SELECT r.status AS reservation_status,z.price  AS seat_price,m.mname  AS mname, z.zname  AS zname, "+
+            " s.seatName AS seat_no FROM tickets t JOIN reservations r ON t.rno = r.rno JOIN seats s ON r.sno = s.sno "+
+            " JOIN zones z        ON s.zno = z.zno JOIN members m      ON r.mno = m.mno WHERE t.ticket_uuid = #{uuid} LIMIT 1")
+    Map<String,Object> ticketUuidInfo(@Param("uuid") String uuid);
 
 }//inter end

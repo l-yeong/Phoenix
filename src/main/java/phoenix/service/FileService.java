@@ -31,7 +31,7 @@ public class FileService {
     private String baseDir = System.getProperty("user.dir"); //루트 디렉터리 경로
     private String uploadPath = baseDir + "/src/main/resources/static/upload/"; //QR 이미지 저장 경로
 
-    public String saveQRImg(Object url) {
+    public String saveQRImg(String url) {
         try {
             Path dir = Paths.get(uploadPath);
             if (!Files.exists(dir)) Files.createDirectories(dir);
@@ -47,12 +47,16 @@ public class FileService {
                     .substring(0,6);
 
             // 날짜+UUID 파일명
-            String fileName = date +"-"+uuid+"_qr.png";
+            String fileName = date +"_"+uuid+"_qr.png";
+            Path output = dir.resolve(fileName);
+
             // QR 텍스트를 직접 전달
             byte[] png = ticketsQR.TicketQrCode(url, 200);
             Files.write(output, png);
 
+            // 웹 접근 경로 반환
             return "/upload/" + fileName;
+
         } catch (Exception e) {
             throw new RuntimeException("QR 파일 저장 실패", e);
         }

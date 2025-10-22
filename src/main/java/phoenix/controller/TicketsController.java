@@ -28,7 +28,7 @@ public class TicketsController {
      * 예: POST /tickets/write?rno=40001
      */
     @PostMapping("/write")
-    public ResponseEntity<Boolean>ticketWrite(@RequestParam int rno) {
+    public ResponseEntity<Boolean> ticketWrite(@RequestParam int rno) {
         boolean result = ticketsService.ticketWrite(rno);
         return ResponseEntity.ok(result);
     }//func end
@@ -55,6 +55,17 @@ public class TicketsController {
         List<Map<String, Object>> result = ticketsService.findPayloads(mno, rno);
 
         return ResponseEntity.ok(result);
-    }
+    }//func end
 
+    /**
+     * QR 링크로 진입: /tickets/qr?qr={uuid}
+     * - JSON 바로 반환 (프론트 새 QR 전용 컴포넌트가 axios로 호출)
+     */
+    @GetMapping("/qr")
+    public ResponseEntity<?> TicketUrlUuid(@RequestParam("qr") String uuid) {
+        int rno = ticketsService.TicketUrlUuid(uuid);
+        if (rno <= 0) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("QR Not Found");
+        return ResponseEntity.ok(rno); // ✅ rno만 반환
+    }//func end
 }//class end
+

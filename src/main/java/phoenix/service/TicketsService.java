@@ -34,9 +34,8 @@ public class TicketsService {
      */
     @Transactional
     public boolean ticketWrite(int rno) {
-        //예약 정보 조회
+        //예약 정보 조회 + 상태 검증
         Map<String, Object> info = ticketsMapper.ticketPrint(rno);
-        System.out.println("rno = " + rno);
         if (info == null) return false;
 
         String status = String.valueOf(info.get("reservation_status"));
@@ -45,49 +44,34 @@ public class TicketsService {
             return false;
         }//func end
 
-        // 기존 QR 존재 여부 확인
+        // rno 중복 QR발급 방지
         String existingCode = ticketsMapper.findTicketdedupe(rno);
         if (existingCode != null && !existingCode.isEmpty()) {
             System.out.println("[ticketWrite] 이미 QR 존재 → false");
             return false;
         }//if end
 
-        // 가격 조회
-        Number seatPrice = (Number) info.get("seat_price");
-        int price = seatPrice != null ? seatPrice.intValue() : 0;
+        // 6자리 토큰 생성 (예: ab12f9)
+        String qrUuid = java.util.UUID.randomUUID()
+                .toString().replace("-", "")
+                .substring(0, 6);
 
-        // QR 코드용 고정 문자열
-        //java.time.ZoneId KST = java.time.ZoneId.of("Asia/Seoul");
-        //String date = java.time.LocalDate.now(KST)
-        //        .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
-        //String uuid = java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 8);
-        //String payload = String.format("%s_%s", date, uuid);
-
-        // QR 스캔시 정보 출력
-        String name = String.valueOf(info.getOrDefault("mname",""));
-        String zone = String.valueOf(info.getOrDefault("zname",""));
-        String seat = String.valueOf(info.getOrDefault("seat_no",""));
-        String validText = "사용가능";
-
-        Map<String,Object>qrPayload=new LinkedHashMap<>();
-        qrPayload.put("이름",name);
-        qrPayload.put("구역",zone);
-        qrPayload.put("좌석",seat);
-        qrPayload.put("사용여부",validText);
-
+        // QR코드 스캔 URL(도메인생기면 여기만 수정)
+        String baseUrl = "http://localhost:8080";
+        String qrUrl = baseUrl+"/tickets/qr?qr="+qrUuid;
 
         // QR 이미지 파일 생성 및 저장
-        String imagePath = fileService.saveQRImg(qrPayload);
+        String imagePath = fileService.saveQRImg(qrUrl);
 
         //DB저장
         TicketsDto dto = new TicketsDto();
         dto.setRno(rno);
         dto.setTicket_code(imagePath);
-        dto.setPrice(price);
         dto.setValid(true);
-
+        dto.setTicket_uuid(qrUuid);
         ticketsMapper.ticketWrite(dto);
         return true;
+
     }//func end
 
     /**
@@ -140,6 +124,18 @@ public class TicketsService {
                 .collect(Collectors.joining(","));
         return ticketsMapper.formerGame(gnoList);
     }//func end
+
+    /** uuid → rno 조회 (없으면 0) */
+    public int TicketUrlUuid(String uuid) {
+        if (uuid == null || uuid.isBlank()) return 0;
+        return ticketsMapper.TicketUrlUuid(uuid);
+    }
+
+    /** uuid → 예매 상세(표시용) 바로 조회 (없으면 null) */
+    public Map<String, Object> ticketUuidInfo(String uuid) {
+        if (uuid == null || uuid.isBlank()) return null;
+        return ticketsMapper.ticketUuidInfo(uuid);
+    }
 
 
 }//class end
