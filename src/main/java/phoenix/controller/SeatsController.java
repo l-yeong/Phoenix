@@ -7,7 +7,9 @@ import org.springframework.web.bind.annotation.*;
 
 import phoenix.model.dto.SeatsDto;
 import phoenix.service.SeatLockService;
+import phoenix.service.SeatsService;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -30,6 +32,7 @@ public class SeatsController {  // class start
 
     // 의존성 주입
     private final SeatLockService seatService;
+    private final SeatsService seatsService;
 
     // 좌석 임시 선택 메소드
     @PostMapping("/select")
@@ -94,4 +97,10 @@ public class SeatsController {  // class start
 
         return ResponseEntity.ok(new SeatsDto.MapResponse(statusBySeat));
     }   // func end
+
+    @GetMapping("/print")
+    public ResponseEntity<?> seatPrint(){
+        List<SeatsDto> result = seatsService.seatPrint();
+        return ResponseEntity.ok(result);
+    }// func end
 }   // class end

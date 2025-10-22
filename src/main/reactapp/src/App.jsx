@@ -18,6 +18,7 @@ import FindPwdPage from "./pages/FindPwdPage";
 import { AuthProvider } from "./api/loginstate.jsx";
 import Mypage from "./features/members/Mypage.jsx";
 import ReservationFind from "./features/reservations/ReservationFind.jsx"
+import SeatChange from "./features/reservationExchanges/SeatChange.jsx";
 
 function App() {
   return (
@@ -47,6 +48,7 @@ function App() {
           <Route path="/macro" element={<MacroPage />} />
           <Route path="/seats" element={<SeatsPolygonPage />} />
           <Route path="/zone/:zoneId" element={<ZoneDemoPage />} />
+          <Route path="/seatchange" element={<SeatChange /> } />
         </Routes>
         <Footer />
 
