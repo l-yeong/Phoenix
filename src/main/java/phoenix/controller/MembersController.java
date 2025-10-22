@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.graphql.GraphQlProperties;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -91,6 +92,29 @@ public class MembersController {
                     .status(HttpStatus.UNAUTHORIZED)
                     .body(new ApiResponseUtil<>(false, "아이디 또는 비밀번호가 일치하지 않습니다.", null));
         }
+
+        // 상태값 검사 추가(정상(active)/휴면(dormant)/탈퇴(withdrawn) 계정 로그인 불가)
+        switch (member.getStatus()){
+                case "withdrawn" -> {
+                    return ResponseEntity
+                            .status(HttpStatus.FORBIDDEN)
+                            .body(new ApiResponseUtil<>(false , "탈퇴한 계정입니다. 다시 가입해주세요." , null));
+                }
+                case "dormant" -> {
+                    return ResponseEntity
+                            .status(HttpStatus.FORBIDDEN)
+                            .body(new ApiResponseUtil<>(false , "휴면 상태의 계정입니다. 관리자에게 문의하세요.",null));
+                }
+                case "active" -> {
+
+                }
+                default -> {
+                    return ResponseEntity
+                            .status(HttpStatus.FORBIDDEN)
+                            .body(new ApiResponseUtil<>(false , "비정상적인 계정 상태입니다." , null));
+                }
+
+        } // switch e
 
         // 2. Authentication 객체 생성
         UsernamePasswordAuthenticationToken authenticationToken =
