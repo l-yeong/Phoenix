@@ -1,6 +1,8 @@
 package phoenix.model.mapper;
 
 import org.apache.ibatis.annotations.*;
+import phoenix.model.dto.SeatsDto;
+
 import java.util.List;
 import java.util.Map;
 
@@ -29,5 +31,9 @@ public interface SeatsMapper {
                 public int gno;
                 public String seatName;
         }
+
+        // 전체 좌석 조회
+        @Select("select * from seats")
+        List<SeatsDto> seatPrint();
 }
 
