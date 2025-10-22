@@ -12,6 +12,8 @@ import GatePage from "./features/seats/GatePage";
 import MacroPage from "./features/seats/MacroPage";
 import SeatsPolygonPage from "./features/seats/SeatsPolygonPage";
 import ZoneDemoPage from "./features/seats/ZoneDemoPage";
+import FindIdPage from "./pages/FindIdPage";
+import FindPwdPage from "./pages/FindPwdPage";
 
 import { AuthProvider } from "./api/loginstate.jsx";
 import Mypage from "./features/members/Mypage.jsx";
@@ -19,22 +21,23 @@ import ReservationFind from "./features/reservations/ReservationFind.jsx"
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-
+    <BrowserRouter>
+      <AuthProvider>
         <Header />
         <Routes>
-          {/* 🔴 메인 선택 페이지 */}
+          {/* 메인 선택 페이지 */}
           <Route path="/" element={<HomeMain />} />
 
-          {/* ⚾ 일반 예매 */}
+          {/* 일반 예매 */}
           <Route path="/home" element={<Home />} />
 
-          {/* 👴 시니어 예매 */}
+          {/* 시니어 예매 */}
           <Route path="/senior-reserve" element={<SeniorReserve />} />
 
-          {/* 🧩 회원 관련 */}
+          {/* 회원 관련 */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/find-id" element={<FindIdPage />} />
+          <Route path="/find-pwd" element={<FindPwdPage />} />
           <Route path="/signup" element={<SignUpPage />} />
           <Route path="/social/success" element={<SocialSuccess />} />
           <Route path="/social/signup" element={<SocialSignUp />} />
@@ -47,8 +50,9 @@ function App() {
         </Routes>
         <Footer />
 
-      </BrowserRouter>
-    </AuthProvider>
+
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 

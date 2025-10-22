@@ -31,35 +31,43 @@ public class EmailService {
      */
     public String sendAuthCode(String email){
 
-        // [1] 6자리 난수 생성
-        // Math.random() * 900000 → 0~899999 범위 생성
-        // + 100000 → 최소 100000 ~ 최대 999999 (즉, 6자리 보장)
-        String code = String.valueOf((int)(Math.random() * 900000) + 100000);
+        try {
 
-        // [2] Redis에 인증코드 저장
-        // key : 이메일 주소
-        // value : 인증코드
-        // 5분(300초) 동안만 유효하도록 TTL 설정
-        redisTemplate.opsForValue().set(email , code , 5 , TimeUnit.MINUTES); // 5분 유효
+            // [1] 6자리 난수 생성
+            // Math.random() * 900000 → 0~899999 범위 생성
+            // + 100000 → 최소 100000 ~ 최대 999999 (즉, 6자리 보장)
+            String code = String.valueOf((int)(Math.random() * 900000) + 100000);
 
-        // [3] 메일 객체 생성
-        // SimpleMailMessage : 간단한 텍스트 메일 전송용 클래스
-        SimpleMailMessage message = new SimpleMailMessage();
+            // [2] Redis에 인증코드 저장
+            // key : 이메일 주소
+            // value : 인증코드
+            // 5분(300초) 동안만 유효하도록 TTL 설정
+            redisTemplate.opsForValue().set(email , code , 5 , TimeUnit.MINUTES); // 5분 유효
 
-        // [4] 수신자 이메일 주소 지정
-        message.setTo(email);
+            // [3] 메일 객체 생성
+            // SimpleMailMessage : 간단한 텍스트 메일 전송용 클래스
+            SimpleMailMessage message = new SimpleMailMessage();
 
-        // [5] 메일 제목 지정
-        message.setSubject("[Phoenix] 이메일 코드");
+            // [4] 수신자 이메일 주소 지정
+            message.setTo(email);
 
-        // [6] 메일 본문 내용 작성
-        message.setText("인증코드 : " + code + "\n 5분 이내에 입력해주세요.");
+            // [5] 메일 제목 지정
+            message.setSubject("[Phoenix] 이메일 코드");
 
-        // [7] 메일 발송
-        mailSender.send(message);
+            // [6] 메일 본문 내용 작성
+            message.setText("인증코드 : " + code + "\n 5분 이내에 입력해주세요.");
 
-        // [8] 생성된 인증코드를 반환 (테스트나 로그용)
-        return code;
+            // [7] 메일 발송
+            mailSender.send(message);
+
+            // [8] 생성된 인증코드를 반환 (테스트나 로그용)
+            return code;
+
+        } catch (Exception e) {
+            System.err.println("[EMAIL ERROR] " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
 
     } // func e
 

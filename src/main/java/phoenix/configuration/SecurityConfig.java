@@ -1,5 +1,6 @@
 package phoenix.configuration;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -106,18 +107,18 @@ public class SecurityConfig {
                 // =============================
                 // 기본 보안 설정 비활성화 (REST용)
                 // =============================
+                .securityMatcher("/**") // 모든 요청은 이 체인에서만 처리
                 .csrf(csrf -> csrf.disable()) // CSRF 보호 비활성화 , 세션-폼 기반이 아닌 REST(JWT)
                 .formLogin(form -> form.disable()) // 스프링 기본 로그인 폼 비활성화(프론트/REST로만 로그인 처리하겠다는 뜻)
                 .httpBasic(basic -> basic.disable()) // Basic 인증 비활성화(아이디/비번을 Base64로 보내는 방식 금지
                 .logout(logout -> logout.disable()) // 로그아웃 비활성화 추가
-                .cors(cors -> {}) // CORS 설정과 통합(CorsConfig 반영)
 
                 // OAuth2 요청까지 포함해 CORS 허용
                 .cors(cors -> cors.configurationSource(request -> {
                     var config = new org.springframework.web.cors.CorsConfiguration();
                     config.setAllowedOriginPatterns(List.of("http://localhost:5173"));
                     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-                    config.setAllowedHeaders(List.of("*"));
+                    config.setAllowedHeaders(List.of("Authorization","Content-Type"));
                     config.setAllowCredentials(true);
                     return config;
                 }))
@@ -135,29 +136,40 @@ public class SecurityConfig {
                 // =============================
                 .authorizeHttpRequests(auth -> auth // URL별 인가 규칙 시작
                         .requestMatchers(HttpMethod.OPTIONS , "/**").permitAll() // 프리플라이트 요청 허용
-                        .requestMatchers("/members/social/**").permitAll() // 소셜 로그인/회원가입 경로 허용
-                        .requestMatchers("/socket/**").permitAll()               // WebSocket 연결 허용 추가
-                        .requestMatchers(                                       // requestMatchers(...).permitAll() : 나열한 경로는 "인증 없이" 접근 허용
-                                "/members/signup",
-                                "/members/login",
-                                "/members/email/send",
-                                "/members/verify-email",
-                                "/members/token/refresh",
-                                "/members/logout",
+                        .requestMatchers("/members/email/**").permitAll()
+                        .requestMatchers(
+                                "/members/**", // 회원 하위 모두
+                                "/oauth2/**",           // 소셜 회원
+                                "/socket/**",
                                 "/seats/**",
                                 "/gate/**",
                                 "/captcha/**",
                                 "/game/**",
-                                "/captcha/**",
                                 "/tickets/**",
-                                "/upload/**", // QR이미지 허용
+                                "/upload/**",
                                 "/reserve/**",
-                                "/seat/**",
-                                "/oauth2/**" // 소셜 로그인 허용
-
-                        ).permitAll()
+                                "/seat/**"
+                        ).permitAll() // 나중에 싹다 authenticated() 로 바꿔서 인증없이 못들어가게 만들거임
                         .anyRequest().authenticated() // 나머지는 전부 인증필요(JWT 또는 OAuth2 로그인 성공 상태)
                 )
+                // =============================
+                // 인증 실패 / 인가 실패 시 JSON 응답으로 변경
+                // =============================
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((req, res, e) -> {
+                            res.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
+                            res.setContentType("application/json;charset=UTF-8");
+                            res.getWriter().write("{\"success\":false,\"message\":\"UNAUTHORIZED\"}");
+                        })
+                        .accessDeniedHandler((req, res, e) -> {
+                            res.setStatus(HttpServletResponse.SC_FORBIDDEN); // 403
+                            res.setContentType("application/json;charset=UTF-8");
+                            res.getWriter().write("{\"success\":false,\"message\":\"FORBIDDEN\"}");
+                        })
+                )
+
+                // /login 페이지로 redirect 시키는 캐시 전략 완전히 끔
+                .requestCache(cache -> cache.disable())
 
                 // =============================
                 // OAuth2 로그인 설정
@@ -176,7 +188,8 @@ public class SecurityConfig {
 //                        UsernamePasswordAuthenticationFilter.class);
 
         return security.build(); // 위 설정으로 SecurityFilterChain 인스턴스 생성해서 컨테이너에 등록
-    }
+
+    } // func e
 
     /**
      * <h3>AuthenticationManager 빈 등록</h3>
