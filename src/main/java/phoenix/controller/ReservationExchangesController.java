@@ -36,8 +36,10 @@ public class ReservationExchangesController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "로그인 정보가 없습니다."));
         }
+        System.out.println("mno = " + mno);
         dto.setFrom_mno(mno);
         int result = reservationexchangesService.requestChange(dto);
+        System.out.println("result = " + result);
         return ResponseEntity.ok(result);
     }// func end
 

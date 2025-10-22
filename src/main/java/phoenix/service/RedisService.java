@@ -79,6 +79,7 @@ public class RedisService { // class start
                     String.valueOf(86400),             // ARGV[2] : TTL 24시간
                     String.valueOf(dto.getTo_rno())    // ARGV[3] : 응답자 예매번호
             );
+            System.out.println("lua = " + result);
 
             // Lua 스크립트 반환값이 null이면 실패
             if (result == null) return 0;
