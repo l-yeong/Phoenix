@@ -72,8 +72,13 @@ public class ReservationsController {
     @PutMapping("/cancle")
     public ResponseEntity<Boolean> reserveCancle(@RequestParam int rno ){
         MembersDto loginMember = membersService.getLoginMember();
+        System.out.println("loginMember = " + loginMember);
+        if (loginMember == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(false);
+        }
         int mno = loginMember.getMno();
         boolean result = reservationsService.reserveCancle(rno , mno);
+        System.out.println("result = " + result);
         return ResponseEntity.ok().body(result);
     }// func end
 
@@ -86,6 +91,7 @@ public class ReservationsController {
     @GetMapping("/possible")
     public ResponseEntity<?> seatPossible(@RequestParam int rno){
         List<ReservationsDto> list = reservationsService.seatPossible(rno);
+        System.out.println("list = " + list);
         return ResponseEntity.ok(list);
     }// func end
 }//class end
