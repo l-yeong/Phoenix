@@ -12,6 +12,8 @@ import GatePage from "./features/seats/GatePage";
 import MacroPage from "./features/seats/MacroPage";
 import SeatsPolygonPage from "./features/seats/SeatsPolygonPage";
 import ZoneDemoPage from "./features/seats/ZoneDemoPage";
+import FindIdPage from "./pages/FindIdPage";
+import FindPwdPage from "./pages/FindPwdPage";
 
 import { AuthProvider } from "./api/loginstate.jsx";
 import Mypage from "./features/members/Mypage.jsx";
@@ -34,6 +36,8 @@ function App() {
 
           {/* 회원 관련 */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/find-id" element={<FindIdPage />} />
+          <Route path="/find-pwd" element={<FindPwdPage />} />
           <Route path="/signup" element={<SignUpPage />} />
           <Route path="/social/success" element={<SocialSuccess />} />
           <Route path="/social/signup" element={<SocialSignUp />} />

@@ -4,6 +4,7 @@ import {
   Button,
   TextField,
   Typography,
+  Link
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axiosInstance";
@@ -26,10 +27,10 @@ const LoginForm = () => {
     e.preventDefault();
 
     try {
-      const response = await api.post("/members/login", 
-        { mid, password_hash: password,} ,
-        { withCredentials : true }
-    );
+      const response = await api.post("/members/login",
+        { mid, password_hash: password, },
+        { withCredentials: true }
+      );
 
       const resData = response.data.data;
       if (!resData) {
@@ -41,22 +42,22 @@ const LoginForm = () => {
       alert(`${resData.mid}님 환영합니다!`);
       navigate("/");
     } catch (error) {
-    console.error("로그인 실패:", error);
+      console.error("로그인 실패:", error);
 
-    // ✅ 응답 상태별 처리 (302는 더 이상 안뜰 예정, 대신 401/400)
-    if (error.response) {
-      const { status } = error.response;
-      if (status === 401) {
-        alert("인증되지 않은 요청입니다. 다시 로그인해주세요.");
-      } else if (status === 400) {
-        alert("아이디 또는 비밀번호를 확인해주세요.");
+      // 응답 상태별 처리 (302는 더 이상 안뜰 예정, 대신 401/400)
+      if (error.response) {
+        const { status } = error.response;
+        if (status === 401) {
+          alert("인증되지 않은 요청입니다. 다시 로그인해주세요.");
+        } else if (status === 400) {
+          alert("아이디 또는 비밀번호를 확인해주세요.");
+        } else {
+          alert("서버 오류가 발생했습니다.");
+        }
       } else {
-        alert("서버 오류가 발생했습니다.");
+        alert("서버에 연결할 수 없습니다.");
       }
-    } else {
-      alert("서버에 연결할 수 없습니다.");
     }
-  }
   };
 
   /** 소셜 로그인 리디렉션 */
@@ -74,7 +75,7 @@ const LoginForm = () => {
         alignItems: "center",
       }}
     >
-      {/* 🔥 제목 */}
+      {/* 제목 */}
       <Typography
         variant="h5"
         sx={{ mb: 3, color: "#CA2E26", fontWeight: "bold" }}
@@ -82,7 +83,7 @@ const LoginForm = () => {
         🔥 Phoenix 로그인
       </Typography>
 
-      {/* 🧩 로그인 폼 */}
+      {/* 로그인 폼 */}
       <Box
         component="form"
         onSubmit={handleLogin}
@@ -124,7 +125,35 @@ const LoginForm = () => {
         </Button>
       </Box>
 
-      {/* 🔹 안내문 */}
+      {/* 아이디 / 비밀번호 찾기 링크 */}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          mt: 1,
+          width: "100%",
+          maxWidth: "400px",
+        }}
+      >
+        <Link
+          component="button"
+          underline="hover"
+          sx={{ fontSize: "0.9rem", color: "gray" }}
+          onClick={() => navigate("/find-id")}
+        >
+          아이디 찾기
+        </Link>
+        <Link
+          component="button"
+          underline="hover"
+          sx={{ fontSize: "0.9rem", color: "gray" }}
+          onClick={() => navigate("/find-pwd")}
+        >
+          비밀번호 찾기
+        </Link>
+      </Box>
+
+      {/* 안내문 */}
       <Typography
         variant="body2"
         sx={{
@@ -137,7 +166,7 @@ const LoginForm = () => {
         SNS 계정으로 빠르게 로그인하세요
       </Typography>
 
-      {/* 🔹 소셜 로그인 버튼 */}
+      {/* 소셜 로그인 버튼 */}
       <Box
         sx={{
           display: "flex",
