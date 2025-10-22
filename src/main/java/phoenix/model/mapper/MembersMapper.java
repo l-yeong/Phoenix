@@ -78,8 +78,8 @@ public interface MembersMapper {
     /**
      * 회원 탈퇴
      * */
-    @Update("UPDATE members SET status = 'withdrawn' WHERE mid = #{mid}")
-    int memberDelete(String mid);
+    @Update("UPDATE members SET status = 'withdrawn' , email = #{newEmail} WHERE mid = #{mid}")
+    int memberDelete(String mid , String newEmail );
 
     /**
      * 아이디 찾기

@@ -20,6 +20,7 @@ import phoenix.util.PasswordUtil;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -203,7 +204,14 @@ public class MembersService {
         if (member == null) return false;
 
         if (!passwordEncoder.matches(password, member.getPassword_hash())) return false;
-        return membersMapper.memberDelete(mid) > 0;
+
+        // 탈퇴 이메일 형식 : test@gmail.com_탈퇴_2025-10-22_4821
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        String newEmail = member.getEmail() + "탈퇴" + today + "_" + (int)(Math.random() * 1000 );
+
+        int result = membersMapper.memberDelete(mid , newEmail);
+
+        return result > 0;
     } // func e
 
 
