@@ -7,6 +7,7 @@ import Modal from '@mui/joy/Modal';
 import ModalClose from '@mui/joy/ModalClose';
 import Typography from '@mui/joy/Typography';
 import Sheet from '@mui/joy/Sheet';
+import TicketQR from "../tickets/TicketQR"; // QR 조회 컴포넌트
 
 export default function reservationFind( props ){
     // [*] 모달 상태 관리
@@ -149,7 +150,9 @@ export default function reservationFind( props ){
 
             return (
                 <div>
-
+                    <div style={{ margin: "20px 0" }}>
+                                                    <TicketQR />
+                                          </div>
                     <ul>
                         <li>예매번호 : {reservation.reservation?.rno ?? "-"}</li>
                         <li>좌석번호 : {reservation.reservation?.sno ?? "-"}</li>
