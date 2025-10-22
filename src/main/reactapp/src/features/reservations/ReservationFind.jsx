@@ -1,6 +1,7 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import TicketQR from "../tickets/TicketQR";
 
 export default function reservationFind( props ){
     // [*] 예매 상태 관리
@@ -99,6 +100,9 @@ export default function reservationFind( props ){
 
             return (
                 <div>
+                    <div style={{ margin: "20px 0" }}>
+                      <TicketQR rno={parseInt(rno, 10)} />
+                    </div>
                 <ul>
                     <li>예매번호 : {reservation.reservation?.rno ?? "-"}</li>
                     <li>좌석번호 : {reservation.reservation?.sno ?? "-"}</li>

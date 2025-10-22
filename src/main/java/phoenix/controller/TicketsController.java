@@ -3,6 +3,7 @@ package phoenix.controller;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.neo4j.Neo4jProperties;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -37,10 +38,23 @@ public class TicketsController {
      * 예: GET /tickets/print
      */
     @GetMapping("/print")
-    public ResponseEntity<List<Map<String,Object>>>findPayloads(@AuthenticationPrincipal MembersDto user) {
-        //MembersDto login = membersService.getLoginMember(); // 여기서 null일 일 없도록 아래 서비스 수정
-        List<Map<String,Object>> result = ticketsService.findPayloads(user.getMno());
+    public ResponseEntity<?> findPayloads(@RequestParam(name = "rno", required = false) Integer rno) {
+        MembersDto loginMno = membersService.getLoginMember();
+
+        // 로그인 여부 확인
+        if (loginMno == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인이 필요합니다.");
+        }
+
+        //  rno 값 검증
+        if (rno == null) {
+            return ResponseEntity.badRequest().body("rno 파라미터가 필요합니다.");
+        }
+
+        int mno = loginMno.getMno();
+        List<Map<String, Object>> result = ticketsService.findPayloads(mno, rno);
+
         return ResponseEntity.ok(result);
-    }//func end
+    }
 
 }//class end

@@ -84,6 +84,7 @@ public class ReservationExchangesService {
         // 예매좌석 교체
         reservationsService.reserveUpdate(fromDto.getSno(),toDto.getRno(),mno);         // 응답자 요청자 좌석으로 변경
         reservationsService.reserveUpdate(toDto.getSno(),from_rno,dto.getFrom_mno());   // 요청자 응답자 좌석으로 변경  *** 트랜잭션해야됨
+
         // redis 삭제
         redisService.deleteAllRequest(dto);
         return true;
