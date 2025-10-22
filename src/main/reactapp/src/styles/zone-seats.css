@@ -1,0 +1,112 @@
+.zone-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px 20px 28px;
+}
+
+/* 헤더 */
+.zone-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.zone-title { margin: 0; font-size: 20px; font-weight: 800; }
+.zone-sub { color: #6b7280; font-size: 13px; }
+
+.zone-header__right { display: flex; gap: 8px; }
+.btn {
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.btn:hover { background: #f9fafb; }
+.btn--primary {
+  background: #1d4ed8; color: #fff; border-color: #1d4ed8;
+}
+.btn--primary:hover { filter: brightness(1.05); }
+.btn:disabled { opacity: .6; cursor: not-allowed; }
+
+/* 툴바 */
+.zone-toolbar {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+}
+.legend { display: inline-flex; align-items: center; gap: 6px; margin-right: 8px; }
+.legend__swatch { width: 12px; height: 12px; border-radius: 3px; border: 1px solid rgba(0,0,0,.08); }
+.legend__swatch--green { background: #10b981; }
+.legend__swatch--blue  { background: #3b82f6; }
+.legend__swatch--hold  { background: #f59e0b; }
+.legend__swatch--sold  { background: #ef4444; }
+.legend__label { font-size: 12px; color: #374151; }
+.zone-toolbar__spacer { flex: 1; }
+.zone-filter .checkbox { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+.zone-summary { color: #374151; font-weight: 700; margin-left: 8px; }
+
+/* 에러 */
+.zone-error { color: #dc2626; font-size: 13px; margin: 8px 0; }
+
+/* 그리드 */
+.seat-grid {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 4px 18px rgba(16,24,40,0.06);
+  min-height: 220px;
+}
+.seat-skeleton {
+  height: 36px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #f3f4f6, #eef2f7, #f3f4f6);
+  background-size: 200% 100%;
+  animation: ske 1.2s infinite linear;
+}
+@keyframes ske { 0% {background-position: 0% 0;} 100% {background-position: 200% 0;} }
+
+/* 좌석 칩 */
+.seat-chip {
+  position: relative;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.seat-chip--available { color: #065f46; background:#ecfdf5; border-color:#a7f3d0; }
+.seat-chip--held_by_me { color:#1e3a8a; background:#eff6ff; border-color:#bfdbfe; }
+.seat-chip--held { color:#7c2d12; background:#fffbeb; border-color:#fde68a; }
+.seat-chip--sold { color:#7f1d1d; background:#fef2f2; border-color:#fecaca; }
+.seat-chip:disabled { opacity: .7; cursor: not-allowed; }
+
+.seat-label { position: relative; z-index: 1; }
+
+/* TTL 뱃지 (내 홀드) */
+.ttl-badge {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  z-index: 2;
+  padding: 2px 6px;
+  font-size: 11px;
+  border-radius: 999px;
+  background: #1f2937;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+}
+.ttl-badge--mine { background: #111827; }
+
+/* 하단 노트 */
+.zone-footer-note {
+  margin-top: 10px;
+  color: #6b7280;
+  font-size: 12px;
+}

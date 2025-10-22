@@ -4,18 +4,12 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * [Gate 전용 DTO]
- * - 컨트롤러 <-> 프론트 통신 모델
- * - gno 포함: 공연(또는 회차) 단위 중복 예매 방지에 사용
- */
 public class GateDto {
 
     /** 대기열 등록 요청 */
     @Data
     public static class EnqueueRequest {
-        private int mno;
-        private int gno; // 같은 공연 중복 예매 사전 차단용
+        private int gno; // 공연/경기 식별자
     }
 
     /** 대기열 등록 응답 */
@@ -24,25 +18,11 @@ public class GateDto {
         private boolean queued;   // true면 큐 등록, false면(이미 예매 등) 차단
         private int waiting;      // 현재 대기열 길이
     }
-    /** 입장 확정 요청 */
-    @Data
-    public static class EnterRequest {
-        private int mno;
-        private String token;
-        private int gno; // 입장 시에도 중복 예매 재확인
-    }
 
-    /** 입장 확정 응답 */
-    @Data @AllArgsConstructor @NoArgsConstructor
-    public static class EnterResponse {
-        private boolean allowed;  // true면 세션 시작(입장 성공)
-        private String message;   // "entered" / "denied" 등
-    }
-
-    /** 퇴장 요청 */
+    /** 퇴장 요청(선택: 바디/쿼리 어느 쪽이든 gno 필요) */
     @Data
     public static class LeaveRequest {
-        private int mno;
+        private int gno;
     }
 
     /** 퇴장 응답 */

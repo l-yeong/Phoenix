@@ -1,15 +1,15 @@
 package phoenix.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import phoenix.model.dto.SeatsDto;
+import phoenix.service.MembersService;
 import phoenix.service.SeatLockService;
-import phoenix.service.SeatsService;
 
-import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -32,75 +32,42 @@ public class SeatsController {  // class start
 
     // 의존성 주입
     private final SeatLockService seatService;
-    private final SeatsService seatsService;
+    private final MembersService membersService;
 
-    // 좌석 임시 선택 메소드
-    @PostMapping("/select")
-    public ResponseEntity<SeatsDto.SelectResponse> select(@RequestBody SeatsDto.SelectRequest dto) throws InterruptedException {
-
-        // SeatLockService 시그니처에 맞춰 (userId, showId, seatId) 전달
-        int code = seatService.tryLockSeat(dto.getMno(), dto.getGno(), dto.getSno());
-
-        // 서비스에서 가져온 반환값을 가지고 분기처리
-        String msg = switch (code) {
-            case 1 -> "lock success";
-            case -1 -> "no session";
-            case -2 -> "duplicate reservation";
-            case -3 -> "already held/sold";
-            case -4 -> "limit exceed";
-            default -> "error";
-        };  // switch end
-
-        // 1이면 성공 나머지 다 실패
-        boolean ok =  code == 1;
-
-        // 메세지와 성공여부 보내기
-        return ResponseEntity.ok(new SeatsDto.SelectResponse(ok, code , msg));
-    }   // func end
-
-    // 좌석 해제 메소드
-    // SeatLockService.releaseSeat(userId, seatId, showId) (다회차 안전)
-    @PostMapping("/release")
-    public ResponseEntity<SeatsDto.ReleaseResponse> release(@RequestBody SeatsDto.ReleaseRequest dto) {
-
-        boolean ok = seatService.releaseSeat(dto.getMno(), dto.getSno(), dto.getGno());
-
-        return ResponseEntity.ok(new SeatsDto.ReleaseResponse(ok));
-    }   // func end
-
-    // ------------------------------------------------------------
-    // 3) 좌석 확정(결제)
-    //   - SeatLockService.confirmSeats(userId, seatIds, showId, failReason)
-    // ------------------------------------------------------------
-    @PostMapping("/confirm")
-    public ResponseEntity<SeatsDto.ConfirmResponse> confirm(@RequestBody SeatsDto.ConfirmRequest req) {
-        StringBuilder reason = new StringBuilder();
-        boolean ok = seatService.confirmSeats(req.getMno(), req.getSeats(), req.getGno(), reason);
-        // reason 이 서비스에서 StringBuilder 돼서 들어옴.
-        return ResponseEntity.ok(
-                new SeatsDto.ConfirmResponse(ok, ok ? "confirmed" : reason.toString())
+    /** (부분) 상태 조회 — 화면에 보이는 좌석만 물어본다(네트워크/서버 비용 최소화) */
+    @PostMapping("/status")
+    public ResponseEntity<Map<String, Object>> status(@RequestBody SeatsDto.StatusReq req) {
+        int mno = membersService.getLoginMember().getMno();
+        var statusMap = seatService.getSeatStatusFor(
+                req.getGno(), mno, req.getSeats().stream().map(SeatsDto.SeatRef::getSno).toList()
         );
-    }   // func end
+        return ResponseEntity.ok(Map.of("statusBySno", statusMap));
+    }
 
-    // ------------------------------------------------------------
-    // 4) 좌석 상태 조회 (폴링 or 새로고침 시 호출)
-    //    - DB + Redis 기반 상태를 통합 조회
-    //    - 요청 파라미터:
-    //        userId : 현재 로그인한 사용자 ID
-    //        gno     : 경기 번호
-    //    - 응답: 각 좌석의 상태 (SOLD / HELD / HELD_BY_ME / AVAILABLE)
-    // ------------------------------------------------------------
-    @PostMapping("/getMap")
-    public ResponseEntity<SeatsDto.MapResponse> getSeatMap(@RequestBody SeatsDto.MapRequest dto) {
+    /** 좌석 선택(락 시도 → 임시 보유) */
+    @PostMapping("/select")
+    public ResponseEntity<Map<String, Object>> select(@RequestBody SeatsDto.SingleSeatReq req) throws InterruptedException {
+        int mno = membersService.getLoginMember().getMno();
+        int code = seatService.tryLockSeat(mno, req.getGno(), req.getZno(), req.getSno());
+        return ResponseEntity.ok(Map.of("ok", code == 1, "code", code));
+    }
 
-        Map<String, String> statusBySeat = seatService.getSeatStatusMap(dto.getGno(), dto.getMno());
-
-        return ResponseEntity.ok(new SeatsDto.MapResponse(statusBySeat));
-    }   // func end
-
-    @GetMapping("/print")
-    public ResponseEntity<?> seatPrint(){
-        List<SeatsDto> result = seatsService.seatPrint();
-        return ResponseEntity.ok(result);
-    }// func end
+    /** 좌석 해제(내 임시 보유 해제) */
+    @PostMapping("/release")
+    public ResponseEntity<Map<String, Object>> release(@RequestBody SeatsDto.SingleSeatReq req) {
+        int mno = membersService.getLoginMember().getMno();
+        boolean ok = seatService.releaseSeat(mno, req.getGno(), req.getZno(), req.getSno());
+        return ResponseEntity.ok(Map.of("ok", ok));
+    }
+    // ---------- 결제(초기: Redis만 반영) ----------
+    @PostMapping("/confirm")
+    public ResponseEntity<Map<String, Object>> confirm(@RequestBody SeatsDto.ConfirmReq req) {
+        int mno = membersService.getLoginMember().getMno();
+        StringBuilder reason = new StringBuilder();
+        boolean ok = seatService.confirmSeats(mno, req.getGno(), req.getSnos(), reason);
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("ok", ok);
+        if (!ok) body.put("reason", reason.toString());
+        return ResponseEntity.ok(body);
+    }
 }   // class end

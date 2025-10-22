@@ -6,317 +6,266 @@ import org.redisson.api.*;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
 import phoenix.util.RedisKeys;
 
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-
 /**
- * ===============================================================
- * [GateService]
- * 🎟️ 공연 예매 입장 제어(대기열 + 동시성 제어) 핵심 로직
- * ===============================================================
-
- * 핵심 역할
- * 1. 동시에 입장 가능한 사용자 수를 제한 (예: 3명만)
- * 2. 나머지 인원은 "대기열"에 넣어 순서대로 입장시킴
- * 3. 입장 시 "1회용 토큰"을 발급하여 프론트에 전달
- * 4. 입장 중(게이트 통과)인 사용자는 TTL(세션 유지 시간) 동안만 예매 가능
- * 5. 이미 예매한 사용자는 대기열에 들어가지 못하도록 차단
-
- * 기술 요소
- * - Redisson RSemaphore : 동시 입장 인원(퍼밋) 제어
- * - Redisson RBlockingQueue : 대기열(FIFO)
- * - Redisson RBucket : 세션 상태(mno), 토큰 저장(token → mno)
- * - Redisson RSet : 현재 활성 사용자 목록 관리
-
- * TTL 설정
- * - 게이트 세션 유지시간 : 5분
- * - 1회용 토큰 유효시간 : 30초
- * - RSemaphore 퍼밋 수 : 3명 (동시 입장 제한)
+ * =============================================================
+ * 🧩 [테스트용 GateService]
+ *  - gno(경기) 단위로 완전히 분리된 구조
+ *  - 세마포어, 대기열, 활성유저, 세션 모두 gno별로 분리
+ *  - 로그를 매우 풍부하게 추가하여 상태 확인 가능
+ * =============================================================
  */
-
 @Service
 @RequiredArgsConstructor
-@EnableScheduling // @Scheduled로 세션 만료 회수를 주기적으로 수행
+@EnableScheduling
 public class GateService {
-    // 의존성 추가
+
     private final GameService gameService;
     private final RedissonClient redisson;
 
-    // 동시 입장 허용 인원 (3명까지만 동시에 예매 페이지 접근 가능)
-    private static final int MAX_PERMITS = 3;
+    private static final int MAX_PERMITS = 1; // 동시 입장 허용 인원
+    private static final long SESSION_MINUTES = 5; // 세션 TTL (분)
 
-    // 게이트 세션 TTL (5분) — 입장 후 5분 동안만 좌석 선택 가능
-    private static final long SESSION_MINUTES = 5;
+    // ===== Redis Accessors =====
+    private RSemaphore semaphore(int gno) { return redisson.getSemaphore(RedisKeys.keySemaphore(gno)); }
+    private RBlockingQueue<Integer> queue(int gno) { return redisson.getBlockingQueue(RedisKeys.keyQueue(gno)); }
+    private RSet<Integer> activeSet(int gno) { return redisson.getSet(RedisKeys.keyActiveSet(gno)); }
+    private RSet<Integer> waitingSet(int gno) { return redisson.getSet(RedisKeys.keyWaitingSet(gno)); }
+    private RBucket<String> sessionBucket(int gno, int mno){ return redisson.getBucket(RedisKeys.keySession(gno, mno)); }
+    private RSet<Integer> gnoIndex(){ return redisson.getSet(RedisKeys.GATE_GNO_INDEX); }
 
-
-
-    // Redis 구조 접근자
-
-    // 동시 입장 제한 세마포어
-    // "gate:semaphore" 키에 연결된 Redisson 분산 세마포어
-    // 퍼밋이 0이면 모든 입장이 꽉 찬 상태 ,,,  세마포어란 쉽게 말하면 쓰레드풀임.
-    private RSemaphore semaphore() { return redisson.getSemaphore(RedisKeys.GATE_SEMAPHORE); }
-
-    // 대기열 큐 => 대기자를 순차적으로 들여보냄 , 분산 대기열임.
-    private RBlockingQueue<Integer> queue() { return redisson.getBlockingQueue(RedisKeys.WAITING_QUEUE); }
-
-    // 현재 게이트 안에 있는 사용자 Set 집합
-    private RSet<Integer> activeSet() {return redisson.getSet(RedisKeys.ACTIVE_SET);}
-    // 대기 명단
-    private RSet<Integer> waitingSet() { return redisson.getSet(RedisKeys.WAITING_SET); }
-
-
-    // 초기화 로직 ==> 앱 스타트 시 3개의 퍼밋만 세팅
-    // 스프링(Spring)에서 “빈(Bean)이 생성되고 DI(의존성 주입)가 끝난 직후 한 번만 자동 실행되는 초기화 어노테이션
     @PostConstruct
-    public void init() {
-        // Redis 상에 퍼밋 개수를 지정 (이미 존재해도 무해)
-        semaphore().trySetPermits(MAX_PERMITS);
-    }   // func end
+    public void clearAllGateDataOnStartup() {
+        RKeys keys = redisson.getKeys();
+        long deleted = 0;
 
+        // "gate:"로 시작하는 모든 키를 전부 삭제
+        Iterable<String> all = keys.getKeysByPattern("gate:*");
+        for (String key : all) {
+            keys.delete(key);
+            deleted++;
+        }
 
-    // 메소드 부분
+        System.out.println("🧹 [GateService] 초기화 완료 — 삭제된 키 수: " + deleted);
 
-    // 중복 예매 여부 확인 메소드
-    // getBucket 으로 참조주소값을 가져오고 그 값을 Bucket<V> 타입의 b에 저장한다.
-    // 그것을 .get()해서 Redis 타입을 자동 파싱해서 자바 형식으로 가져와 true 인지 false 인지 확인한다.
-    // Boolean 타입인 이유는 가져온 Bucket이 null일 경우 nullPointException이 일어날 수 있기 때문에
-    // 안전하게 처리한다. 암튼 가져와서 비교하고 이미 예약 되어있으면 false를 반환한다.
+    }
+
+    private void ensureSemaphoreInitialized(int gno) {
+        gnoIndex().add(gno); // 🔴 추가: 스케줄러가 이 gno를 순회할 수 있게 등록
+        RSemaphore sem = redisson.getSemaphore(String.format("gate:%d:semaphore", gno));
+        RBucket<Boolean> boostedFlag = redisson.getBucket(String.format("gate:%d:boosted", gno));
+
+        // ✅ 세마포어가 없으면 완전 신규 생성 (최초 공연 등록 시)
+        if (!sem.isExists()) {
+            sem.trySetPermits(MAX_PERMITS);
+            boostedFlag.set(true);
+            System.out.printf("🆕 [GateService] gno=%d 세마포어 신규 생성 (permits=%d)%n", gno, MAX_PERMITS);
+            return;
+        }
+
+        // ✅ 세마포어가 0이고 아직 보정 안 했을 때만 +1
+        int available = sem.availablePermits();
+        if (available == 0 && !Boolean.TRUE.equals(boostedFlag.get())) {
+            sem.release(1);
+            boostedFlag.set(true);
+            System.out.printf("🔧 [GateService] gno=%d 세마포어 보정 완료 (0 → 1)%n", gno);
+        } else {
+            System.out.printf("✅ [GateService] gno=%d 세마포어 정상 상태 (permits=%d, boosted=%s)%n",
+                    gno, available, boostedFlag.get());
+        }
+    }
+
+    // 이미 예매 완료했는지 체크
     private boolean hasUserAlreadyBooked(int mno, int gno) {
         RBucket<Boolean> b = redisson.getBucket("user_booking:" + mno + ":" + gno);
         return Boolean.TRUE.equals(b.get());
-    }   // func end
+    }
 
+    // ============ Public APIs ============
 
-    // 대기열 등록 (enqueue) 메소드
-    /**
-     * 사용자가 "예매 페이지 입장 시도"를 하면 호출됨
-     * 1 이미 예매한 사용자라면 대기열에 넣지 않음
-     * 2 아직 예매하지 않았다면 대기열에 추가
-     * 3. 빈 자리가 있으면 assignNextIfPossible()로 토큰 발급 시도
-     */
+    /** 🟢 대기열 등록 */
     public EnqueueResult enqueue(int mno, int gno) {
+        ensureSemaphoreInitialized(gno);
+        System.out.println("[DEBUG] user_booking check: "
+                + redisson.getBucket("user_booking:" + mno + ":" + gno).get());
+        System.out.println("\n🎟️ [enqueue] 호출: mno=" + mno + ", gno=" + gno);
+        System.out.println(" ┣ 세마포어 남은 퍼밋: " + semaphore(gno).availablePermits());
+        System.out.println(" ┣ 현재 activeSet=" + activeSet(gno).size() + ", queue=" + queue(gno).size());
 
-        // 1️⃣ 예매 가능 여부 확인 (보안)
+        // 🔴 추가: 내 세션이 없는데 activeSet에는 남아있으면 stale → 정리 후 퍼밋 반환
+        if (!sessionBucket(gno, mno).isExists() && activeSet(gno).remove(mno)) {
+            try { semaphore(gno).release(); } catch (Exception ignore) {}
+            System.out.println("🧹 [enqueue] stale active 제거 및 퍼밋 반환 (mno=" + mno + ", gno=" + gno + ")");
+        }
+
         if (!gameService.isReservable(gno)) {
+            System.out.println(" 🚫 예약 불가 경기입니다.");
             return new EnqueueResult(false, 0);
-        }   // if end
-
-        // 이미 예매한 사용자인 경우 즉시 차단함 ===> 매크로등 쓸데 없는 대기열 점유를 방지한다.
+        }
         if (hasUserAlreadyBooked(mno, gno)) {
-            return new EnqueueResult(false, 0);
-        }   // if end
+            System.out.println(" 🚫 이미 예매 완료된 사용자입니다.");
+            return new EnqueueResult(false, -1);
+        }
 
-        // 이미 대기중이면 재등록하지 않음
-        if (!waitingSet().add(mno)) return new EnqueueResult(true, queue().size());
+        if (!waitingSet(gno).add(mno)) {
+            System.out.println(" ⚠ 이미 대기열에 있는 사용자입니다.");
+            return new EnqueueResult(true, queue(gno).size());
+        }
 
-        // 대기열(큐)에 유저를 추가한다.
-        queue().add(mno);
+        queue(gno).add(mno);
+        System.out.println(" ➕ 대기열 등록 완료. 현재 큐 크기=" + queue(gno).size());
 
-        // 빈 슬롯이 있다면 즉시 다음 사람을 입장시킴
-        // 아래에 메소드 호출임 오해 금지.
-        assignNextIfPossible();
+        assignNextIfPossible(gno);
+        return new EnqueueResult(true, queue(gno).size());
+    }
 
-        // 현재 대기열 길이 반환
-        // 맨 아래의 생성자임
-        return new EnqueueResult(true, queue().size());
-    }   // func end
+    /** 🚪 세마포어 여유가 있으면 다음 대기자 입장 */
+    public void assignNextIfPossible(int gno) {
 
-
-    // 다음 대기자에게 입장 토큰 발급하는 메소드
-    /**
-     세마포어 퍼밋이 남아있을 때 호출됨
-     대기열의 맨 앞 사용자를 꺼내서
-     입장 토큰(admission token)을 발급한다.
-     발급된 토큰은 30초 동안만 유효하며,
-     이 시간 안에 프론트에서 "/enter" 요청을 보내야 입장 확정됨.
-     */
-    public void assignNextIfPossible() {
         try {
-            // 세마포어 자리가 남아 있지 않으면 (입장 인원 꽉 참) 리턴한다.
-            if (semaphore().availablePermits() <= 0) return;
+            System.out.println("\n[assignNextIfPossible] 실행 (gno=" + gno + ")");
+            int permits = semaphore(gno).availablePermits();
+            System.out.println(" ┣ 세마포어 남은 퍼밋=" + permits);
+            System.out.println(" ┣ 대기열 크기=" + queue(gno).size());
 
-            // 대기열에서 맨 앞 유저를 꺼냄
-            Integer nextUser = queue().poll();
-            // 대기하는 인원이 존재하지 않으면 그냥 종료
-            if (nextUser == null) return;
-            // 이미 활성 유저라면 재입장 방지 로 인하여 그냥 종료
-            if (activeSet().contains(nextUser)) return;
-
-            // 세마포어 퍼밋 1개 확보를 시도한다.
-            // (tryAcquire() : 현재 세마포어에 여유 슬롯이 있다면 하나를 즉시 획득하고, 없으면 false 를 반환
-            boolean acquired = semaphore().tryAcquire();
-            // 만약 실패한다면?
-            if (!acquired) {
-                // 다시 큐에 되돌림 >> 잘가라~ 그리고 리턴
-                queue().add(nextUser);
+            if (permits <= 0) {
+                System.out.println(" ❌ 퍼밋 없음 → 대기 유지");
                 return;
-            }   // if end
+            }
 
-            // Redis에 토큰 mno를 저장한다 ==> 30초 TTL를 준다
-            redisson.getBucket(RedisKeys.SESSION_PREFIX + nextUser)
-                    .set("alive", SESSION_MINUTES, TimeUnit.MINUTES);
+            Integer nextUser = queue(gno).poll();
+            if (nextUser == null) {
+                System.out.println(" ⚠ 대기자 없음 → 종료");
+                return;
+            }
+            if (activeSet(gno).contains(nextUser)) {
+                System.out.println(" ⚠ 이미 활성 상태 사용자(" + nextUser + ")");
+                return;
+            }
 
-            // 활성 유저명단에 넣음
-            activeSet().add(nextUser);
-            // assignNextIfPossible 안에서 입장 처리 직후 제거
-            waitingSet().remove(nextUser);
+            boolean acquired = semaphore(gno).tryAcquire();
+            if (!acquired) {
+                System.out.println(" ❌ tryAcquire 실패 → 대기열 뒤로 보냄");
+                queue(gno).add(nextUser);
+                return;
+            }
+
+            // 세션 부여
+            sessionBucket(gno, nextUser).set("alive", SESSION_MINUTES, TimeUnit.MINUTES);
+            activeSet(gno).add(nextUser);
+            waitingSet(gno).remove(nextUser);
+
+            System.out.println(" ✅ [입장성공] mno=" + nextUser + " / gno=" + gno);
+            System.out.println(" ┣ 세션 TTL=" + SESSION_MINUTES + "분, 퍼밋잔여=" + semaphore(gno).availablePermits());
+            System.out.println(" ┣ activeSet=" + activeSet(gno).readAll());
+            System.out.println(" ┗ queue=" + queue(gno).readAll());
 
         } catch (Exception e) {
             e.printStackTrace();
-        }   // try end
-    }   // func end
+        }
+    }
 
+    /** 🔍 세션 alive 확인 */
+    public boolean isEntered(int mno, int gno) {
+        boolean ok = sessionBucket(gno, mno).isExists();
+        System.out.println("[isEntered] mno=" + mno + ", gno=" + gno + " → " + ok);
+        return ok;
+    }
 
-    // 프론트에서 확인할 입장했는지 확인용 메소드
-    public boolean isEntered(int mno) {
+    /** 🚪 퇴장 처리 */
+    public boolean leave(int mno, int gno) {
 
-        return redisson.getBucket(RedisKeys.SESSION_PREFIX + mno).isExists();
-    }   // func end
+        System.out.println("\n🚪 [leave] mno=" + mno + ", gno=" + gno);
 
+        sessionBucket(gno, mno).delete();
+        boolean wasActive = activeSet(gno).remove(mno);
 
-    // [퇴장 처리용 메소드 => 사용자가 예매를 끝내거나 퇴장할 때 실행.
-    /**
-     사용자가 예매를 마치거나 직접 퇴장할 때 호출됨.
-     session:{mno} 키 삭제
-     activeSet 에서 제거
-     세마포어 퍼밋 1개 반환 후 다음 대기자에게 기회 부여
-     */
-    public boolean leave(int mno) {
-        // 세션 및 활성 사용자 제거
-        // delete() => 해당 버켓 제거
-        redisson.getBucket(RedisKeys.SESSION_PREFIX + mno).delete();
-
-        // 지금 입장 중인 유저 목록(activeSet) 에서 빼고, 원래 들어있었는지 결과를 wasActive로 받음 (있었으면 true)
-        boolean wasActive = activeSet().remove(mno);
-
-        // 세마포어에 있는 퍼밋을 제거함
         if (wasActive) {
             try {
-                semaphore().release();
-            } catch (Exception ignore) {
-            }
+                semaphore(gno).release();
+                System.out.println(" 🔄 퍼밋 반환됨 → 남은 퍼밋=" + semaphore(gno).availablePermits());
+            } catch (Exception ignore) {}
         }
-        // 큐에 있는 1순위 사람을 퍼밋에 불러오는 메소드 실행
-        assignNextIfPossible();
-
-        // 성공 반환
+        assignNextIfPossible(gno);
         return true;
-    }   // func end
+    }
 
+    /** 📊 대기열 길이 */
+    public int waitingCount(int gno) {
 
-    // 상태 조회용 헬퍼
-    // 대기 인원수 조회 메소드
-    public int waitingCount() {
-        // 현재 큐에 대기 중인 사람 수
-        return queue().size();
-    }   // func end
+        return queue(gno).size();
+    }
 
-    // 남은 입장 가능 슬롯 수 알려주는 메소드
-    public int availablePermits() {
-        // 현재 남은 입장 가능 슬롯 수
-        return semaphore().availablePermits();
-    }   // func end
+    /** 🧮 남은 퍼밋 */
+    public int availablePermits(int gno) {
 
+        return semaphore(gno).availablePermits();
+    }
 
-    // 1분 연장 하는 메소드
-    /**
-     사용자가 "연장하기" 버튼을 눌렀을 때 호출됨.
-     session:{mno} 의 TTL(남은 수명)을 1분 더 늘려준다.
-     연장은 최대 N회로 제한할 수도 있음 (원하면 구현 가능)
-     */
-    public int extendSession(int mno) {
+    /** ⏰ 세션 연장 */
+    public int extendSession(int mno, int gno) {
+
         try {
-            // 세션 버킷을 가져옴
-            RBucket<String> sessionBucket = redisson.getBucket(RedisKeys.SESSION_PREFIX + mno);
+            RBucket<String> s = sessionBucket(gno, mno);
+            if (!s.isExists()) return 0;
 
-            // 세션이 존재하지 않으면 (만료된 경우) 연장이 불가능
-            if (!sessionBucket.isExists()) return 0;
-
-            // 연장 횟수 카운트 버킷 가져오기
-            RBucket<Integer> countBucket = redisson.getBucket("gate:extendCount:" + mno);
-            // null 값이 뜰 수도 있고 그냥 Integer로 가져옴
+            RBucket<Integer> countBucket = redisson.getBucket("gate:extendCount:" + gno + ":" + mno);
             Integer count = countBucket.get();
-            // 만약 null 이면 0으로 함
             if (count == null) count = 0;
-
-            // 이미 2회 연장했다면 안됨
             if (count >= 2) return -2;
 
-            // 현재 남은 TTL 가져와서 1분 추가
-            // remainTimeToLive() : TTL 시간 가져옴
-            long remain = sessionBucket.remainTimeToLive();
+            long remain = s.remainTimeToLive();
             long extended = remain + TimeUnit.MINUTES.toMillis(1);
-
-            // TTL 재설정 (기존 TTL + 1분)
-            // expire() 은 이미 있는 버켓에 TTL 다시 설정한다는거임. expire.(int시간 , 시간 단위)
-            sessionBucket.expire(extended, TimeUnit.MILLISECONDS);
-
-            // 연장 횟수 +1 저장 (TTL은 세션과 동일하게 설정)
+            s.expire(extended, TimeUnit.MILLISECONDS);
             countBucket.set(count + 1, SESSION_MINUTES, TimeUnit.MINUTES);
 
-            System.out.println("[GateService] " + mno + " 님 세션 연장 (" + (count + 1) + "/2)");
-
-            return count + 1; // 연장 성공
+            System.out.println("[extendSession] mno=" + mno + " gno=" + gno + " → 연장 " + (count + 1) + "/2회");
+            return count + 1;
         } catch (Exception e) {
+            e.printStackTrace();
             return -1;
-        }   // try end
-    }   // func end
+        }
+    }
 
+    /** 📍 내 순번 조회 */
+    public Integer positionOf(int mno, int gno) {
+        if (isEntered(mno, gno)) return 0;
 
+        RBlockingQueue<Integer> q = queue(gno);
+        int idx = 1;
+        for (Integer uid : q) {
+            if (uid.equals(mno)) return idx;
+            idx++;
+        }
+        return null;
+    }
 
-    // 스케줄러 : 세션 만료 회수 메소드
-    /**
-     * [reapExpiredSessions]
-     * - 2초마다 실행(@Scheduled)
-     * - activeSet(현재 입장자 목록)을 순회하면서
-     *   session:{mno} TTL이 만료된 사용자를 제거한다.
-     * - 세션이 사라진 사용자는 자동으로 퍼밋이 반환되어
-     *   다음 대기자가 입장 가능하게 된다.
-     */
+    // ============ 스케줄러 ============
     @Scheduled(fixedDelay = 2000)
     public void reapExpiredSessions() {
         try {
-            for (Integer uid : activeSet()) {
-                // session:{mno} 키가 여전히 존재하는지 검사하기 위해 버켓을 가져옴.
-                boolean alive = redisson.getBucket(RedisKeys.SESSION_PREFIX + uid).isExists();
-
-                // 존재하지 않으면 TTL 만료된 것 → 회수 처리
-                if (!alive) {
-                    // 없앰
-                    activeSet().remove(uid);
-                    // 세마포어 퍼밋 삭제
-                    try { semaphore().release(); } catch (Exception ignore) {}
-                    // 다음 대기자 입장 시도
-                    assignNextIfPossible();
-                }   // if end
-            }   // for end
+            Set<Integer> shows = gnoIndex().readAll();
+            for (Integer gno : shows) {
+                RSet<Integer> actives = activeSet(gno);
+                for (Integer mno : actives) {
+                    boolean alive = sessionBucket(gno, mno).isExists();
+                    if (!alive) {
+                        System.out.println("🧹 [스케줄러] 세션 만료됨 mno=" + mno + " gno=" + gno);
+                        actives.remove(mno);
+                        try { semaphore(gno).release(); } catch (Exception ignore) {}
+                        assignNextIfPossible(gno);
+                    }
+                }
+            }
         } catch (Exception e) {
             e.printStackTrace();
-        }   // try end
-    }   // func end
-
-    // 내가 몇 번째 순번인지 알려주는 메소드
-    public Integer positionOf(int mno) {
-        // 이미 입장(세션 alive)이면 0으로 표기하거나 null 반환 등 정책 선택
-        if (isEntered(mno)) return 0;
-
-        // 현재 대기열에서 1-base 순번 계산 (O(n))
-        RBlockingQueue<Integer> q = queue();
-        int idx = 1;
-        for (Integer uid : q) {
-            if (uid.equals(mno)) return idx; // 1,2,3,...
-            idx++;
         }
-        // 큐에 없으면 null (대기열 미등록/활성 유저 등)
-        return null;
-    }   // func end
+    }
 
-    // ===============================================================
-    // 내부 결과 DTO(record) 이거 반환하고 컨트롤러에서 실제 dto에 넣어 쓸 예정
-    // record는 그냥 dto 같이 생성해줌
+    // 내부 결과 DTO
     public record EnqueueResult(boolean queued, int waiting) {}
-}   // class end
+}

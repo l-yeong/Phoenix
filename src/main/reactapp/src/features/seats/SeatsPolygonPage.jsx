@@ -1,151 +1,167 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import axios from "axios";
 import { useLocation, useNavigate } from "react-router-dom";
 import ZoomableSvgOverlay from "../../components/ZoomableSvgOverlay";
-import rawZones from "../../data/zones.json";
+import zonesData from "../../data/zones.json";
+import "../../styles/seats-polygon.css";
 
 const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
-
-/** 데모용: 존별 총 좌석 수 추정 */
-const DEMO_TOTAL_BY_ZONE = {
-  centerZone: 80,
-  gyeoreZone: 50,
-  yeonwooZone: 60,
-  seonghoZone: 40,
-  chanyeongZone: 35,
-  outfieldZone: 120,
-};
+const api = axios.create({ baseURL: API, withCredentials: true });
 
 export default function SeatsPolygonPage() {
   const navigate = useNavigate();
+  const { state } = useLocation(); // { gno } 기대
+  const gno = state?.gno ?? Number(sessionStorage.getItem("gate_gno") || 0);
 
-  // ✅ Gate/Macro에서 넘겨받은 uno, gno, token
-  const { state } = useLocation(); // { uno, gno, token }
-  const uno = state?.uno;
-  const gno = state?.gno;
-  const captchaToken = state?.token; // "local-captcha-ok"
-
-  const api = useMemo(() => axios.create({ baseURL: API }), []);
-
-  // ────────────────────────────────
-  // 1) 게이트/캡차 검증 가드
-  // ────────────────────────────────
+  // ✅ Gate 세션 가드
   useEffect(() => {
-    if (!uno || !gno || !captchaToken) navigate("/gate");
-  }, [uno, gno, captchaToken, navigate]);
-
-  useEffect(() => {
+    if (!Number.isInteger(Number(gno))) {
+      navigate("/gate", { replace: true });
+      return;
+    }
+    sessionStorage.setItem("gate_gno", String(gno));
     let cancelled = false;
     (async () => {
       try {
-        const { data } = await api.get(`/gate/check/${encodeURIComponent(uno || "")}`);
-        if (!cancelled && !data?.ready) navigate("/gate");
+        const { data } = await api.get(`/gate/check/${encodeURIComponent(gno)}`);
+        if (!cancelled && (!data || data.ready === false)) navigate("/gate", { replace: true });
       } catch {
-        if (!cancelled) navigate("/gate");
+        if (!cancelled) navigate("/gate", { replace: true });
       }
     })();
     return () => { cancelled = true; };
-  }, [api, uno, navigate]);
+  }, [gno, navigate]);
 
-  // ────────────────────────────────
-  // 2) 폴리곤 데이터 로드
-  // ────────────────────────────────
-  const zones = useMemo(
-    () => rawZones.map((z) => ({ id: z.id, label: z.label, points_pct: z.points_pct })),
-    []
-  );
+  const zones = useMemo(() => zonesData, []);
 
+  // ✅ 존별 남은 좌석
+  const [remainByZone, setRemainByZone] = useState({});
+  const [loadingMap, setLoadingMap] = useState(false);
+  const [mapErr, setMapErr] = useState("");
 
-  // ────────────────────────────────
-  // 3) 데모 잔여 좌석 수 상태
-  // ────────────────────────────────
-  const [remainByZone, setRemainByZone] = useState(() => {
-    const obj = {};
-    zones.forEach((z) => {
-      const total = DEMO_TOTAL_BY_ZONE[z.id] ?? 50;
-      const soldGuess = Math.floor(Math.random() * (total * 0.5)); // 0~50% 매진 가정
-      obj[z.id] = total - soldGuess;
-    });
-    return obj;
-  });
+  const loadRemainForZone = useCallback(async (zno) => {
+    // 1) 존 좌석 리스트
+    const { data: meta } = await api.get(`/zone/${encodeURIComponent(zno)}/seats`);
+    const seats = Array.isArray(meta?.seats) ? meta.seats : [];
+    if (seats.length === 0) return 0;
 
-  const refreshDemo = () => {
-    const obj = {};
-    zones.forEach((z) => {
-      const total = DEMO_TOTAL_BY_ZONE[z.id] ?? 50;
-      const soldGuess = Math.floor(Math.random() * (total * 0.5));
-      obj[z.id] = total - soldGuess;
-    });
-    setRemainByZone(obj);
-  };
+    // 2) 해당 sno만 상태 요청
+    const seatsPayload = seats.map((s) => ({ zno: Number(zno), sno: s.sno }));
+    const { data: stat } = await api.post("/seat/status", { gno, seats: seatsPayload });
+    const statusBySno = stat?.statusBySno || {};
+    return Object.values(statusBySno).filter((st) => st === "AVAILABLE").length;
+  }, [gno]);
 
-  // ────────────────────────────────
-  // 4) Hover 툴팁 상태
-  // ────────────────────────────────
-  const [tooltip, setTooltip] = useState(null); // { label, remain, x, y }
+  const loadAllZonesRemain = useCallback(async () => {
+    if (!Number.isInteger(Number(gno))) return;
+    setLoadingMap(true);
+    setMapErr("");
+    try {
+      const results = await Promise.allSettled(
+        zones.map(async (z) => [z.id, await loadRemainForZone(z.zno)])
+      );
+      const acc = {};
+      for (const r of results) {
+        if (r.status === "fulfilled") {
+          const [id, cnt] = r.value;
+          acc[id] = cnt ?? 0;
+        }
+      }
+      setRemainByZone(acc);
+    } catch (e) {
+      console.error(e);
+      setMapErr("존별 남은 좌석을 불러오지 못했습니다.");
+      setRemainByZone({});
+    } finally {
+      setLoadingMap(false);
+    }
+  }, [gno, zones, loadRemainForZone]);
 
-  const handleZoneHover = (zone, { clientX, clientY }) => {
+  useEffect(() => { loadAllZonesRemain(); }, [loadAllZonesRemain]);
+
+  // ✅ 툴팁
+  const [tooltip, setTooltip] = useState(null);
+  const handleZoneHover = (zone, e) => {
     setTooltip({
+      x: e.clientX,
+      y: e.clientY,
       label: zone.label,
       remain: remainByZone[zone.id] ?? 0,
-      x: clientX,
-      y: clientY,
+    });
+  };
+  const handleZoneLeave = () => setTooltip(null);
+
+  // ✅ 클릭 → 존 상세로 이동
+  const goZoneDetail = (zone) => {
+    if (!zone || !Number.isInteger(Number(zone.zno))) {
+      alert("존 정보가 올바르지 않습니다.");
+      return;
+    }
+    sessionStorage.setItem("gate_gno", String(gno));
+    navigate(`/zone/${Number(zone.zno)}`, {
+      state: { gno: Number(gno), zoneId: zone.id, zno: Number(zone.zno), zoneLabel: zone.label },
     });
   };
 
-  const handleZoneLeave = () => setTooltip(null);
-
-  // ────────────────────────────────
-  // 5) 존 클릭 시 상세 페이지로 이동
-  // ────────────────────────────────
-  const goZone = (zone) => {
-    navigate(`/zone/${zone.id}`, { state: { uno, gno, token: captchaToken } });
-  };
-
-  // ────────────────────────────────
-  // 6) 렌더링
-  // ────────────────────────────────
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      {/* 헤더 */}
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-2xl font-bold">🎟️ 좌석 선택</h2>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={refreshDemo}
-            className="border rounded px-3 py-1 hover:bg-gray-100 transition"
-          >
-            새로고침
+    <div className="seats-layout">
+      <div className="seats-canvas">
+        <div className="seats-head">
+          <h2>🎟️ 좌석 현황</h2>
+          <span className="meta">경기번호: {gno}</span>
+          <span className="spacer" />
+          <button className="ghost-btn" onClick={loadAllZonesRemain} disabled={loadingMap}>
+            {loadingMap ? "갱신 중…" : "새로고침"}
           </button>
         </div>
+
+        {/* ✅ 배경 / 폴리곤 레이어 분리 (잘림/어긋남 방지) */}
+        <div className="canvas-wrap canvas-wrap--contain">
+        <ZoomableSvgOverlay
+            backgroundUrl="/stadium.png"
+            zones={zones}
+            onZoneClick={goZoneDetail}
+            onZoneHover={handleZoneHover}
+           onZoneLeave={handleZoneLeave}
+            fit="contain"
+            preserveAspectRatio="xMidYMid meet"
+          />
+       </div>
+
+        {tooltip && (
+          <div className="zone-tooltip" style={{ top: tooltip.y + 12, left: tooltip.x + 12 }}>
+            <div className="tt-title">{tooltip.label}</div>
+            <div className="tt-sub">남은 좌석 {tooltip.remain}석</div>
+          </div>
+        )}
       </div>
 
-      {/* 줌/드래그 가능한 좌석 지도 */}
-      <ZoomableSvgOverlay
-        backgroundUrl="/stadium.png"     // public 경로
-        zones={zones}                     // JSON에서 가져온 존 정보
-        selected={new Set()}              // 이 페이지는 선택 상태 없음
-        onZoneClick={goZone}              // 클릭 시 상세 페이지 이동
-        onZoneHover={handleZoneHover}     // 툴팁 표시
-        onZoneLeave={handleZoneLeave}
-      />
-
-      {/* Hover 툴팁 */}
-      {tooltip && (
-        <div
-          className="fixed z-50 bg-black text-white text-xs px-2 py-1 rounded"
-          style={{ top: tooltip.y + 12, left: tooltip.x + 12 }}
-        >
-          <div className="font-semibold">{tooltip.label}</div>
-          <div>남은 좌석: {tooltip.remain}석</div>
+      <aside className="seats-side">
+        <div className="side-card">
+          <div className="side-title">존별 남은 좌석</div>
+          {mapErr && <div className="side-error">{mapErr}</div>}
+          <ul className="zone-list">
+            {zones.map((z) => {
+              const remain = remainByZone[z.id] ?? 0;
+              return (
+                <li
+                  key={z.id}
+                  className="zone-item"
+                  onClick={() => goZoneDetail(z)}
+                  role="button"
+                  title={`${z.label} 남은 좌석 ${remain}석`}
+                >
+                  <span className="zone-label">{z.label}</span>
+                  <span className="zone-count">
+                    {loadingMap ? "…" : remain}
+                    <span className="unit">석</span>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
         </div>
-      )}
-
-      {/* 안내 문구 */}
-      <div className="mt-4 text-xs text-gray-500 leading-5">
-        • 이 화면은 <b>존 단위 데모</b>입니다. 각 존을 클릭하면 상세 좌석 선택 페이지로 이동합니다. <br />
-        • 잔여 좌석 수는 임시 계산이며, 실제 서비스에서는 <b>/seat/map</b> API 결과를 반영하세요.
-      </div>
+      </aside>
     </div>
   );
 }
