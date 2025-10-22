@@ -13,6 +13,8 @@ export default function reservationFind( props ){
     const [open, setOpen] = React.useState(false);
     // [*] 교환 가능한 좌석 목록
     const [changeSeat , setChangeSeat] = useState([]);
+    // [*] 전체좌석목록
+    const [ seatList , setSeatList ] = useState([]);
     // [*] 예매 상태 관리
     const [ reservation , setReservation ] = useState(null);
     // [*] 교환요청목록 상태관리
@@ -119,10 +121,19 @@ export default function reservationFind( props ){
         }
     }// func end
 
+    // [8] 전체좌석 가져오기
+    const seatPrint = async () => {
+        try{
+            const response = await axios.get('http://localhost:8080/seat/print');
+            setSeatList(response.data);
+        }catch(e){ console.log(e); }
+    }// func end
+
     // 컴포넌트 처음 랜더링시 호출
     useEffect( () => {
         reserveInfo();
         getAllRequest();
+        seatPrint();
     },[rno]);
 
     return (
@@ -178,9 +189,15 @@ export default function reservationFind( props ){
                             좌석교환
                         </Typography>
                         <Typography id="modal-desc" textColor="text.tertiary">
-                            <button onClick={saveRequest} disabled={!changeSeat.includes()}>A-1</button><button onClick={saveRequest}>A-2</button><button onClick={saveRequest}>A-3</button>
-                            <button onClick={saveRequest}>B-1</button><button onClick={saveRequest}>B-2</button><button onClick={saveRequest}>B-3</button>
-                            <button onClick={saveRequest}>C-1</button><button onClick={saveRequest}>C-2</button><button onClick={saveRequest}>C-3</button>
+                            <Button
+                                key={seat.sno}
+                                onClick={() => saveRequest(seat.sno)}
+                                disabled={!changeSeat.some(cs => cs.sno === seat.sno)} // 가능한 좌석만 클릭 가능
+                                variant={changeSeat.some(cs => cs.sno === seat.sno) ? "soft" : "outlined"}
+                                sx={{ m: 1, width: 70 }}
+                                >
+                                {seat.seatName}
+                            </Button>
                         </Typography>
                         </Sheet>
                     </Modal>
