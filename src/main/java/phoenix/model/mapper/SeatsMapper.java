@@ -1,6 +1,8 @@
 package phoenix.model.mapper;
 
 import org.apache.ibatis.annotations.*;
+import phoenix.model.dto.SeatDto;
+
 import java.util.List;
 import java.util.Map;
 
@@ -63,4 +65,7 @@ public interface SeatsMapper {
               CAST(SUBSTRING(s.seatName, 2) AS UNSIGNED)  -- 열(1..10)
             """)
         List<Map<String, Object>> findSeatsByZone(@Param("zno") int zno);
+
+        @Select("select * from seats")
+        List<SeatDto> seatPrint();
 }

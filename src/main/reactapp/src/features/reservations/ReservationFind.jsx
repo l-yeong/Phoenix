@@ -149,10 +149,7 @@ export default function reservationFind( props ){
 
             return (
                 <div>
-                                    <div>
-                                        <div style={{ margin: "20px 0" }}>
-                                          <TicketQR rno={parseInt(rno, 10)} />
-                                        </div>
+
                     <ul>
                         <li>예매번호 : {reservation.reservation?.rno ?? "-"}</li>
                         <li>좌석번호 : {reservation.reservation?.sno ?? "-"}</li>
@@ -192,15 +189,15 @@ export default function reservationFind( props ){
                             좌석교환
                         </Typography>
                         <Typography id="modal-desc" textColor="text.tertiary">
-                            <Button
-                                key={seat.sno}
-                                onClick={() => saveRequest(seat.sno)}
-                                disabled={!changeSeat.some(cs => cs.sno === seat.sno)} // 가능한 좌석만 클릭 가능
-                                variant={changeSeat.some(cs => cs.sno === seat.sno) ? "soft" : "outlined"}
-                                sx={{ m: 1, width: 70 }}
-                                >
-                                {seat.seatName}
-                            </Button>
+{/*                             <Button */}
+{/*                                 key={seat.sno} */}
+{/*                                 onClick={() => saveRequest(seat.sno)} */}
+{/*                                 disabled={!changeSeat.some(cs => cs.sno === seat.sno)} // 가능한 좌석만 클릭 가능 */}
+{/*                                 variant={changeSeat.some(cs => cs.sno === seat.sno) ? "soft" : "outlined"} */}
+{/*                                 sx={{ m: 1, width: 70 }} */}
+{/*                                 > */}
+{/*                                 {seat.seatName} */}
+{/*                             </Button> */}
                         </Typography>
                         </Sheet>
                     </Modal>

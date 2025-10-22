@@ -18,7 +18,6 @@ import FindPwdPage from "./pages/FindPwdPage";
 import { AuthProvider } from "./api/loginstate.jsx";
 import Mypage from "./features/members/Mypage.jsx";
 import ReservationFind from "./features/reservations/ReservationFind.jsx"
-import SeatChange from "./features/reservationExchanges/SeatChange.jsx";
 
 function App() {
   return (
@@ -47,7 +46,6 @@ function App() {
           <Route path="/gate" element={<GatePage />} />
           <Route path="/macro" element={<MacroPage />} />
           <Route path="/seats" element={<SeatsPolygonPage />} />
-          <Route path="/seatchange" element={<SeatChange /> } />
           <Route path="/zone/:zno" element={<ZoneDemoPage />} />
         </Routes>
         <Footer />

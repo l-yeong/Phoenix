@@ -5,11 +5,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import phoenix.model.dto.SeatDto;
 import phoenix.model.dto.SeatsDto;
 import phoenix.service.MembersService;
 import phoenix.service.SeatLockService;
+import phoenix.service.SeatsService;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -33,6 +36,7 @@ public class SeatsController {  // class start
     // 의존성 주입
     private final SeatLockService seatService;
     private final MembersService membersService;
+    private final SeatsService sService;
 
     /** (부분) 상태 조회 — 화면에 보이는 좌석만 물어본다(네트워크/서버 비용 최소화) */
     @PostMapping("/status")
@@ -70,4 +74,10 @@ public class SeatsController {  // class start
         if (!ok) body.put("reason", reason.toString());
         return ResponseEntity.ok(body);
     }
+
+    @GetMapping("/print")
+    public ResponseEntity<?> seatPrint(){
+        List<SeatDto> result = sService.seatPrint();
+        return ResponseEntity.ok(result);
+    }// func end
 }   // class end
