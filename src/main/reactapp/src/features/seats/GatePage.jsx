@@ -65,7 +65,7 @@ export default function GatePage() {
     }
   };
 
-  /** 🚪 창 닫힘 / 새로고침 시 leave() 호출 (퍼밋 반환 + 로그) */
+  /** 창 닫힘 / 새로고침 시 leave() 호출 (퍼밋 반환 + 로그) */
   useEffect(() => {
     const handleUnload = async () => {
       console.log("[GatePage] 🚪 beforeunload 이벤트 발생 — leave 호출 예정");
@@ -97,7 +97,7 @@ export default function GatePage() {
     return () => window.removeEventListener("beforeunload", handleUnload);
   }, [gno]);
 
-  /** ✅ 최초 진입 시 대기열 등록 */
+  /** 최초 진입 시 대기열 등록 */
   useEffect(() => {
     if (gno && !queued) {
       console.log("[GatePage] 🎬 최초 진입 — enqueue 실행");
@@ -140,7 +140,7 @@ export default function GatePage() {
     return () => clearTimeout(timer);
   }, [queued, gno, api]);
 
-  /** 🎯 입장 완료 시 macro로 이동 */
+  /** 입장 완료 시 macro로 이동 */
   useEffect(() => {
     console.log("[GatePage] ✅ useEffect 감시중 | ready =", ready, "gno =", gno);
     if (ready) {

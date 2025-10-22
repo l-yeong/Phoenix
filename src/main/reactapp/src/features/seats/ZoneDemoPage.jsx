@@ -184,49 +184,41 @@ export default function ZoneDemoPage() {
   }, [seatsMeta, statusBySno]);
 
   // 🔁 기존 confirmSeats 함수를 아래로 교체
-const confirmSeats = async () => {
-  if (!myHeldSnos.length) {
-    alert("임시 보유한 좌석이 없습니다.");
-    return;
-  }
-  // eslint-disable-next-line no-restricted-globals
-  const ok = window.confirm(`${myHeldSnos.length}개 좌석을 결제(확정)하시겠습니까?`);
-  if (!ok) return;
-
-  try {
-    // 1) 결제(확정)
-    const { data } = await api.post("/seat/confirm", { gno, snos: myHeldSnos });
-
-    if (data?.ok) {
-      alert("결제(확정) 완료!");
-
-      // 2) 로컬 TTL/표시 초기화
-      setMyTtlBySno({});
-      myHeldSnos.forEach((sno) => sessionStorage.removeItem(`holdStartedAt:${gno}:${sno}`));
-
-      // 3) 게이트 퇴장(퍼밋 반환)
-      try {
-        await api.post("/gate/leave", null, { params: { gno } });
-      } catch (e) {
-        // leave 실패해도 치명적이지 않으니 콘솔만
-        console.warn("[ZoneDemoPage] gate/leave 실패:", e?.message);
-      } finally {
-        // 새로고침 복구 방지
-        sessionStorage.removeItem("gate_gno");
-      }
-
-      // 4) 홈으로 이동
-      navigate("/home", { replace: true });
+  const confirmSeats = async () => {
+    if (!myHeldSnos.length) {
+      alert("임시 보유한 좌석이 없습니다.");
       return;
     }
+    // eslint-disable-next-line no-restricted-globals
+    const ok = window.confirm(`${myHeldSnos.length}개 좌석을 결제(확정)하시겠습니까?`);
+    if (!ok) return;
 
-    // 실패 시 메시지
-    alert(`결제 실패: ${data?.reason || "원인 불명"}`);
-    await loadStatus();
-  } catch {
-    alert("네트워크 오류로 결제에 실패했습니다.");
-  }
-};
+    try {
+      // 1) 결제(확정)
+      const { data } = await api.post("/seat/confirm", { gno, snos: myHeldSnos });
+
+      if (data?.ok) {
+        alert("결제(확정) 완료!");
+
+        setMyTtlBySno({});
+        myHeldSnos.forEach((sno) => sessionStorage.removeItem(`holdStartedAt:${gno}:${sno}`));
+
+      try {
+        await api.post(`/gate/leave`, gno, {
+          headers: { "Content-Type": "application/json" },
+        });
+      } catch (e) {
+        alert("[ZoneDemoPage] gate/leave 실패:", e?.message);
+      } finally {
+        sessionStorage.removeItem("gate_gno");
+        navigate("/home", { replace: true });
+      }
+    }
+      await loadStatus();
+    } catch {
+      alert("네트워크 오류로 결제에 실패했습니다.");
+    }
+  };
 
   // ✅ 요약
   const summary = useMemo(() => {
