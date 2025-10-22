@@ -14,7 +14,7 @@ public class SeatsService {
     private final SeatsMapper seatsMapper;
 
     // 전체좌석 조회
-    public List<SeatDto> seatPrint(){
-        return seatsMapper.seatPrint();
+    public List<SeatDto> seatPrint(int rno){
+        return seatsMapper.seatPrint(rno);
     }// func end
 }//func end
