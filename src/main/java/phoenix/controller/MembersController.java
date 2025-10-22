@@ -1,6 +1,7 @@
 package phoenix.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -241,13 +242,23 @@ public class MembersController {
      */
     @PostMapping("/delete")
     public ResponseEntity<ApiResponseUtil<?>> memberDelete(@AuthenticationPrincipal MembersDto user,
-                                                           @RequestBody Map<String, String> req) {
+                                                           @RequestBody Map<String, String> req ,
+                                                           HttpServletRequest request ) {
         boolean result = membersService.memberDelete(user.getMid(), req.get("password_hash"));
 
-        return result
-                ? ResponseEntity.ok(new ApiResponseUtil<>(true, "회원 탈퇴가 완료되었습니다.", null))
-                : ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ApiResponseUtil<>(false, "비밀번호가 일치하지 않습니다.", null));
+        if( result ){
+            // 세션 기반 인증 완전 종료
+            SecurityContextHolder.clearContext();
+            request.getSession().invalidate();
+
+            return ResponseEntity.ok(new ApiResponseUtil<>( true , "회원 탈퇴가 완료되었습니다." , null));
+
+        }
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ApiResponseUtil<>(false , "비밀번호가 일치하지 않습니다." , null));
+
     } // func e
 
 
