@@ -9,6 +9,7 @@ import {
   Box,
 } from "@mui/material";
 import api from "../api/axiosInstance";
+import { useNavigate } from "react-router-dom";
 
 const SignUpPage = () => {
   const [form, setForm] = useState({
@@ -24,6 +25,7 @@ const SignUpPage = () => {
   const [emailCode, setEmailCode] = useState("");
   const [emailVerified, setEmailVerified] = useState(false);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const playerList = [
     { id: 1, name: "박찬호" },
@@ -45,12 +47,20 @@ const SignUpPage = () => {
       alert("이메일을 입력해주세요.");
       return;
     }
+
     try {
       setLoading(true);
       const res = await api.post("/members/email/send", { email: form.email });
-      alert(res.data ? "인증코드가 이메일로 전송되었습니다." : "전송 실패");
+      console.log("이메일 응답:", res.data);
+
+      if (res.data === true) {
+        alert("인증코드가 이메일로 전송되었습니다!");
+      } else {
+        alert("이메일 전송 실패");
+      }
     } catch (err) {
-      alert("이메일 전송 실패");
+      console.error("이메일 전송 오류:", err);
+      alert("서버 오류로 이메일 전송에 실패했습니다.");
     } finally {
       setLoading(false);
     }
@@ -92,6 +102,8 @@ const SignUpPage = () => {
       });
       if (res.data.success) {
         alert("회원가입 성공!");
+        // 2초 뒤 자동 이동
+        setTimeout(() => navigate("/login"), 1000);
       } else {
         alert("회원가입 실패");
       }

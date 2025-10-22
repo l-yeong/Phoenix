@@ -58,21 +58,13 @@ public class MembersService {
             membersDto.setPassword_hash(passwordEncoder.encode(membersDto.getPassword_hash()));
         }
 
-        // 비밀번호 해시화
-        membersDto.setPassword_hash(PasswordUtil.encode(membersDto.getPassword_hash()));
-
         // 초기 상태값 설정
         membersDto.setStatus("active");
         membersDto.setExchange(true);
-        membersDto.setEmail_verified(false);
+        membersDto.setEmail_verified(true);
 
         // db 저장
         boolean result = membersMapper.signUp(membersDto) > 0;
-
-        // 이메일 인증코드 발송( Redis + Gmail )
-        if(result){
-            emailService.sendAuthCode(membersDto.getEmail());
-        }
 
         return result;
     } // func e
@@ -128,6 +120,17 @@ public class MembersService {
 
 
     /**
+     *  이메일 인증 코드 요청 메소드
+     * */
+    public boolean emailSendByEmail(String email) {
+        MembersDto member = membersMapper.findByEmail(email);
+        if (member != null) return false;
+
+        emailService.sendAuthCode(email);
+        return true;
+    } // func e
+
+    /**
      *  이메일 인증 완료 처리 메소드
      * */
     public boolean verityEmail( String email , String code ){
@@ -139,26 +142,6 @@ public class MembersService {
         }
 
         return verified;
-    } // func e
-
-    /**
-     *  이메일 인증 코드 요청 메소드
-     * */
-    public boolean emailSend(String mid){
-        MembersDto member = membersMapper.findByMid(mid);
-        if(member == null ) return false;
-
-        emailService.sendAuthCode(member.getEmail());
-        return true;
-    } // func e
-
-
-    public boolean emailSendByEmail(String email) {
-        MembersDto member = membersMapper.findByEmail(email);
-        if (member == null) return false;
-
-        emailService.sendAuthCode(email);
-        return true;
     } // func e
 
 

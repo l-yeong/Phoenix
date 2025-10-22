@@ -1,4 +1,6 @@
+// src/api/loginstate.jsx
 import { createContext, useContext, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../api/axiosInstance"; // withCredentials:true 설정된 axios
 
 const AuthContext = createContext();
@@ -12,6 +14,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null); // 로그인한 회원 정보
   const [loading, setLoading] = useState(true); // 초기 로딩 상태
   const [loggedOut, setLoggedOut] = useState(false); // 로그아웃 감지 플래그
+  const navigate = useNavigate(); // SPA 네비게이션 훅 추가
 
   /** 로그인 성공 시 상태 갱신 */
   const login = (userData) => {
@@ -51,9 +54,23 @@ export const AuthProvider = ({ children }) => {
       console.error("로그아웃 요청 실패:", e);
     } finally {
       setUser(null);
-      window.location.href = "/"; // 세션 쿠키 초기화 & 새로고침
+      // 새로고침 대신 SPA 라우팅
+      navigate("/");
     }
   };
+
+  /** 세션 만료 이벤트 감지 (axiosInstance.js에서 dispatch된 이벤트 잡기) */
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      console.warn("세션 만료 이벤트 수신됨 → 로그인 페이지 이동");
+      alert("세션이 만료되었습니다. 다시 로그인해주세요.");
+      logout(); // 전역 상태 초기화
+      navigate("/login"); // SPA 내부 이동
+    };
+
+    window.addEventListener("sessionExpired", handleSessionExpired);
+    return () => window.removeEventListener("sessionExpired", handleSessionExpired);
+  }, [navigate]);
 
   // 디버깅용 로그
   useEffect(() => {
