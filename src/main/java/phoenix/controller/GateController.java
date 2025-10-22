@@ -29,18 +29,13 @@ public class GateController {
     }
 
     // === [2] 퇴장: 바디/쿼리 어느 쪽이든 gno 수용 (before unload용 keepalive POST) ===
-    @PostMapping(value = "/leave", consumes = MediaType.ALL_VALUE)
-    public ResponseEntity<GateDto.LeaveResponse> leave(
-            @RequestBody(required = false) Integer bodyGno,
-            @RequestParam(required = false) Integer gnoParam
-    ) {
-        System.out.printf("🛰️ [GateController] leave() 진입됨 — bodyGno=%s, gnoParam=%s%n", bodyGno, gnoParam);
-        Integer gno = bodyGno != null ? bodyGno : gnoParam;
-        if (gno == null) return ResponseEntity.badRequest().body(new GateDto.LeaveResponse(false));
+    @PostMapping("/leave")
+    public ResponseEntity<GateDto.LeaveResponse> leave(@RequestBody int gno) {
 
         int mno = membersService.getLoginMember().getMno();
         boolean ok = gateService.leave(mno, gno);
         return ResponseEntity.ok(new GateDto.LeaveResponse(ok));
+
     }
 
     // === [3] 상태 조회: 쿼리로 gno 받기 (선택 사용)
@@ -50,14 +45,6 @@ public class GateController {
                 gateService.waitingCount(gno),
                 gateService.availablePermits(gno)
         ));
-    }
-
-    // === [4] 세션 연장: 쿼리로 gno 받기 ===
-    @PostMapping("/extend")
-    public ResponseEntity<Integer> extend(@RequestParam int gno) {
-        int mno = membersService.getLoginMember().getMno();
-        int result = gateService.extendSession(mno, gno);
-        return ResponseEntity.ok(result);
     }
 
     // === [5] 세션 alive 확인: 패스 파라미터 방식(/check/{gno})을 지원 (프론트 호출과 1:1 매칭) ===

@@ -206,30 +206,6 @@ public class GateService {
         return semaphore(gno).availablePermits();
     }
 
-    /** ⏰ 세션 연장 */
-    public int extendSession(int mno, int gno) {
-
-        try {
-            RBucket<String> s = sessionBucket(gno, mno);
-            if (!s.isExists()) return 0;
-
-            RBucket<Integer> countBucket = redisson.getBucket("gate:extendCount:" + gno + ":" + mno);
-            Integer count = countBucket.get();
-            if (count == null) count = 0;
-            if (count >= 2) return -2;
-
-            long remain = s.remainTimeToLive();
-            long extended = remain + TimeUnit.MINUTES.toMillis(1);
-            s.expire(extended, TimeUnit.MILLISECONDS);
-            countBucket.set(count + 1, SESSION_MINUTES, TimeUnit.MINUTES);
-
-            System.out.println("[extendSession] mno=" + mno + " gno=" + gno + " → 연장 " + (count + 1) + "/2회");
-            return count + 1;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return -1;
-        }
-    }
 
     /** 📍 내 순번 조회 */
     public Integer positionOf(int mno, int gno) {
