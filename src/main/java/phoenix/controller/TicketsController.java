@@ -66,7 +66,7 @@ public class TicketsController {
      */
     @GetMapping("/qr")
     public ResponseEntity<?> ticketUrlUuid(@RequestParam("qr") String uuid) {
-        int info = ticketsService.ticketUrlUuid(uuid);
+        Map<String, Object> info = ticketsService.ticketUrlUuid(uuid);
         return ResponseEntity.ok(info);
     }//func end
 
@@ -80,5 +80,18 @@ public class TicketsController {
         }//if end
         return ResponseEntity.ok(info);
     }//func end
+
+    //=====================================
+    @PostMapping("/scan")
+    public ResponseEntity<Map<String, Object>> qrScan(
+            @RequestBody Map<String, Object> payload) {
+
+        String ticketCode = (String) payload.get("ticketCode");
+        Integer mno = (Integer) payload.get("mno");
+        Integer rno = (Integer) payload.get("rno");
+
+        Map<String, Object> result = ticketsService.qrScanAndUpdate(ticketCode, mno, rno);
+        return ResponseEntity.ok(result);
+    }
 }//class end
 
