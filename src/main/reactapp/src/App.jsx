@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, HashRouter } from "react-router-dom";
 import Home from "./pages/Home";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
@@ -14,6 +14,8 @@ import SeatsPolygonPage from "./features/seats/SeatsPolygonPage";
 import ZoneDemoPage from "./features/seats/ZoneDemoPage";
 import FindIdPage from "./pages/FindIdPage";
 import FindPwdPage from "./pages/FindPwdPage";
+import TicketQR from "./features/tickets/TicketQR.jsx";
+import TicketQRInfo from "./features/tickets/TicketQRInfo.jsx";
 
 import { AuthProvider } from "./api/loginstate.jsx";
 import Mypage from "./features/members/Mypage.jsx";
@@ -47,10 +49,10 @@ function App() {
           <Route path="/macro" element={<MacroPage />} />
           <Route path="/seats" element={<SeatsPolygonPage />} />
           <Route path="/zone/:zno" element={<ZoneDemoPage />} />
+          <Route path="/tickets/:rno" element={<TicketQR />} />
+          <Route path="/qr" element={<TicketQRInfo />} />
         </Routes>
         <Footer />
-
-
       </AuthProvider>
     </BrowserRouter>
   );

@@ -126,16 +126,16 @@ public class TicketsService {
     }//func end
 
     /** uuid → rno 조회 (없으면 0) */
-    public int TicketUrlUuid(String uuid) {
+    public int ticketUrlUuid(String uuid) {
         if (uuid == null || uuid.isBlank()) return 0;
-        return ticketsMapper.TicketUrlUuid(uuid);
-    }
+        return ticketsMapper.ticketUrlUuid(uuid);
+    }//func end
 
     /** uuid → 예매 상세(표시용) 바로 조회 (없으면 null) */
     public Map<String, Object> ticketUuidInfo(String uuid) {
         if (uuid == null || uuid.isBlank()) return null;
         return ticketsMapper.ticketUuidInfo(uuid);
-    }
+    }//func end
 
 
 }//class end

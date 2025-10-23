@@ -7,7 +7,8 @@ import Modal from '@mui/joy/Modal';
 import ModalClose from '@mui/joy/ModalClose';
 import Typography from '@mui/joy/Typography';
 import Sheet from '@mui/joy/Sheet';
-import TicketQR from "../tickets/TicketQR"; // QR 조회 컴포넌트
+import "../../styles/zone-seats.css";
+import TicketQR from "../tickets/TicketQR";
 
 export default function reservationFind( props ){
     // [*] 모달 상태 관리
@@ -40,15 +41,16 @@ export default function reservationFind( props ){
     }// func end
       
     // [2] 예매 취소 
-    const reserveCancle = async() => {
-        try{
-            const response = await axios.put(`http://localhost:8080/reserve/cancle?rno=${rno}`);
-            if(response.data.status == 200){
+    const reserveCancle = async () => {
+        try {
+            const response = await axios.put(`http://localhost:8080/reserve/cancle?rno=${rno}`, {}, { withCredentials: true });
+            console.log(response.data);
+            if (response.data) {
                 alert('예매를 취소 하였습니다');
-            }else{
+            } else {
                 alert('예매 취소를 실패하였습니다');
-            }// func end
-        }catch(e){
+            }
+        } catch (e) {
             console.log(e);
         }// try end
     }// func end
@@ -67,7 +69,7 @@ export default function reservationFind( props ){
     // [4] 교환요청 수락
     const acceptChange = async (fromRno) => {
         try{
-            const response = await axios.post(`http://localhost:8080/seat/accept?rno=${fromRno}`);
+            const response = await axios.post(`http://localhost:8080/seat/accept?rno=${fromRno}`,{} , { withCredentials: true });
             if(response.data.status == 200){
                 alert('좌석이 교환되었습니다');
             }else{
@@ -97,8 +99,8 @@ export default function reservationFind( props ){
         const check = confirm('교환요청을 보내시겠습니까?');
         if(check){
             try{
-                const obj = { from_rno : rno , }
-                const response = await axios.post(`http://localhost:8080/seat/change`);
+                const obj = { from_rno : rno  }
+                const response = await axios.post(`http://localhost:8080/seat/change`,obj , { withCredentials: true });
                 if(response.data.status == 200){
                     alert('좌석교환 신청을 완료하였습니다.');
                 }else{
@@ -113,7 +115,7 @@ export default function reservationFind( props ){
     // [7] 모달오픈 클릭이벤트
     const openModalEvent = async () => {
         try{
-            const response = await axios.get(`http://localhost:8080/seat/possible?rno=${rno}`);
+            const response = await axios.get(`http://localhost:8080/reserve/possible?rno=${rno}`);
             setChangeSeat(response.data);
             setOpen(true);
         }catch(e){
@@ -125,7 +127,7 @@ export default function reservationFind( props ){
     // [8] 전체좌석 가져오기
     const seatPrint = async () => {
         try{
-            const response = await axios.get('http://localhost:8080/seat/print');
+            const response = await axios.get(`http://localhost:8080/seat/print?rno=${rno}`);
             setSeatList(response.data);
         }catch(e){ console.log(e); }
     }// func end
@@ -134,11 +136,15 @@ export default function reservationFind( props ){
     useEffect( () => {
         reserveInfo();
         getAllRequest();
+        seatPrint();
     },[rno]);
 
     return (
         <>
         <h2> 예매 상세내역 </h2>
+                             <div style={{ margin: "20px 0" }}>
+                                        <TicketQR />
+                              </div>
         {!reservation || !reservation.reservation || !reservation.game ? (
             <p> 예매 정보를 불러오는중... </p>
         ) : (
@@ -150,9 +156,7 @@ export default function reservationFind( props ){
 
             return (
                 <div>
-                    <div style={{ margin: "20px 0" }}>
-                                                    <TicketQR />
-                                          </div>
+
                     <ul>
                         <li>예매번호 : {reservation.reservation?.rno ?? "-"}</li>
                         <li>좌석번호 : {reservation.reservation?.sno ?? "-"}</li>
@@ -167,7 +171,7 @@ export default function reservationFind( props ){
                     <Button variant="outlined" color="neutral" onClick={openModalEvent} disabled={!cancel}>
                         좌석교환
                     </Button>
-                    <Button variant="outlined" color="neutral" onClick={reserveCancle} disabled={!cancel}>
+                    <Button variant="outlined" color="neutral" onClick={reserveCancle} disabled={!cancel || reservation.reservation.status == 'cancelled'}>
                         예매취소
                     </Button>
                     <Modal
@@ -192,15 +196,21 @@ export default function reservationFind( props ){
                             좌석교환
                         </Typography>
                         <Typography id="modal-desc" textColor="text.tertiary">
-{/*                             <Button */}
-{/*                                 key={seat.sno} */}
-{/*                                 onClick={() => saveRequest(seat.sno)} */}
-{/*                                 disabled={!changeSeat.some(cs => cs.sno === seat.sno)} // 가능한 좌석만 클릭 가능 */}
-{/*                                 variant={changeSeat.some(cs => cs.sno === seat.sno) ? "soft" : "outlined"} */}
-{/*                                 sx={{ m: 1, width: 70 }} */}
-{/*                                 > */}
-{/*                                 {seat.seatName} */}
-{/*                             </Button> */}
+                            <div className="seat-grid">
+                                {seatList.map( (s) => {
+                                    return (
+                                        <button
+                                            key={s.sno}
+                                            onClick={() => saveRequest(s.sno)} // 클릭 시 좌석번호 전달
+                                            disabled={!changeSeat.some(cs => cs.sno === s.sno)} // 가능 좌석만 활성화
+                                            className={`seat-chip`}
+                                        >
+                                            {s.seatName}
+                                        </button>
+
+                                    )
+                                })}
+                            </div>
                         </Typography>
                         </Sheet>
                     </Modal>

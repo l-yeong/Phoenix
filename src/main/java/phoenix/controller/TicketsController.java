@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.neo4j.Neo4jProperties;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -12,6 +13,8 @@ import org.springframework.web.bind.annotation.*;
 import phoenix.model.dto.MembersDto;
 import phoenix.service.MembersService;
 import phoenix.service.TicketsService;
+
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
@@ -62,10 +65,20 @@ public class TicketsController {
      * - JSON 바로 반환 (프론트 새 QR 전용 컴포넌트가 axios로 호출)
      */
     @GetMapping("/qr")
-    public ResponseEntity<?> TicketUrlUuid(@RequestParam("qr") String uuid) {
-        int rno = ticketsService.TicketUrlUuid(uuid);
-        if (rno <= 0) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("QR Not Found");
-        return ResponseEntity.ok(rno); // ✅ rno만 반환
+    public ResponseEntity<?> ticketUrlUuid(@RequestParam("qr") String uuid) {
+        int info = ticketsService.ticketUrlUuid(uuid);
+        return ResponseEntity.ok(info);
+    }//func end
+
+
+    @GetMapping("/qrInfo")
+    public ResponseEntity<?> ticketUuidInfo(@RequestParam("qr") String uuid) {
+        Map<String,Object> info = ticketsService.ticketUuidInfo(uuid);
+        if (info == null || info.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "티켓을 찾을 수 없습니다.", "uuid", uuid));
+        }//if end
+        return ResponseEntity.ok(info);
     }//func end
 }//class end
 
