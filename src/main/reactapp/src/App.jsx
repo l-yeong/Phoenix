@@ -18,6 +18,7 @@ import FindPwdPage from "./pages/FindPwdPage";
 import { AuthProvider } from "./api/loginstate.jsx";
 import Mypage from "./features/members/Mypage.jsx";
 import ReservationFind from "./features/reservations/ReservationFind.jsx"
+import ChangeStatus from "./pages/ChangeStatus.jsx";
 
 function App() {
   return (
@@ -41,6 +42,7 @@ function App() {
           <Route path="/signup" element={<SignUpPage />} />
           <Route path="/social/success" element={<SocialSuccess />} />
           <Route path="/social/signup" element={<SocialSignUp />} />
+          <Route path="/changestatus" element={<ChangeStatus />} />
           <Route path="/mypage" element={<Mypage />} />
           <Route path="/reservation/:rno" element={<ReservationFind />} />
           <Route path="/gate" element={<GatePage />} />
