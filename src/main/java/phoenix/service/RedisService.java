@@ -167,7 +167,9 @@ public class RedisService { // class start
     public List<String> getMessage(int mno){
         String key = "alarm:" + mno;
         List<Object> list = redisTemplate.opsForList().range(key, 0, -1);
+        System.out.println("list 알림전체조회 = " + list);
         List<String> messages = list.stream().map(Object::toString).collect(Collectors.toList());
+        System.out.println("messages 알림메시지들 = " + messages);
         return messages;
     }// func end
 

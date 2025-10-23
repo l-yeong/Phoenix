@@ -91,10 +91,7 @@ public class FileService {
      * @return Map 경기정보
      */
     public Map<String,String> getGame(int gno){
-        System.out.println("경기목록 : "+ gameMap);
-        System.out.println("경기번호 : "+ gno);
         Map<String,String> result = gameMap.get("" +gno);
-        System.out.println("경기정보 : "+ result);
         return result;
     }// func end
 
