@@ -94,17 +94,21 @@ export default function reservationFind( props ){
     }// func end
 
     // [6] 좌석 교환 요청
-    const saveRequest = async() => {
+    const saveRequest = async(toSno , to_rno) => {
         const check = confirm('교환요청을 보내시겠습니까?');
         if(check){
             try{
-                const obj = { from_rno : rno  }
+                const obj = { from_rno : Number(rno) , to_rno : to_rno , toSno : toSno }
+                console.log(obj);
                 const response = await axios.post(`http://localhost:8080/seat/change`,obj , { withCredentials: true });
-                if(response.data.status == 200){
+                console.log(response.data);
+                if(response.data == 1){
                     alert('좌석교환 신청을 완료하였습니다.');
+                }else if(response.data == 2){
+                    alert('현재 요청이 많아 잠시후 다시 시도해주세요.');
                 }else{
                     alert('좌석교환 신청을 실패하였습니다.');
-                }// if end
+                }
             }catch(e){ console.log(e); }
         }else{
             return
@@ -191,13 +195,15 @@ export default function reservationFind( props ){
                         >
                             좌석교환
                         </Typography>
-                        <Typography id="modal-desc" textColor="text.tertiary">
+                        <Typography id="modal-desc" textColor="text.tertiary" component="div">
                             <div className="seat-grid">
                                 {seatList.map( (s) => {
+                                    const seatInfo = changeSeat.find(cs => cs.sno === s.sno); // 같은 좌석번호 검색
+                                    const to_rno = seatInfo ? seatInfo.rno : undefined;
                                     return (                                    
                                         <button
                                             key={s.sno}
-                                            onClick={() => saveRequest(s.sno)} // 클릭 시 좌석번호 전달
+                                            onClick={() => saveRequest(s.sno, to_rno)} // 클릭 시 좌석번호 전달
                                             disabled={!changeSeat.some(cs => cs.sno === s.sno)} // 가능 좌석만 활성화    
                                             className={`seat-chip`}                                    
                                         >
