@@ -16,6 +16,8 @@ import FindIdPage from "./pages/FindIdPage";
 import FindPwdPage from "./pages/FindPwdPage";
 import TicketQR from "./features/tickets/TicketQR.jsx";
 import TicketQRInfo from "./features/tickets/TicketQRInfo.jsx";
+import TicketLog from "./features/tickets/TicketLog";
+import QRScanner from "./features/tickets/QRScanner";
 
 import { AuthProvider } from "./api/loginstate.jsx";
 import Mypage from "./features/members/Mypage.jsx";
@@ -49,8 +51,12 @@ function App() {
           <Route path="/macro" element={<MacroPage />} />
           <Route path="/seats" element={<SeatsPolygonPage />} />
           <Route path="/zone/:zno" element={<ZoneDemoPage />} />
+
+          {/* 티켓 관련 */}
           <Route path="/tickets/:rno" element={<TicketQR />} />
           <Route path="/qr" element={<TicketQRInfo />} />
+          <Route path="/tickets/ticketLog" element={<TicketLog />} />
+          <Route path="/tickets/QRScanner" element={<QRScanner />} />
         </Routes>
         <Footer />
       </AuthProvider>
