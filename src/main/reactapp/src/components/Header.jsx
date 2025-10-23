@@ -54,7 +54,7 @@ const Header = () => {
     return () => {
       try {
         socket.close();
-      } catch {}
+      } catch { }
       wsRef.current = null;
     };
   }, [user]);
@@ -66,11 +66,11 @@ const Header = () => {
   const onLogout = async () => {
     console.log("[Header] 🚪 로그아웃 시작");
 
-    
+
 
     try {
       wsRef.current?.close();
-    } catch {}
+    } catch { }
     wsRef.current = null;
 
     localStorage.removeItem("jwt");
@@ -100,7 +100,14 @@ const Header = () => {
 
         <Box className={styles.nav}>
           {["TICKET", "PLAYERS", "GAME", "CONTENTS", "MEMBERSHIP"].map((menu) => (
-            <Button key={menu} className={styles.navButton}>
+            <Button
+              key={menu}
+              className={styles.navButton}
+              onClick={() => {
+                if (menu === "TICKET") navigate("/tickets/ticketLog");
+                else toast.info(`${menu} 페이지는 준비 중입니다.`);
+              }}
+            >
               {menu}
             </Button>
           ))}
