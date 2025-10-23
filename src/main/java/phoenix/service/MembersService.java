@@ -18,9 +18,11 @@ import phoenix.security.JwtUtil;
 import phoenix.util.PasswordUtil;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -85,6 +87,10 @@ public class MembersService {
         if (member != null) {
             System.out.println("[LOGIN-DEBUG] email_verified = " + member.getEmail_verified());
             System.out.println("[LOGIN-DEBUG] password matches = " + PasswordUtil.matches(rawPassword, member.getPassword_hash()));
+        }
+
+        if("withdrawn".equalsIgnoreCase(member.getStatus())){
+            throw new IllegalStateException("withdrawn"); // 로그인 차단 + 안내페이지로 이동용
         }
 
         if (member.getBirthdate() == null) {
@@ -205,7 +211,7 @@ public class MembersService {
     } // func e
 
     /**
-     * 회원 탈퇴
+     * 회원 탈퇴 (상태만 변경)
      *
      * @param mid 회원 아이디
      * @param password 입력한 비밀번호
@@ -215,13 +221,10 @@ public class MembersService {
         MembersDto member = membersMapper.findByMid(mid);
         if (member == null) return false;
 
-        // 탈퇴 이메일 형식 : test@gmail.com_탈퇴_2025-10-22_4821
-        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-        String newEmail = member.getEmail() + "탈퇴" + today + "_" + (int)(Math.random() * 1000 );
 
         // 소셜 회원은 비밀번호 검증 스킵
         if(member.getProvider() != null && !member.getProvider().isBlank()){
-            return membersMapper.memberDelete(mid , newEmail) > 0;
+            return membersMapper.updateStatus(mid , "withdrawn") > 0;
         }
 
         // 일반 회원은 비밀번호 검증 필수
@@ -229,7 +232,31 @@ public class MembersService {
             return false;
         }
 
-        return membersMapper.memberDelete(mid , newEmail) > 0;
+        return membersMapper.updateStatus(mid , "withdrawn") > 0;
+
+    } // func e
+
+    /**
+     * 휴면 계정 복구 (테스트는 패널티 1분 / 나중에 1일 or 7일로 설정 )
+     @param mid
+     @return
+     */
+    public boolean changeStatus(String mid){
+        MembersDto member = membersMapper.findByMid(mid);
+        if(member == null) return false;
+
+        // 1분 패널티 적용
+        if(member.getLast_status_change() != null){
+            long minute = ChronoUnit.MINUTES.between(
+                    member.getLast_status_change(),
+                    LocalDateTime.now()
+            );
+            if(minute < 1){
+                throw new IllegalStateException("1분 이내에는 상태를 변경할 수 없습니다.");
+            }
+        }
+
+        return membersMapper.changeStatus(mid) > 0;
 
     } // func e
 

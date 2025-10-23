@@ -46,7 +46,16 @@ const LoginForm = () => {
 
       // 응답 상태별 처리 (302는 더 이상 안뜰 예정, 대신 401/400)
       if (error.response) {
-        const { status } = error.response;
+        const { status, data } = error.response;
+
+        // 423 Locked → 탈퇴/휴면 상태 안내
+        if (status === 423 && data?.data) {
+          alert(data.message || "휴면 또는 탈퇴한 계정입니다.");
+          // 백엔드에서 전달한 URL로 이동
+          window.location.href = data.data;
+          return;
+        }
+
         if (status === 401) {
           alert("인증되지 않은 요청입니다. 다시 로그인해주세요.");
         } else if (status === 400) {
