@@ -10,7 +10,7 @@ const HomeMain = () => {
       {/* 로고 + 타이틀 */}
       <Box className={styles.logoSection}>
         <img
-          src="/images/phoenix_logo_red.png"
+          src="피닉스로고.png"
           alt="Phoenix Logo"
           className={styles.logo}
         />

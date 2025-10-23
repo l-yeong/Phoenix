@@ -15,6 +15,9 @@ export default function Mypage() {
         pno: "",
         exchange: false,
     })
+
+    const [provider, setProvider] = useState(null); // 소셜 회원 여부 저장
+
     const { logout } = useAuth();
     ;
 
@@ -48,7 +51,9 @@ export default function Mypage() {
             const response = await axios.get("http://localhost:8080/members/info", {
                 withCredentials: true,
             });
-            setForm(response.data.data);
+            const data = response.data.data;
+            setForm(data);
+            setProvider(!!data.provider); // 소셜 회원 여부 설정
         } catch (e) {
             console.error("회원정보 로드 실패:", e);
         }
@@ -60,9 +65,16 @@ export default function Mypage() {
     const handleInfoUpdate = async (e) => {
         e.preventDefault();
         try {
+
+            const payload = { ...form };
+            // 소셜 회원인 경우 이메일, 전화번호 수정 불가
+            if (provider) {
+                delete payload.password_hash;
+            }
+
             const res = await axios.put(
                 "http://localhost:8080/members/infoupdate",
-                form,
+                payload,
                 { withCredentials: true }
             );
             if (res.data.success) alert("회원정보가 성공적으로 수정되었습니다!");
@@ -104,9 +116,13 @@ export default function Mypage() {
         if (!window.confirm("정말 탈퇴하시겠습니까? 복구할 수 없습니다.")) return;
 
         try {
+
+            // 소셜 회원이면 비밀번호 입력 없이 빈 객체 전송
+            const payload = provider ? {} : deleteForm;
+
             const res = await axios.post(
                 "http://localhost:8080/members/delete",
-                deleteForm,
+                payload,
                 { withCredentials: true }
             );
             if (res.data.success) {
@@ -130,9 +146,14 @@ export default function Mypage() {
     /* ===============================
        모드 전환 시 데이터 로드
     =============================== */
+    // 마이페이지 처음 로드 시 회원정보 1회만 불러오기
+    useEffect(() => {
+        memberInfo();
+    }, []);
+
+    // 모드가 "reservation"일 때만 예매내역 다시 불러오기
     useEffect(() => {
         if (mode === "reservation") reservePrint();
-        else memberInfo();
     }, [mode]);
 
     /* ===============================
@@ -146,7 +167,10 @@ export default function Mypage() {
             <div style={{ marginBottom: "20px" }}>
                 <button onClick={() => setMode("reservation")}>예매 내역</button>
                 <button onClick={() => setMode("edit")}>회원정보 수정</button>
-                <button onClick={() => setMode("password")}>비밀번호 변경</button>
+                {/* 소셜회원이면 비밀번호 변경 탭 숨김 */}
+                {!provider && (
+                    <button onClick={() => setMode("password")}>비밀번호 변경</button>
+                )}
                 <button onClick={() => setMode("delete")}>회원 탈퇴</button>
             </div>
 
@@ -220,7 +244,13 @@ export default function Mypage() {
                             name="email"
                             value={form.email || ""}
                             onChange={(e) => setForm({ ...form, email: e.target.value })}
+                            disabled={provider} // 소셜회원은 이메일 변경 불가
                         />
+                        {provider && (
+                            <small style={{ color: "#999", display: "block", marginBottom: "10px" }}>
+                                ※ 소셜 회원은 이메일을 변경할 수 없습니다.
+                            </small>
+                        )}
 
                         <label>선호 선수 번호(pno)</label>
                         <input
@@ -240,9 +270,8 @@ export default function Mypage() {
                     </form>
                 </>
             )}
-
-            {/* 비밀번호 변경 */}
-            {mode === "password" && (
+            {/* 일반회원만 비밀번호 변경 가능 */}
+            {!provider && mode === "password" && (
                 <>
                     <h3>비밀번호 변경</h3>
                     <form onSubmit={handlePasswordUpdate}>
@@ -282,15 +311,23 @@ export default function Mypage() {
                 <>
                     <h3>회원 탈퇴</h3>
                     <form onSubmit={handleDelete}>
-                        <label>비밀번호 확인</label>
-                        <input
-                            type="password"
-                            name="password_hash"
-                            value={deleteForm.password_hash}
-                            onChange={(e) =>
-                                setDeleteForm({ ...deleteForm, password_hash: e.target.value })
-                            }
-                        />
+                        {/* 소셜회원이면 비밀번호 입력칸 제거 */}
+                        {!provider && (
+                            <>
+                                <label>비밀번호 확인</label>
+                                <input
+                                    type="password"
+                                    name="password_hash"
+                                    value={deleteForm.password_hash}
+                                    onChange={(e) =>
+                                        setDeleteForm({
+                                            ...deleteForm,
+                                            password_hash: e.target.value,
+                                        })
+                                    }
+                                />
+                            </>
+                        )}
                         <button type="submit" style={{ backgroundColor: "red", color: "white" }}>
                             탈퇴하기
                         </button>

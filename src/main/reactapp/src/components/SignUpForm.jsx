@@ -169,11 +169,12 @@ const SignUpPage = () => {
             value={form.email}
             onChange={handleChange}
             fullWidth
+            disabled={emailVerified} // 인증 완료 시 이메일 수정 불가
           />
           <Button
             variant="outlined"
             onClick={sendEmailCode}
-            disabled={loading}
+            disabled={loading || emailVerified} // 로딩 중이거나 인증 완료 시 비활성화
             sx={{ whiteSpace: "nowrap" }}
           >
             코드전송
@@ -186,9 +187,14 @@ const SignUpPage = () => {
             value={emailCode}
             onChange={(e) => setEmailCode(e.target.value)}
             fullWidth
+            disabled={emailVerified} // 인증 완료 시 코드 입력창 잠금
           />
-          <Button variant="outlined" onClick={verifyEmail}>
-            인증확인
+          <Button 
+            variant="outlined" 
+            onClick={verifyEmail}
+            disabled={emailVerified} // 인증 완료 시 버튼 비활성화
+            >
+            {emailVerified ? "확인완료" : "인증확인"}
           </Button>
         </Box>
 

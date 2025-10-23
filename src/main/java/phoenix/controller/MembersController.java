@@ -1,5 +1,6 @@
 package phoenix.controller;
 
+import com.beust.ah.A;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -206,14 +207,21 @@ public class MembersController {
      *   "exchange": false
      * }
      * </pre>
-     * @param user 로그인한 회원 정보 (SecurityContext에서 주입)
+     * 이제 이거 안씀 , 맨 아래 getLoginMember()에서 분기 처리 한 dto 쓰면 됨 user 로그인한 회원 정보 (SecurityContext에서 주입)
      * @param dto 수정할 회원 정보 DTO
      * @return 수정 성공 여부 메시지
      */
     @PutMapping("/infoupdate")
-    public ResponseEntity<ApiResponseUtil<?>> infoUpdate(@AuthenticationPrincipal MembersDto user,
-                                                         @RequestBody MembersDto dto) {
-        boolean result = membersService.infoUpdate(user.getMid(), dto);
+    public ResponseEntity<ApiResponseUtil<?>> infoUpdate( @RequestBody MembersDto dto) {
+
+        MembersDto loginMember = membersService.getLoginMember();
+
+        if(loginMember == null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponseUtil<>(false , "로그인이 필요합니다." , null));
+        }
+
+        boolean result = membersService.infoUpdate(loginMember.getMid(), dto);
 
         return result
                 ? ResponseEntity.ok(new ApiResponseUtil<>(true, "회원 정보가 성공적으로 수정되었습니다.", null))
@@ -232,15 +240,22 @@ public class MembersController {
      *   "new_password": "New#5678"
      * }
      * </pre>
-     * @param user 로그인한 회원 정보
+     * // 여기도 이제 안씀 @param user 로그인한 회원 정보
      * @param req 비밀번호 변경 요청 JSON
      * @return 변경 성공 여부 메시지
      */
     @PutMapping("/pwdupdate")
-    public ResponseEntity<ApiResponseUtil<?>> pwdUpdate(@AuthenticationPrincipal MembersDto user,
-                                                        @RequestBody Map<String, String> req) {
+    public ResponseEntity<ApiResponseUtil<?>> pwdUpdate(@RequestBody Map<String, String> req) {
+
+        MembersDto loginMember = membersService.getLoginMember();
+
+        if(loginMember == null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponseUtil<>(false , "로그인이 필요합니다." , null));
+        }
+
         boolean result = membersService.pwdUpdate(
-                user.getMid(),
+                loginMember.getMid(),
                 req.get("current_password"),
                 req.get("new_password")
         );
@@ -260,15 +275,22 @@ public class MembersController {
      *   "password_hash": "1234"
      * }
      * </pre>
-     * @param user 로그인한 회원 정보
+     * // 여기도 안씀 이제 @param user 로그인한 회원 정보
      * @param req 비밀번호 입력 JSON
      * @return 탈퇴 성공 여부 메시지
      */
     @PostMapping("/delete")
-    public ResponseEntity<ApiResponseUtil<?>> memberDelete(@AuthenticationPrincipal MembersDto user,
-                                                           @RequestBody Map<String, String> req ,
+    public ResponseEntity<ApiResponseUtil<?>> memberDelete(@RequestBody Map<String, String> req ,
                                                            HttpServletRequest request ) {
-        boolean result = membersService.memberDelete(user.getMid(), req.get("password_hash"));
+
+        MembersDto loginMember = membersService.getLoginMember();
+
+        if(loginMember == null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponseUtil<>(false , "로그인이 필요합니다." , null));
+        }
+
+        boolean result = membersService.memberDelete(loginMember.getMid(), req.get("password_hash"));
 
         if( result ){
             // 세션 기반 인증 완전 종료

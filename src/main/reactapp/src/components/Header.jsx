@@ -1,4 +1,5 @@
 // ✅ src/components/Header.jsx
+import axios from "axios";
 import React, { useEffect, useState, useRef } from "react";
 import { AppBar, Toolbar, Box, Typography, Button } from "@mui/material";
 import { ToastContainer, toast } from "react-toastify";
@@ -59,14 +60,22 @@ const Header = () => {
     };
   }, [user]);
 
-  /**
-   * ✅ 로그아웃 처리
-   * - 소켓 종료 → 세션/토큰 삭제 → 페이지 이동
-   */
-  const onLogout = async () => {
+    const onLogout = async () => {
     console.log("[Header] 🚪 로그아웃 시작");
 
-    
+    const gno = Number(sessionStorage.getItem("gate_gno"));
+    if (gno) {
+      try {
+        const res = await axios.post(`${API}/gate/leave`, gno, {
+          withCredentials: true,
+          headers: { "Content-Type": "application/json" },
+        });
+        console.log("[Header] ✅ gate/leave 성공:", res.data);
+      } catch (err) {
+        console.error("[Header] ❌ gate/leave 실패:", err);
+        alert(`[Header] gate/leave 실패: ${err.response?.status || err.message}`);
+      }
+    }
 
     try {
       wsRef.current?.close();

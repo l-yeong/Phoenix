@@ -20,6 +20,7 @@ import phoenix.util.PasswordUtil;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -152,25 +153,37 @@ public class MembersService {
      * @param dto 수정할 회원 정보 DTO
      * @return 수정 성공 여부
      */
+    @Transactional
     public boolean infoUpdate(String mid, MembersDto dto) {
         MembersDto existing = membersMapper.findByMid(mid);
         if (existing == null) return false;
 
-        // 이메일 변경 여부 확인
-        if (dto.getEmail() == null || dto.getEmail().isEmpty()) {
-            dto.setEmail(existing.getEmail());
-        } else if (!existing.getEmail().equals(dto.getEmail())) {
-            dto.setEmail_verified(false);
-        } else {
-            dto.setEmail_verified(existing.getEmail_verified()); // 기존 인증 상태 유지
+        // 소셜회원일 경우 이메일 변경 금지
+        if(existing.getProvider() != null && !existing.getProvider().isBlank()){
+            dto.setEmail(existing.getEmail()); // 원래 이메일 유지
+            dto.setEmail_verified(existing.getEmail_verified()); // 이메일 인증상태도 유지
+        }else{
+
+            // 이메일 변경 여부 확인
+            if (dto.getEmail() == null || dto.getEmail().isEmpty()) {
+                dto.setEmail(existing.getEmail());
+            } else if (!existing.getEmail().equals(dto.getEmail())) {
+                dto.setEmail_verified(false); // 이메일 변경시 인증 해제
+            } else {
+                dto.setEmail_verified(existing.getEmail_verified()); // 기존 인증 상태 유지
+            }
+
+            // email_verified가 null일 경우 기본값 true로 보정
+            if (dto.getEmail_verified() == null) {
+                dto.setEmail_verified(existing.getEmail_verified());
+            }
         }
 
-        // email_verified가 null일 경우 기본값 true로 보정
-        if (dto.getEmail_verified() == null) {
-            dto.setEmail_verified(existing.getEmail_verified());
-        }
+        // mid는 인증회원 기준으로 유지
+        dto.setMid(mid);
 
         return membersMapper.infoUpdate(mid, dto) > 0;
+
     } // func e
 
     /**
@@ -202,8 +215,22 @@ public class MembersService {
         MembersDto member = membersMapper.findByMid(mid);
         if (member == null) return false;
 
-        if (!passwordEncoder.matches(password, member.getPassword_hash())) return false;
-        return membersMapper.memberDelete(mid) > 0;
+        // 탈퇴 이메일 형식 : test@gmail.com_탈퇴_2025-10-22_4821
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        String newEmail = member.getEmail() + "탈퇴" + today + "_" + (int)(Math.random() * 1000 );
+
+        // 소셜 회원은 비밀번호 검증 스킵
+        if(member.getProvider() != null && !member.getProvider().isBlank()){
+            return membersMapper.memberDelete(mid , newEmail) > 0;
+        }
+
+        // 일반 회원은 비밀번호 검증 필수
+        if (!passwordEncoder.matches(password, member.getPassword_hash())) {
+            return false;
+        }
+
+        return membersMapper.memberDelete(mid , newEmail) > 0;
+
     } // func e
 
 
