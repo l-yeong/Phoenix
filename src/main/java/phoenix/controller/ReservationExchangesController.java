@@ -29,15 +29,17 @@ public class ReservationExchangesController {
      * @return int 성공 : 1 , 요청중인사람존재 : 2 , 요청자가 다른좌석에 요청중 : 0
      */
     @PostMapping("/change")
-    public ResponseEntity<?> saveRequest(ReservationExchangesDto dto){
+    public ResponseEntity<?> saveRequest(@RequestBody ReservationExchangesDto dto){
         MembersDto loginMember = membersService.getLoginMember();
         int mno = loginMember.getMno();
         if (loginMember == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "로그인 정보가 없습니다."));
         }
+        System.out.println("mno = " + mno);
         dto.setFrom_mno(mno);
         int result = reservationexchangesService.requestChange(dto);
+        System.out.println("result = " + result);
         return ResponseEntity.ok(result);
     }// func end
 

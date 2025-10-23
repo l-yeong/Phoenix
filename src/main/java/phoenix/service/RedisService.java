@@ -4,20 +4,18 @@ import lombok.RequiredArgsConstructor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.redisson.api.RLock;
+import org.redisson.api.RMap;
+import org.redisson.api.RSet;
 import org.redisson.api.RedissonClient;
+import org.redisson.client.RedisException;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import org.springframework.stereotype.Service;
 import phoenix.model.dto.ReservationExchangesDto;
 
 
@@ -34,70 +32,48 @@ public class RedisService { // class start
      * @return int 성공 : 1 , 요청중인사람존재 : 2 , 요청자가 다른좌석에 요청중 : 0
      */
     public int saveRequest(ReservationExchangesDto dto) {
-        String requestKey = "change:request:" + dto.getFrom_rno();  // 요청자 기준
-        String seatKey = "change:seat:" + dto.getTo_rno();          // 응답좌석 기준 (index용)
-        RLock lock = redissonClient.getLock(seatKey);               // 응답자 단위 분산 락 생성
+        // 1️⃣ Key 정의
+        String requestKey = "change:request:" + dto.getFrom_rno(); // 요청자 기준 키
+        String seatKey = "change:seat:" + dto.getTo_rno();         // 응답자 기준 키 (Hash)
+        RLock lock = redissonClient.getLock(seatKey);              // 응답자 단위 분산 락
 
         try {
-            // 2초안에 락 못잡으면 2 반환, 5초 뒤 자동 해제
-            if (!lock.tryLock(2, 5, TimeUnit.SECONDS)) {
-                return 2;  // 요청 작업 중인 쓰레드가 있음
-            }
+            // 2️⃣ 락 시도 (2초 대기, 5초 자동 해제)
+            if (!lock.tryLock(2, 5, TimeUnit.SECONDS)) return 2;
 
-            /*
-             * Lua Script 내용
-             *
-             * KEYS[1] : 요청자 기준 키 (requestKey)
-             * KEYS[2] : 좌석 기준 키 (seatKey)
-             * ARGV[1] : 직렬화된 DTO 데이터
-             * ARGV[2] : TTL(초)
-             * ARGV[3] : 좌석번호 (Set에 추가할 값)
-             */
-            String lua = """
-                            -- 요청자가 이미 다른 좌석에 요청한 데이터가 존재하면 0 반환
-                            if redis.call('EXISTS', KEYS[1]) == 1 then
-                                return 0
-                            end
-                            -- 요청자 기준 키가 없으면 새로 저장
-                            if redis.call('SETNX', KEYS[1], ARGV[1]) == 1 then
-                                -- TTL 설정(24시간)
-                                redis.call('EXPIRE', KEYS[1], ARGV[2])
-                                -- 응답자 기준 세트에 응답자 예매번호 추가
-                                redis.call('SADD', KEYS[2], ARGV[3])
-                                -- 응답자 세트에도 TTL 설정
-                                redis.call('EXPIRE', KEYS[2], ARGV[2])
-                                return 1
-                            else
-                                return 0
-                            end
-                        """;
+            // 3️⃣ 요청자 키 저장 (이미 존재하면 실패)
+            Boolean saved = redisTemplate.opsForValue()
+                    .setIfAbsent(requestKey, dto, 86400, TimeUnit.SECONDS); // serialize 제거, Jackson 사용
+            if (saved == null || !saved) return 0; // 이미 요청한 경우
 
-            Long result = redisTemplate.execute(
-                    new DefaultRedisScript<>(lua, Long.class),
-                    List.of(requestKey, seatKey),
-                    serialize(dto),                    // ARGV[1] : 요청 데이터(JSON)
-                    String.valueOf(86400),             // ARGV[2] : TTL 24시간
-                    String.valueOf(dto.getTo_rno())    // ARGV[3] : 응답자 예매번호
-            );
+            // 4️⃣ 응답자 기준 Hash 가져오기
+            String hashKey = seatKey;
+            String field = String.valueOf(dto.getFrom_rno());
 
-            // Lua 스크립트 반환값이 null이면 실패
-            if (result == null) return 0;
+            Set<Integer> seatSet = (Set<Integer>) redisTemplate.opsForHash().get(hashKey, field);
+            if (seatSet == null) seatSet = new HashSet<>();
 
-            return result.intValue();
+            // 요청 좌석번호 추가
+            seatSet.add(dto.getToSno());
+
+            // Hash에 업데이트
+            redisTemplate.opsForHash().put(hashKey, field, seatSet);
+
+            // TTL 설정 (24시간)
+            redisTemplate.expire(hashKey, 86400, TimeUnit.SECONDS);
+
+            return 1; // 성공
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            return 2;  // 락 실패 또는 스레드 인터럽트
+            return 2; // 락 실패 또는 인터럽트
         } catch (Exception e) {
             e.printStackTrace();
-            return 0;  // 기타 실패
+            return 0; // 기타 실패
         } finally {
-            if (lock.isHeldByCurrentThread()) {
-                lock.unlock();
-            }// if end
-        }// try end
-    }// func end
-
+            if (lock.isHeldByCurrentThread()) lock.unlock();
+        }
+    }
     /**
      * redis에 요청데이터 조회
      *
