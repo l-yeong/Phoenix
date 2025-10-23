@@ -53,7 +53,7 @@ export default function Mypage() {
             });
             const data = response.data.data;
             setForm(data);
-            setProvider(data.provider || null); // 소셜 회원 여부 설정
+            setProvider(!!data.provider); // 소셜 회원 여부 설정
         } catch (e) {
             console.error("회원정보 로드 실패:", e);
         }
@@ -146,9 +146,14 @@ export default function Mypage() {
     /* ===============================
        모드 전환 시 데이터 로드
     =============================== */
+    // 마이페이지 처음 로드 시 회원정보 1회만 불러오기
+    useEffect(() => {
+        memberInfo();
+    }, []);
+
+    // 모드가 "reservation"일 때만 예매내역 다시 불러오기
     useEffect(() => {
         if (mode === "reservation") reservePrint();
-        else memberInfo();
     }, [mode]);
 
     /* ===============================
@@ -239,7 +244,13 @@ export default function Mypage() {
                             name="email"
                             value={form.email || ""}
                             onChange={(e) => setForm({ ...form, email: e.target.value })}
+                            disabled={provider} // 소셜회원은 이메일 변경 불가
                         />
+                        {provider && (
+                            <small style={{ color: "#999", display: "block", marginBottom: "10px" }}>
+                                ※ 소셜 회원은 이메일을 변경할 수 없습니다.
+                            </small>
+                        )}
 
                         <label>선호 선수 번호(pno)</label>
                         <input
@@ -300,7 +311,7 @@ export default function Mypage() {
                 <>
                     <h3>회원 탈퇴</h3>
                     <form onSubmit={handleDelete}>
-                        {/* 🔹 소셜회원이면 비밀번호 입력칸 제거 */}
+                        {/* 소셜회원이면 비밀번호 입력칸 제거 */}
                         {!provider && (
                             <>
                                 <label>비밀번호 확인</label>
