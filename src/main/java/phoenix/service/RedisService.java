@@ -47,20 +47,31 @@ public class RedisService { // class start
             if (saved == null || !saved) return 0; // 이미 요청한 경우
 
             // 4️⃣ 응답자 기준 Hash 가져오기
-            String hashKey = seatKey;
             String field = String.valueOf(dto.getFrom_rno());
 
-            Set<Integer> seatSet = (Set<Integer>) redisTemplate.opsForHash().get(hashKey, field);
+            Set<Integer> seatSet = (Set<Integer>) redisTemplate.opsForHash().get(seatKey, field);
             if (seatSet == null) seatSet = new HashSet<>();
 
             // 요청 좌석번호 추가
             seatSet.add(dto.getToSno());
+            System.out.println("seatSet = " + seatSet);
 
             // Hash에 업데이트
-            redisTemplate.opsForHash().put(hashKey, field, seatSet);
+            redisTemplate.opsForHash().put(seatKey, field, seatSet);
 
             // TTL 설정 (24시간)
-            redisTemplate.expire(hashKey, 86400, TimeUnit.SECONDS);
+            redisTemplate.expire(seatKey, 86400, TimeUnit.SECONDS);
+            // requestKey 확인
+            Object request = redisTemplate.opsForValue().get("change:request:" + dto.getFrom_rno());
+            System.out.println("request = " + request);
+
+            // seatKey Hash 확인
+            Map<Object, Object> seatHash = redisTemplate.opsForHash().entries("change:seat:" + dto.getTo_rno());
+            System.out.println("seatHash = " + seatHash);
+
+
+            String json = new ObjectMapper().writeValueAsString(seatSet);
+            System.out.println(json); // "[30004]"
 
             return 1; // 성공
 
