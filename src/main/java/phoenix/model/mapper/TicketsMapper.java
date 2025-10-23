@@ -18,14 +18,8 @@ public interface TicketsMapper {
     int ticketWrite(TicketsDto dto);
 
     // QR정보
-    @Select("""
-            SELECT r.mno, r.rno,
-                   r.status AS reservation_status,
-                   t.ticket_code
-            FROM reservations r
-            LEFT JOIN tickets t ON t.rno = r.rno
-            WHERE r.rno = #{rno}
-            """)
+    @Select("SELECT r.mno, r.rno, r.status AS reservation_status, t.ticket_code FROM reservations r "+
+            " LEFT JOIN tickets t ON t.rno = r.rno WHERE r.rno = #{rno}")
     Map<String, Object> ticketPrint(@Param("rno") int rno);
 
     /*==========================================================================================================================*/
@@ -42,16 +36,8 @@ public interface TicketsMapper {
     int formerGame(@Param("gnoList") String gnoList);
 
     // uuid로 rno만 조회
-    @Select("""
-                SELECT t.rno,
-                       t.valid,
-                       r.mno,
-                       r.status AS reservation_status
-                FROM tickets t
-                JOIN reservations r ON r.rno = t.rno
-                WHERE t.ticket_uuid = #{uuid}
-                LIMIT 1
-            """)
+    @Select("SELECT t.rno, t.valid, r.mno, r.status AS reservation_status FROM tickets t JOIN reservations r ON r.rno = t.rno "+
+            " WHERE t.ticket_uuid = #{uuid} LIMIT 1")
     Map<String, Object> ticketUrlUuid(@Param("uuid") String uuid);
 
     // uuid로 바로 예매표시용 정보 조회 (reserveInfo와 동일 스키마)
@@ -61,30 +47,26 @@ public interface TicketsMapper {
     Map<String, Object> ticketUuidInfo(@Param("uuid") String uuid);
 
     // QR 스캐너 조회
-    @Select("""
-                SELECT r.mno, r.rno,
-                       r.status AS reservation_status,
-                       t.ticket_code,
-                       t.valid
-                FROM tickets t
-                JOIN reservations r ON r.rno = t.rno
-                WHERE t.ticket_code = #{ticketCode}
-            """)
+    @Select("SELECT r.mno, r.rno, r.status AS reservation_status, t.ticket_code, t.valid FROM tickets t "+
+            " JOIN reservations r ON r.rno = t.rno WHERE t.ticket_code = #{ticketCode}")
     Map<String, Object> qrScan(@Param("ticketCode") String ticketCode);
 
     // QR 소진(유효→사용됨)
-    @Update("""
-                UPDATE tickets t
-                JOIN reservations r ON r.rno = t.rno
-                SET t.valid = 0
-                WHERE t.ticket_code = #{ticketCode}
-                  AND t.valid = 1
-                  AND r.mno = #{mno}
-                  AND r.rno = #{rno}
-                  /* AND r.status = 'reserved'  -- 옵션: 상태검증 강화 */
-            """)
-    int qrScanInfoUpdate(@Param("ticketCode") String ticketCode,
-                         @Param("mno") Integer mno,
-                         @Param("rno") Integer rno);
+    @Update("UPDATE tickets t JOIN reservations r ON r.rno = t.rno SET t.valid = 0 WHERE t.ticket_code = #{ticketCode} "+
+            " AND t.valid = 1 AND r.mno = #{mno} AND r.rno = #{rno}")
+    int qrScanInfoUpdate(@Param("ticketCode") String ticketCode,@Param("mno") Integer mno,@Param("rno") Integer rno);
+
+    //관리자 페이지
+    /**
+     * 관리자 QR 사용 기록 전체 조회
+     * - 모든 티켓 목록을 연락처 포함으로 조회
+     */
+    @Select("SELECT m.mname AS mname, m.mphone AS mphone, z.zname AS zname, s.seatName AS seat_no, "+
+            " CONCAT(z.zname, ' ', s.seatName) AS seat_label, z.price AS seat_price, "+
+            " r.status AS reservation_status, t.valid AS valid FROM tickets t JOIN reservations r ON r.rno = t.rno "+
+            " JOIN members m ON r.mno = m.mno JOIN seats s ON r.sno = s.sno JOIN zones z ON s.zno = z.zno "+
+            " ORDER BY t.ticket_code DESC")
+    List<Map<String, Object>> adminScanLog();
+
 
 }//inter end

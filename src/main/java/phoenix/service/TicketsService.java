@@ -57,7 +57,7 @@ public class TicketsService {
                 .substring(0, 6);
 
         // QR코드 스캔 URL(도메인생기면 여기만 수정)
-        String baseUrl = "http://localhost:8080";
+        String baseUrl = "http:/localhost:8080";
         String qrUrl = baseUrl + "/tickets/qr?qr=" + qrUuid;
 
         // QR 이미지 파일 생성 및 저장
@@ -165,6 +165,11 @@ public class TicketsService {
         } else {
             return Map.of("success", false, "message", "정보 불일치 또는 이미 사용됨");
         }
-    }
+    }//func end
+
+    public List<Map<String, Object>>adminScanLog(){
+        List<Map<String,Object>> result = ticketsMapper.adminScanLog();
+        return result;
+    }//func end
 
 }//class end

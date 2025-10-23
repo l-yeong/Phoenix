@@ -92,6 +92,13 @@ public class TicketsController {
 
         Map<String, Object> result = ticketsService.qrScanAndUpdate(ticketCode, mno, rno);
         return ResponseEntity.ok(result);
-    }
+    }//func end
+
+
+    @GetMapping("/ticketLog")
+    public ResponseEntity<?>adminScanLog(){
+        List<Map<String, Object>> result = ticketsService.adminScanLog();
+        return ResponseEntity.ok(result);
+    }//func end
 }//class end
 
