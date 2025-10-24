@@ -38,8 +38,22 @@ const LoginForm = () => {
         return;
       }
 
-      login({ mid: resData.mid, mno: resData.mno });
-      alert(`${resData.mid}님 환영합니다!`);
+      // member + role 정보를 함께 loginstate에 저장
+      login({
+        mid: resData.member.mid,
+        mno: resData.member.mno,
+        role: resData.role,
+        status: resData.member.status,
+      });
+
+      // ROLE_WITHDRAWN 회원은 자동 이동하지 않음
+      if (resData.role === "ROLE_WITHDRAWN") {
+        alert("탈퇴한 계정입니다. 복구 페이지로 이동합니다.");
+        window.location.href = `http://localhost:5173/changestatus?mid=${resData.member.mid}`;
+        return;
+      }
+
+      alert(`${resData.member.mid}님 환영합니다!`);
       navigate("/");
     } catch (error) {
       console.error("로그인 실패:", error);
