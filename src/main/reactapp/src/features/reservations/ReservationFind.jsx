@@ -66,9 +66,9 @@ export default function reservationFind( props ){
     }// func end
 
     // [4] 교환요청 수락
-    const acceptChange = async (fromRno) => {
+    const acceptChange = async () => {
         try{
-            const response = await axios.post(`http://localhost:8080/seat/accept?rno=${fromRno}`,{} , { withCredentials: true });
+            const response = await axios.post(`http://localhost:8080/seat/accept?rno=${rno}`,{} , { withCredentials: true });
             if(response.data.status == 200){
                 alert('좌석이 교환되었습니다');
             }else{
@@ -80,9 +80,9 @@ export default function reservationFind( props ){
     }// func end
 
     // [5] 교환요청 거절
-    const rejectChange = async (fromRno) => {
+    const rejectChange = async () => {
         try{
-            const response = await axios.delete(`http://localhost:8080/seat/reject?rno=${fromRno}`);
+            const response = await axios.delete(`http://localhost:8080/seat/reject?rno=${rno}`);
             if(response.data.status == 200){
                 alert('좌석교환을 거절하였습니다.');
             }else{
