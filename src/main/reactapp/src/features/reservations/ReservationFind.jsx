@@ -8,6 +8,7 @@ import ModalClose from '@mui/joy/ModalClose';
 import Typography from '@mui/joy/Typography';
 import Sheet from '@mui/joy/Sheet';
 import "../../styles/zone-seats.css";
+import TicketQR from "../tickets/TicketQR";
 
 export default function reservationFind( props ){
     // [*] 모달 상태 관리
@@ -108,7 +109,7 @@ export default function reservationFind( props ){
                     alert('현재 요청이 많아 잠시후 다시 시도해주세요.');
                 }else{
                     alert('좌석교환 신청을 실패하였습니다.');
-                }
+                }// if end
             }catch(e){ console.log(e); }
         }else{
             return
@@ -145,6 +146,9 @@ export default function reservationFind( props ){
     return (
         <>
         <h2> 예매 상세내역 </h2>
+                             <div style={{ margin: "20px 0" }}>
+                                        <TicketQR />
+                              </div>
         {!reservation || !reservation.reservation || !reservation.game ? (
             <p> 예매 정보를 불러오는중... </p>
         ) : (
@@ -156,7 +160,6 @@ export default function reservationFind( props ){
 
             return (
                 <div>
-
                     <ul>
                         <li>예매번호 : {reservation.reservation?.rno ?? "-"}</li>
                         <li>좌석번호 : {reservation.reservation?.sno ?? "-"}</li>
@@ -200,16 +203,16 @@ export default function reservationFind( props ){
                                 {seatList.map( (s) => {
                                     const seatInfo = changeSeat.find(cs => cs.sno === s.sno); // 같은 좌석번호 검색
                                     const to_rno = seatInfo ? seatInfo.rno : undefined;
-                                    return (                                    
+                                    return (
                                         <button
                                             key={s.sno}
                                             onClick={() => saveRequest(s.sno, to_rno)} // 클릭 시 좌석번호 전달
-                                            disabled={!changeSeat.some(cs => cs.sno === s.sno)} // 가능 좌석만 활성화    
-                                            className={`seat-chip`}                                    
+                                            disabled={!changeSeat.some(cs => cs.sno === s.sno)} // 가능 좌석만 활성화
+                                            className={`seat-chip`}
                                         >
                                             {s.seatName}
                                         </button>
-                                        
+
                                     )
                                 })}
                             </div>

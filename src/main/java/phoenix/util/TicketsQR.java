@@ -17,7 +17,7 @@ public class TicketsQR {
 
     // [*] qr 생성
 
-    public static byte[] TicketQrCode(String text, int size) {
+    public static byte[] TicketQrCode(String url, int size) {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         try {
             Map<EncodeHintType, Object> hints = new HashMap<>();
@@ -26,7 +26,7 @@ public class TicketsQR {
 
             // text 문자열 그대로 QR 생성
             BitMatrix matrix = new MultiFormatWriter().encode(
-                    text, BarcodeFormat.QR_CODE, size, size, hints);
+                    url, BarcodeFormat.QR_CODE, size, size, hints);
 
             MatrixToImageWriter.writeToStream(matrix, "PNG", bout);
             return bout.toByteArray();

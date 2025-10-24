@@ -55,7 +55,7 @@ const Header = () => {
     return () => {
       try {
         socket.close();
-      } catch {}
+      } catch { }
       wsRef.current = null;
     };
   }, [user]);
@@ -109,7 +109,14 @@ const Header = () => {
 
         <Box className={styles.nav}>
           {["TICKET", "PLAYERS", "GAME", "CONTENTS", "MEMBERSHIP"].map((menu) => (
-            <Button key={menu} className={styles.navButton}>
+            <Button
+              key={menu}
+              className={styles.navButton}
+              onClick={() => {
+                if (menu === "TICKET") navigate("/tickets/ticketLog");
+                else toast.info(`${menu} 페이지는 준비 중입니다.`);
+              }}
+            >
               {menu}
             </Button>
           ))}

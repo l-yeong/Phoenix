@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.neo4j.Neo4jProperties;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -12,6 +13,8 @@ import org.springframework.web.bind.annotation.*;
 import phoenix.model.dto.MembersDto;
 import phoenix.service.MembersService;
 import phoenix.service.TicketsService;
+
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
@@ -28,7 +31,7 @@ public class TicketsController {
      * 예: POST /tickets/write?rno=40001
      */
     @PostMapping("/write")
-    public ResponseEntity<Boolean>ticketWrite(@RequestParam int rno) {
+    public ResponseEntity<Boolean> ticketWrite(@RequestParam int rno) {
         boolean result = ticketsService.ticketWrite(rno);
         return ResponseEntity.ok(result);
     }//func end
@@ -55,6 +58,31 @@ public class TicketsController {
         List<Map<String, Object>> result = ticketsService.findPayloads(mno, rno);
 
         return ResponseEntity.ok(result);
-    }
+    }//func end
 
+
+    @GetMapping("/qrInfo")
+    public ResponseEntity<?> ticketUuidInfo(@RequestParam("qr") String uuid) {
+        Map<String,Object> info = ticketsService.ticketUuidInfo(uuid);
+        if (info == null || info.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "티켓을 찾을 수 없습니다.", "uuid", uuid));
+        }//if end
+        return ResponseEntity.ok(info);
+    }//func end
+
+    //=====================================
+    @GetMapping("/qr")
+    public ResponseEntity<?> qrScan(@RequestParam("qr")String uuid){
+        Map<String, Object> result = ticketsService.qrScan(uuid);
+        return ResponseEntity.ok(result);
+    }//func end
+
+
+    @GetMapping("/ticketLog")
+    public ResponseEntity<?>adminScanLog(){
+        List<Map<String, Object>> result = ticketsService.adminScanLog();
+        return ResponseEntity.ok(result);
+    }//func end
 }//class end
+

@@ -23,88 +23,72 @@ public class TicketsService {
      * 해당 rno에 이미 ticket_code가 존재하는지 확인 (중복 발급 방지)
      * QR payload 구성(이름/구역/좌석/사용여부) → QR 이미지 생성/저장 → 이미지 경로 반환
      * tickets에 (rno, ticket_code, price, valid=true) 저장
-     *
+     * <p>
      * * - @Transactional: 읽기/쓰기 포함. DB 갱신 단위 보장.
      *
      * @param rno 예매 고유번호
      * @return true: 신규 발급 성공 / false: 상태 부적합 또는 중복 존재 등으로 미발급
-     *
+     * <p>
      * <연계 컨트롤러 예시>
      * - POST /tickets/write?rno={rno}
      */
     @Transactional
     public boolean ticketWrite(int rno) {
-        //예약 정보 조회
+        //예약 정보 조회 + 상태 검증
         Map<String, Object> info = ticketsMapper.ticketPrint(rno);
-        System.out.println("rno = " + rno);
         if (info == null) return false;
 
         String status = String.valueOf(info.get("reservation_status"));
-        if (!"reserved".equalsIgnoreCase(status)){
+        if (!"reserved".equalsIgnoreCase(status)) {
             System.out.println("[ticketWrite] 상태가 reserved 아님 ->false");
             return false;
         }//func end
 
-        // 기존 QR 존재 여부 확인
+        // rno 중복 QR발급 방지
         String existingCode = ticketsMapper.findTicketdedupe(rno);
         if (existingCode != null && !existingCode.isEmpty()) {
             System.out.println("[ticketWrite] 이미 QR 존재 → false");
             return false;
         }//if end
 
-        // 가격 조회
-        Number seatPrice = (Number) info.get("seat_price");
-        int price = seatPrice != null ? seatPrice.intValue() : 0;
+        // 6자리 토큰 생성 (예: ab12f9)
+        String qrUuid = java.util.UUID.randomUUID()
+                .toString().replace("-", "")
+                .substring(0, 6);
 
-        // QR 코드용 고정 문자열
-        //java.time.ZoneId KST = java.time.ZoneId.of("Asia/Seoul");
-        //String date = java.time.LocalDate.now(KST)
-        //        .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
-        //String uuid = java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 8);
-        //String payload = String.format("%s_%s", date, uuid);
-
-        // QR 스캔시 정보 출력
-        String name = String.valueOf(info.getOrDefault("mname",""));
-        String zone = String.valueOf(info.getOrDefault("zname",""));
-        String seat = String.valueOf(info.getOrDefault("seat_no",""));
-        String validText = "사용가능";
-
-        Map<String,Object>qrPayload=new LinkedHashMap<>();
-        qrPayload.put("이름",name);
-        qrPayload.put("구역",zone);
-        qrPayload.put("좌석",seat);
-        qrPayload.put("사용여부",validText);
-
+        // QR코드 스캔 URL(도메인생기면 여기만 수정)
+        String baseUrl = "http:/localhost:8080";
+        String qrUrl = baseUrl + "/tickets/qr?qr=" + qrUuid;
 
         // QR 이미지 파일 생성 및 저장
-        String imagePath = fileService.saveQRImg(qrPayload);
+        String imagePath = fileService.saveQRImg(qrUrl);
 
         //DB저장
         TicketsDto dto = new TicketsDto();
         dto.setRno(rno);
         dto.setTicket_code(imagePath);
-        dto.setPrice(price);
         dto.setValid(true);
-
+        dto.setTicket_uuid(qrUuid);
         ticketsMapper.ticketWrite(dto);
         return true;
+
     }//func end
 
     /**
      * 회원별 QR payload(예: QR 이미지 URL/경로) 목록을 조회합니다.
-     *
+     * <p>
      * <트랜잭션>
      * - @Transactional(readOnly = true): 읽기 전용
      *
      * @param mno 회원 고유번호
      * @return 해당 회원의 티켓 payload(이미지 경로 등) 리스트
-     *
+     * <p>
      * <연계 컨트롤러 예시>
      * - GET /tickets/print?mno={mno}
      */
     @Transactional(readOnly = true)
-    public List<Map<String,Object>> findPayloads(int mno,int rno) {
-        return ticketsMapper.findPayloads(mno,rno);
+    public List<Map<String, Object>> findPayloads(int mno, int rno) {
+        return ticketsMapper.findPayloads(mno, rno);
     }//func end
 
     /**
@@ -113,14 +97,14 @@ public class TicketsService {
      * 반환값 없음(반드시 void), 파라미터 없음(필수)
      */
     //@Scheduled(cron = "0 */5 9-23 * * *",zone = "Asia/Seoul")
-    public void formerGame(){
-        try{
+    public void formerGame() {
+        try {
             int updated = formerGameCSV();
-            if(updated > 0){
-                System.out.println(" 티켓 만료 처리 완료 (valid 1 -> 0) : "+updated);
+            if (updated > 0) {
+                System.out.println(" 티켓 만료 처리 완료 (valid 1 -> 0) : " + updated);
             }//if end
         } catch (Exception e) {
-            System.out.println("티켓 만료 처리 실패"+e);
+            System.out.println("티켓 만료 처리 실패" + e);
         }//catch end
     }//func end
 
@@ -131,9 +115,9 @@ public class TicketsService {
      * @return 실제로 업데이트된 행 수
      */
     @Transactional
-    public int formerGameCSV(){
-        List<Integer>expired = fileService.getExpiredGames(); // game.csv 호출
-        if(expired.isEmpty()) return 0; // 만료된 경기가 없으면 종료
+    public int formerGameCSV() {
+        List<Integer> expired = fileService.getExpiredGames(); // game.csv 호출
+        if (expired.isEmpty()) return 0; // 만료된 경기가 없으면 종료
 
         String gnoList = expired.stream()
                 .map(String::valueOf)
@@ -141,5 +125,38 @@ public class TicketsService {
         return ticketsMapper.formerGame(gnoList);
     }//func end
 
+    /**
+     * uuid → 예매 상세(표시용) 바로 조회 (없으면 null)
+     */
+    public Map<String, Object> ticketUuidInfo(String uuid) {
+        if (uuid == null || uuid.isBlank()) return null;
+        return ticketsMapper.ticketUuidInfo(uuid);
+    }//func end
+
+    //===========================================스캐너
+    @Transactional
+    public Map<String, Object> qrScan(String uuid) {
+        Map<String, Object> ticket = ticketsMapper.qrScan(uuid);
+        if (ticket == null) {
+            return Map.of("success", false, "message", "유효하지 않은 QR 코드입니다.");
+        }
+
+        boolean valid = (Boolean) ticket.get("valid");
+        if (!valid) {
+            return Map.of("success", false, "message", "이미 사용된 티켓입니다.");
+        }
+
+        int updated = ticketsMapper.qrScanInfoUpdate(uuid);
+        if (updated == 1) {
+            return Map.of("success", true, "message", "티켓 사용 완료");
+        } else {
+            return Map.of("success", false, "message", "이미 사용된 티켓입니다.");
+        }
+    }//func end
+
+    public List<Map<String, Object>>adminScanLog(){
+        List<Map<String,Object>> result = ticketsMapper.adminScanLog();
+        return result;
+    }//func end
 
 }//class end

@@ -21,11 +21,6 @@ export default defineConfig({
         target: 'http://localhost:8080', // 이미지 파일 요청도 백엔드로
         changeOrigin: true,
       },
-      // (선택) 필요시 추가
-      '/members': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-      },
     },
   },
 })
