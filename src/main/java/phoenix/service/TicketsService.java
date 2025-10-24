@@ -126,14 +126,6 @@ public class TicketsService {
     }//func end
 
     /**
-     * uuid → rno 조회 (없으면 0)
-     */
-    public Map<String, Object> ticketUrlUuid(String uuid) {
-        if (uuid == null || uuid.isBlank()) return null;
-        return ticketsMapper.ticketUrlUuid(uuid);
-    }//func end
-
-    /**
      * uuid → 예매 상세(표시용) 바로 조회 (없으면 null)
      */
     public Map<String, Object> ticketUuidInfo(String uuid) {
@@ -143,27 +135,22 @@ public class TicketsService {
 
     //===========================================스캐너
     @Transactional
-    public Map<String, Object> qrScanAndUpdate(String ticketCode, Integer mno, Integer rno) {
-        Map<String, Object> info = ticketsMapper.qrScan(ticketCode);
-        if (info == null) {
-            return Map.of("success", false, "message", "티켓을 찾을 수 없습니다.");
+    public Map<String, Object> qrScan(String uuid) {
+        Map<String, Object> ticket = ticketsMapper.qrScan(uuid);
+        if (ticket == null) {
+            return Map.of("success", false, "message", "유효하지 않은 QR 코드입니다.");
         }
 
-        String status = (String) info.get("reservation_status");
-        Boolean valid = (Boolean) info.get("valid");
-
-        if (!"reserved".equalsIgnoreCase(status)) {
-            return Map.of("success", false, "message", "취소된 예매입니다.");
-        }
-        if (valid == null || !valid) {
+        boolean valid = (Boolean) ticket.get("valid");
+        if (!valid) {
             return Map.of("success", false, "message", "이미 사용된 티켓입니다.");
         }
 
-        int updated = ticketsMapper.qrScanInfoUpdate(ticketCode, mno, rno);
+        int updated = ticketsMapper.qrScanInfoUpdate(uuid);
         if (updated == 1) {
-            return Map.of("success", true, "message", "사용 완료");
+            return Map.of("success", true, "message", "티켓 사용 완료");
         } else {
-            return Map.of("success", false, "message", "정보 불일치 또는 이미 사용됨");
+            return Map.of("success", false, "message", "이미 사용된 티켓입니다.");
         }
     }//func end
 

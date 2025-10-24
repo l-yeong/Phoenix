@@ -60,16 +60,6 @@ public class TicketsController {
         return ResponseEntity.ok(result);
     }//func end
 
-    /**
-     * QR 링크로 진입: /tickets/qr?qr={uuid}
-     * - JSON 바로 반환 (프론트 새 QR 전용 컴포넌트가 axios로 호출)
-     */
-    @GetMapping("/qr")
-    public ResponseEntity<?> ticketUrlUuid(@RequestParam("qr") String uuid) {
-        Map<String, Object> info = ticketsService.ticketUrlUuid(uuid);
-        return ResponseEntity.ok(info);
-    }//func end
-
 
     @GetMapping("/qrInfo")
     public ResponseEntity<?> ticketUuidInfo(@RequestParam("qr") String uuid) {
@@ -82,15 +72,9 @@ public class TicketsController {
     }//func end
 
     //=====================================
-    @PostMapping("/scan")
-    public ResponseEntity<Map<String, Object>> qrScan(
-            @RequestBody Map<String, Object> payload) {
-
-        String ticketCode = (String) payload.get("ticketCode");
-        Integer mno = (Integer) payload.get("mno");
-        Integer rno = (Integer) payload.get("rno");
-
-        Map<String, Object> result = ticketsService.qrScanAndUpdate(ticketCode, mno, rno);
+    @GetMapping("/qr")
+    public ResponseEntity<?> qrScan(@RequestParam("qr")String uuid){
+        Map<String, Object> result = ticketsService.qrScan(uuid);
         return ResponseEntity.ok(result);
     }//func end
 

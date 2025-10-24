@@ -35,26 +35,20 @@ public interface TicketsMapper {
             " AND (t.valid = 1)")
     int formerGame(@Param("gnoList") String gnoList);
 
-    // uuid로 rno만 조회
-    @Select("SELECT t.rno, t.valid, r.mno, r.status AS reservation_status FROM tickets t JOIN reservations r ON r.rno = t.rno "+
-            " WHERE t.ticket_uuid = #{uuid} LIMIT 1")
-    Map<String, Object> ticketUrlUuid(@Param("uuid") String uuid);
 
-    // uuid로 바로 예매표시용 정보 조회 (reserveInfo와 동일 스키마)
+    // uuid로 바로 예매표시용 정보 조회
     @Select("SELECT m.mname AS mname, z.zname AS zname, s.seatName AS seat_no,z.price AS seat_price, t.valid AS valid " +
             " FROM tickets t JOIN reservations r ON t.rno = r.rno JOIN seats s ON r.sno = s.sno JOIN zones z ON s.zno = z.zno " +
             " JOIN members m ON r.mno = m.mno WHERE t.ticket_uuid =#{uuid} LIMIT 1;")
     Map<String, Object> ticketUuidInfo(@Param("uuid") String uuid);
 
     // QR 스캐너 조회
-    @Select("SELECT r.mno, r.rno, r.status AS reservation_status, t.ticket_code, t.valid FROM tickets t "+
-            " JOIN reservations r ON r.rno = t.rno WHERE t.ticket_code = #{ticketCode}")
-    Map<String, Object> qrScan(@Param("ticketCode") String ticketCode);
+    @Select("SELECT t.ticket_uuid, t.valid FROM tickets t WHERE ticket_uuid=#{uuid}")
+    Map<String, Object> qrScan(@Param("uuid") String uuid);
 
     // QR 소진(유효→사용됨)
-    @Update("UPDATE tickets t JOIN reservations r ON r.rno = t.rno SET t.valid = 0 WHERE t.ticket_code = #{ticketCode} "+
-            " AND t.valid = 1 AND r.mno = #{mno} AND r.rno = #{rno}")
-    int qrScanInfoUpdate(@Param("ticketCode") String ticketCode,@Param("mno") Integer mno,@Param("rno") Integer rno);
+    @Update("UPDATE tickets SET valid=0 WHERE ticket_uuid=#{uuid} and valid=1")
+    int qrScanInfoUpdate(@Param("uuid") String uuid);
 
     //관리자 페이지
     /**
