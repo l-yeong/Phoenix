@@ -57,7 +57,7 @@ export default function reservationFind( props ){
     // [3] 교환 요청 받은 목록
     const getAllRequest = async() => {
         try{
-            const response = await axios.get(`http://localhost:8080/seat/find?rno=${rno}`);
+            const response = await axios.get(`http://localhost:8080/seat/find?rno=${rno}`, {} , {withCredentials : true});
             setExchange(response.data);
             console.log(response.data);
         }catch(e){

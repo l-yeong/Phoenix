@@ -1,5 +1,6 @@
 package phoenix.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -36,7 +37,6 @@ public class ReservationExchangesController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "로그인 정보가 없습니다."));
         }
-        System.out.println("mno = " + mno);
         dto.setFrom_mno(mno);
         int result = reservationexchangesService.requestChange(dto);
         System.out.println("result = " + result);
@@ -52,6 +52,7 @@ public class ReservationExchangesController {
     @GetMapping("/find")
     public ResponseEntity<List<ReservationExchangesDto>> getAllRequest(@RequestParam int rno){
         List<ReservationExchangesDto> list = redisService.getAllRequest(rno);
+        System.out.println("list = " + list);
         return ResponseEntity.ok(list);
     }// func end
 

@@ -4,10 +4,7 @@ import lombok.RequiredArgsConstructor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.redisson.api.RLock;
-import org.redisson.api.RMap;
-import org.redisson.api.RSet;
 import org.redisson.api.RedissonClient;
-import org.redisson.client.RedisException;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -52,8 +49,8 @@ public class RedisService { // class start
             Set<Integer> seatSet = (Set<Integer>) redisTemplate.opsForHash().get(seatKey, field);
             if (seatSet == null) seatSet = new HashSet<>();
 
-            // 요청 좌석번호 추가
-            seatSet.add(dto.getToSno());
+            // 요청 예매번호 추가
+            seatSet.add(dto.getFrom_rno());
             System.out.println("seatSet = " + seatSet);
 
             // Hash에 업데이트
@@ -72,6 +69,22 @@ public class RedisService { // class start
 
             String json = new ObjectMapper().writeValueAsString(seatSet);
             System.out.println(json); // "[30004]"
+            // 요청자 기준 Key 확인
+            Object requestCheck = redisTemplate.opsForValue().get(requestKey);
+            if (requestCheck != null) {
+                System.out.println(requestKey);
+                System.out.println("✅ requestKey 저장 성공: " + requestCheck);
+            } else {
+                System.out.println("❌ requestKey 저장 실패");
+            }
+            // 응답자 기준 Hash 확인
+            Map<Object, Object> seatHashCheck = redisTemplate.opsForHash().entries(seatKey);
+            if (seatHashCheck != null && !seatHashCheck.isEmpty()) {
+                System.out.println(seatKey);
+                System.out.println("✅ seatKey Hash 저장 성공: " + seatHashCheck);
+            } else {
+                System.out.println("❌ seatKey Hash 저장 실패");
+            }
 
             return 1; // 성공
 
@@ -92,7 +105,7 @@ public class RedisService { // class start
      * @return 요청 dto , 없으면 null
      */
     public ReservationExchangesDto getRequest(int from_rno){
-        String key = "change:seat:" + from_rno;
+        String key = "change:request:" + from_rno;
         return (ReservationExchangesDto) redisTemplate.opsForValue().get(key);
     }// func end
 
@@ -104,15 +117,17 @@ public class RedisService { // class start
      */
     public List<ReservationExchangesDto> getAllRequest(int to_rno){
         String key = "change:seat:" + to_rno;
-        Set<Object> list = redisTemplate.opsForSet().members(key);
+        Map<Object, Object> list = redisTemplate.opsForHash().entries(key);
         if (list == null || list.isEmpty()) return Collections.emptyList();
         List<ReservationExchangesDto> fromList = new ArrayList<>();
-        for (Object fromRno : list){
-            ReservationExchangesDto dto = (ReservationExchangesDto) redisTemplate.opsForValue().get("change:request:"+fromRno);
+        for (Object fromRno : list.keySet()){
+            String fromRnoStr = fromRno.toString();
+            ReservationExchangesDto dto = (ReservationExchangesDto) redisTemplate.opsForValue().get("change:request:"+fromRnoStr);
             if (dto != null){
                 fromList.add(dto);
             }// if end
         }// for end
+        System.out.println("fromList = " + fromList);
         return fromList;
     }// func end
 
@@ -165,8 +180,13 @@ public class RedisService { // class start
      */
     public void saveMessage(int mno , String message){
         String key = "alarm:" + mno;
-        redisTemplate.opsForList().rightPush(key,message);
+        Long result = redisTemplate.opsForList().rightPush(key,message);
+        System.out.println("result = " + result);
+        boolean success = result != null && result > 0; // 정상 저장 여부
+        System.out.println("success = " + success);
         redisTemplate.expire(key , Duration.ofHours(24));
+        List<Object> list = redisTemplate.opsForList().range(key, 0, -1);
+        System.out.println(key + list);
     }// func end
 
     /**

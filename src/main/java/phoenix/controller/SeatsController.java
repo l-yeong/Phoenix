@@ -78,7 +78,6 @@ public class SeatsController {  // class start
     @GetMapping("/print")
     public ResponseEntity<?> seatPrint(@RequestParam int rno){
         List<SeatDto> result = sService.seatPrint(rno);
-        System.out.println("result = " + result);
         return ResponseEntity.ok(result);
     }// func end
 }   // class end

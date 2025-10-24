@@ -39,19 +39,22 @@ public class ReservationExchangesService {
         String nowTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         dto.setRequested_at(nowTime); // 요청시간 저장
         System.out.println("dto = " + dto);
-        // redis 에 저장
-        int saved = redisService.saveRequest(dto);
-        System.out.println(saved);
-        if (saved == 0 || saved == 2) return saved;
-        Executor executor = threadPoolConfing.changeExecutor();
         ReservationsDto fromDto = (ReservationsDto) reservationsService.reserveInfo(dto.getFrom_rno()).get("reservation");
         int fromSeat = fromDto.getSno();
         dto.setFromSeat(fromSeat);
+        // redis 에 저장
+        int saved = redisService.saveRequest(dto);
+        System.out.println("saved = " + saved);
+        if (saved == 0 || saved == 2) return saved;
+        Executor executor = threadPoolConfing.changeExecutor();
         // 쓰레드풀에서 후속처리
         executor.execute( () -> { // 여기에 푸시알림 보낼메시지 작성해서 웹소켓에 보내기
             HashMap<String,Object> map = (HashMap<String, Object>) reservationsService.reserveInfo(dto.getTo_rno());
-            ReservationsDto toDto = objectMapper.convertValue(map, ReservationsDto.class);
+            System.out.println("map = " + map);
+            ReservationsDto toDto = (ReservationsDto) map.get("reservation");
+            System.out.println("toDto = " + toDto);
             int mno = toDto.getMno();
+            System.out.println("mno = " + mno);
             WebSocketSession session = baseballSocketHandler.getSession(mno);
             String msg = fromSeat + "번 좌석에서 좌석 교환 요청을 보냈습니다.";
             System.out.println("msg = " + msg);
