@@ -1,5 +1,6 @@
 package phoenix.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.websocket.Session;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.concurrent.Executor;
 
 @Service
@@ -24,6 +26,7 @@ public class ReservationExchangesService {
     private final RedisService redisService;
     private final ReservationsService reservationsService;
     private final BaseballSocketHandler baseballSocketHandler;
+    private final ObjectMapper objectMapper;
 
     /**
      * 교환요청 접수
@@ -46,10 +49,12 @@ public class ReservationExchangesService {
         dto.setFromSeat(fromSeat);
         // 쓰레드풀에서 후속처리
         executor.execute( () -> { // 여기에 푸시알림 보낼메시지 작성해서 웹소켓에 보내기
-            ReservationsDto toDto = (ReservationsDto) reservationsService.reserveInfo(dto.getTo_rno());
+            HashMap<String,Object> map = (HashMap<String, Object>) reservationsService.reserveInfo(dto.getTo_rno());
+            ReservationsDto toDto = objectMapper.convertValue(map, ReservationsDto.class);
             int mno = toDto.getMno();
             WebSocketSession session = baseballSocketHandler.getSession(mno);
             String msg = fromSeat + "번 좌석에서 좌석 교환 요청을 보냈습니다.";
+            System.out.println("msg = " + msg);
             if(session != null && session.isOpen()){
                 try{
                     session.sendMessage(new TextMessage(msg));
