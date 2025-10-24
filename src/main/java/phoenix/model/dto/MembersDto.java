@@ -3,6 +3,8 @@ package phoenix.model.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
 /*
 * 회원 정보 담는 DTO 클래스
 * */
@@ -25,7 +27,6 @@ public class MembersDto {
     private String status;          // 회원상태
     private Boolean exchange;        // 교환 신청 가능
     private Boolean email_verified; // 이메일 인증 여부
-    private String refresh_token;       // JWT 리프레시 토큰
-    private String refresh_token_expire;// 리프레시 토큰 만료일
+    private LocalDateTime last_status_change; // 마지막 상태변경 날짜
 
 }//func end

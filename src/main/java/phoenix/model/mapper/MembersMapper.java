@@ -75,11 +75,18 @@ public interface MembersMapper {
     @Update("UPDATE members SET password_hash = #{newPwd} WHERE mid = #{mid}")
     int pwdUpdate(@Param("mid") String mid, @Param("newPwd") String newPwd);
 
+
     /**
-     * 회원 탈퇴
-     * */
-    @Update("UPDATE members SET status = 'withdrawn' , email = #{newEmail} WHERE mid = #{mid}")
-    int memberDelete(String mid , String newEmail );
+    * 회원 상태 변경 (탈퇴 / 복구)
+    * */
+    @Update("update members set status = #{status} , last_status_change = now() where mid = #{mid}")
+    int updateStatus(String mid , String status);
+
+    /**
+     * 회원 탈퇴 후 로그인 시 상태 업데이트
+     */
+    @Update("update members set status = 'active' where mid = #{mid} ")
+    int changeStatus(String mid);
 
     /**
      * 아이디 찾기

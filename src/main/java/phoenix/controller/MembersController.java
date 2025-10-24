@@ -20,6 +20,8 @@ import phoenix.service.MembersService;
 import phoenix.util.ApiResponseUtil;
 import phoenix.util.PasswordUtil;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -97,9 +99,14 @@ public class MembersController {
         // 상태값 검사 추가(정상(active)/휴면(dormant)/탈퇴(withdrawn) 계정 로그인 불가)
         switch (member.getStatus()){
                 case "withdrawn" -> {
+                    // ChangeStatus 페이지로 이동하도록 URL 전달
+                    String redirectUrl = String.format(
+                            "http://localhost:5173/chagestatus?mid=%s",
+                            URLEncoder.encode(member.getMid() , StandardCharsets.UTF_8)
+                    );
                     return ResponseEntity
-                            .status(HttpStatus.FORBIDDEN)
-                            .body(new ApiResponseUtil<>(false , "탈퇴한 계정입니다. 다시 가입해주세요." , null));
+                            .status(HttpStatus.LOCKED) // 423 locked : 사용자 조치 필요 상태
+                            .body(new ApiResponseUtil<>(false , "탈퇴한 계정입니다. 복구하시겠습니까?." ,redirectUrl));
                 }
                 case "dormant" -> {
                     return ResponseEntity
@@ -306,6 +313,39 @@ public class MembersController {
                 .body(new ApiResponseUtil<>(false , "비밀번호가 일치하지 않습니다." , null));
 
     } // func e
+
+    /**
+     * 회원 복구
+     *
+     */
+    @PostMapping("/changestatus")
+    public ResponseEntity<ApiResponseUtil<?>> changeStatus(@RequestBody Map<String , String> req ){
+
+        String mid = req.get("mid");
+
+        if(mid == null || mid.isBlank()){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponseUtil<>(false , "회원 ID가 필요합니다." , null));
+        }
+
+        try {
+            boolean resutl = membersService.changeStatus(mid);
+
+            if(resutl){
+                return ResponseEntity.ok(new ApiResponseUtil<>(true , "계정이 복구되었습니다. 다시 로그인해주세요." , null));
+            }else {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ApiResponseUtil<>(false , "계정 복구에 실패했습니다." , null));
+            }
+
+        }catch (IllegalStateException e){
+            // 패널티 제한
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new ApiResponseUtil<>(false , e.getMessage() , null));
+        }
+
+    } // func e
+
 
 
     /* ============================

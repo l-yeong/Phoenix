@@ -92,21 +92,37 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             );
             getRedirectStrategy().sendRedirect(request, response, redirectUrl);
         }
-        // [8] 기존 회원이면 → JWT를 프론트엔드로 전달
+        // [8] 기존 회원이면 회원 상태 확인 후 분기 처리
         else {
 
-            // JWT로 Authentication 생성 후 SecurityContext에 등록
+            MembersDto member = socialAuthService.findMemberByProvider(provider , providerId);
+
+            if( member == null ){
+                // db 동기화 오류 방지
+                getRedirectStrategy().sendRedirect(request , response ,
+                        "http://localhost:5173/social/signup");
+                return;
+            }
+
+            // 탈퇴 상태라면 복구 안내 페이지로 리다이렉트
+            if("withdrawn".equalsIgnoreCase(member.getStatus())){
+                String redirect = String.format(
+                        "http://localhost:5173/changestatus?mid=%s&provider=%s",
+                        URLEncoder.encode(member.getMid() , StandardCharsets.UTF_8),
+                        URLEncoder.encode(provider , StandardCharsets.UTF_8)
+                );
+                getRedirectStrategy().sendRedirect(request , response , redirect);
+                return;
+            }
+
+            // 정상 회원이면 JWT 발급 후 리다이렉트
             Authentication authentication1 = jwtUtil.getAuthentication(jwt);
             SecurityContextHolder.getContext().setAuthentication(authentication1);
 
-            // 회원 정보 조회
-            MembersDto member = socialAuthService.findMemberByProvider(provider , providerId);
-
-            // mid , mno 포함 리다이렉트 url 생성
             String redirectUrl = String.format(
-                    "http://localhost:5173/social/success?token=%s&mid=%s&mno=%d" ,
+                    "http://localhost:5173/social/success?token=%s&mid=%s&mno=%d",
                     URLEncoder.encode(jwt , StandardCharsets.UTF_8),
-                    URLEncoder.encode(member.getMid() , StandardCharsets.UTF_8) ,
+                    URLEncoder.encode(member.getMid() , StandardCharsets.UTF_8),
                     member.getMno()
             );
 
