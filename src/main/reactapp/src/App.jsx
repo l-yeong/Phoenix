@@ -24,6 +24,7 @@ import Mypage from "./features/members/Mypage.jsx";
 import ReservationFind from "./features/reservations/ReservationFind.jsx"
 import ChangeStatus from "./pages/ChangeStatus.jsx";
 
+import Qr from './features/tickets/Qr'
 function App() {
   return (
     <BrowserRouter>
@@ -59,6 +60,10 @@ function App() {
           <Route path="/qr" element={<TicketQRInfo />} />
           <Route path="/tickets/ticketLog" element={<TicketLog />} />
           <Route path="/tickets/QRScanner" element={<QRScanner />} />
+
+          <Route path="/tickets/qr2" element={<Qr />} />
+
+
         </Routes>
         <Footer />
       </AuthProvider>

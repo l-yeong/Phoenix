@@ -62,5 +62,7 @@ public interface TicketsMapper {
             " ORDER BY t.ticket_code DESC")
     List<Map<String, Object>> adminScanLog();
 
+    @Select("SELECT ticket_code FROM tickets WHERE valid=0 AND ticket_code IS NOT NULL LIMIT #{limit}")
+    List<String> QRImgDelete (@Param("limit")int limit);
 
 }//inter end

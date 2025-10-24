@@ -75,6 +75,37 @@ public class TicketsService {
     }//func end
 
     /**
+     * QR 이미지 정리 스케줄러
+     * - valid=0 티켓들의 ticket_code(웹 경로)만 추적해 물리 파일 삭제
+     * - DB 컬럼 값은 그대로 유지(통계/알고리즘 활용용)
+     * - 배치 크기/주기를 조절해 부담 최소화
+     */
+    @Scheduled(cron = "0 * * * * *", zone = "Asia/Seoul")
+    public void QRImgDelete() {
+        final int DeleteCount = 1000; // 하루에 최대 1000개까지 QR이미지 삭제
+        while (true) {
+            List<String> imgDelete = ticketsMapper.QRImgDelete(DeleteCount);
+            if (imgDelete == null || imgDelete.isEmpty()) break;
+
+            int deleted = 0;
+            for (String qrDelete : imgDelete) {
+                if (qrDelete == null) continue;
+                try {
+                    //QR이미지 파일만 삭제
+                    if (fileService.deleteQRImg(qrDelete)) deleted++;
+                } catch (Exception e) {
+                    System.out.println("[QR 이미지 삭제 실패] " + qrDelete + " | " + e.getMessage());
+                }//catch end
+            }//for end
+            if (deleted > 0) {
+                System.out.println("[QR 이미지 삭제 수] " + deleted);
+            }//if end
+            break;
+        }//while end
+    }//func end
+
+
+    /**
      * 회원별 QR payload(예: QR 이미지 URL/경로) 목록을 조회합니다.
      * <p>
      * <트랜잭션>
@@ -96,7 +127,7 @@ public class TicketsService {
      * 매일 9시~23시 사이 5분마다 자동 실행 (KST)
      * 반환값 없음(반드시 void), 파라미터 없음(필수)
      */
-    //@Scheduled(cron = "0 */5 9-23 * * *",zone = "Asia/Seoul")
+    @Scheduled(cron = "0 */5 9-23 * * *", zone = "Asia/Seoul")
     public void formerGame() {
         try {
             int updated = formerGameCSV();
@@ -154,8 +185,8 @@ public class TicketsService {
         }
     }//func end
 
-    public List<Map<String, Object>>adminScanLog(){
-        List<Map<String,Object>> result = ticketsMapper.adminScanLog();
+    public List<Map<String, Object>> adminScanLog() {
+        List<Map<String, Object>> result = ticketsMapper.adminScanLog();
         return result;
     }//func end
 

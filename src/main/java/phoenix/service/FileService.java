@@ -3,6 +3,7 @@ package phoenix.service;
 import com.opencsv.CSVReader;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import phoenix.model.dto.GameDto;
@@ -59,8 +60,23 @@ public class FileService {
 
         } catch (Exception e) {
             throw new RuntimeException("QR 파일 저장 실패", e);
-        }
-    }
+        }//catch end
+    }//func end
+
+
+
+    public boolean deleteQRImg(String fileImgDelete) {
+        try {
+            if ( fileImgDelete == null || !fileImgDelete.startsWith("/upload/")) return false;
+            String filePath = uploadPath + fileImgDelete.replace("/upload/", "");
+            File file = new File(filePath);
+            return file.exists() && file.delete();
+        } catch (Exception e) {
+            System.out.println("[QR 파일 삭제 실패] " + fileImgDelete + " | " + e.getMessage());
+        }//catch end
+        return false;
+    }//func end
+
 
     /**
      * 서비스 생성시 csv파일 읽어오는 기능
