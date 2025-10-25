@@ -46,30 +46,32 @@ public class ReservationExchangesService {
         int saved = redisService.saveRequest(dto);
         System.out.println("saved = " + saved);
         if (saved == 0 || saved == 2) return saved;
-        Executor executor = threadPoolConfing.changeExecutor();
-        // 쓰레드풀에서 후속처리
-        executor.execute( () -> { // 여기에 푸시알림 보낼메시지 작성해서 웹소켓에 보내기
-            HashMap<String,Object> map = (HashMap<String, Object>) reservationsService.reserveInfo(dto.getTo_rno());
-            System.out.println("map = " + map);
-            ReservationsDto toDto = (ReservationsDto) map.get("reservation");
-            System.out.println("toDto = " + toDto);
-            int mno = toDto.getMno();
-            System.out.println("mno = " + mno);
-            WebSocketSession session = baseballSocketHandler.getSession(mno);
-            String msg = fromSeat + "번 좌석에서 좌석 교환 요청을 보냈습니다.";
-            System.out.println("msg = " + msg);
-            if(session != null && session.isOpen()){
-                try{
-                    session.sendMessage(new TextMessage(msg));
-                    System.out.println("푸시알림발송 :" + msg);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }// try end
-            }else { // 응답자가 서버에 접속이 안되있으면 redis에 저장
-                redisService.saveMessage(mno,msg);
-                System.out.println("응답자 미접속 Redis에 저장"+msg);
-            }// if end
-        });
+        if (saved == 1) {
+            Executor executor = threadPoolConfing.changeExecutor();
+            // 쓰레드풀에서 후속처리
+            executor.execute(() -> { // 여기에 푸시알림 보낼메시지 작성해서 웹소켓에 보내기
+                HashMap<String, Object> map = (HashMap<String, Object>) reservationsService.reserveInfo(dto.getTo_rno());
+                System.out.println("map = " + map);
+                ReservationsDto toDto = (ReservationsDto) map.get("reservation");
+                System.out.println("toDto = " + toDto);
+                int mno = toDto.getMno();
+                System.out.println("mno = " + mno);
+                WebSocketSession session = baseballSocketHandler.getSession(mno);
+                String msg = fromSeat + "번 좌석에서 좌석 교환 요청을 보냈습니다.";
+                System.out.println("msg = " + msg);
+                if (session != null && session.isOpen()) {
+                    try {
+                        session.sendMessage(new TextMessage(msg));
+                        System.out.println("푸시알림발송 :" + msg);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }// try end
+                } else { // 응답자가 서버에 접속이 안되있으면 redis에 저장
+                    redisService.saveMessage(mno, msg);
+                    System.out.println("응답자 미접속 Redis에 저장" + msg);
+                }// if end
+            });
+        }// if end
         return saved;
     }// func end
 

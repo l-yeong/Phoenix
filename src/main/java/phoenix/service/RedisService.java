@@ -26,7 +26,9 @@ public class RedisService { // class start
 
 
 
-    public static Map< String , Object > map = new HashMap<>();
+    public static Map< String , Object > requestMap = new HashMap<>();
+    public static Map< String , List<Integer>> seatMap = new HashMap<>();
+    public static Map<String,List<String>> alarmMap = new HashMap<>();
 
 
     /**
@@ -81,9 +83,13 @@ public class RedisService { // class start
             //} else {
             //    System.out.println("❌ seatKey Hash 저장 실패");
             //}
-        map.put(requestKey,dto);
-        map.put(seatKey,dto.getFrom_rno());
-        System.out.println("요청 저장" + map);
+        if (requestMap.get(requestKey) != null || seatMap.containsValue(dto.getFrom_rno())) return 0;
+        List<Integer> list = new ArrayList<>();
+        list.add(dto.getFrom_rno());
+        requestMap.put(requestKey,dto);
+        seatMap.put(seatKey,list);
+        System.out.println("request키 저장 : " + requestMap);
+        System.out.println("seat키 저장 : " + seatMap);
 
         return 1; // 성공
 
@@ -105,7 +111,7 @@ public class RedisService { // class start
      */
     public ReservationExchangesDto getRequest(int from_rno){
         String key = "change:request:" + from_rno;
-        return (ReservationExchangesDto) map.get(key);
+        return (ReservationExchangesDto) requestMap.get(key);
     }// func end
 
     /**
@@ -115,14 +121,17 @@ public class RedisService { // class start
      * @return List<ReservationExchangesDto> 요청목록
      */
     public List<ReservationExchangesDto> getAllRequest(int to_rno){
-        System.out.println( "=====STATIC MAP=========  : " + map  );
+        System.out.println("request키 저장 : " + requestMap);
+        System.out.println("seat키 저장 : " + seatMap);
         String key = "change:seat:" + to_rno;
-        Object object = map.get(key);
-        if (object == null ) return null;
+        List<Integer> list = seatMap.get(key);
+        if (list == null ) return null;
         List<ReservationExchangesDto> dtoList = new ArrayList<>();
-        String rekey = "change:request:"+object;
-        ReservationExchangesDto list = (ReservationExchangesDto) map.get(rekey);
-        dtoList.add(list);
+        for (Integer i : list){
+            String rekey = "change:request:"+i;
+            ReservationExchangesDto reList = (ReservationExchangesDto) requestMap.get(rekey);
+            dtoList.add(reList);
+        }// for end
         System.out.println("요청목록" + dtoList);
         return dtoList;
 
@@ -148,7 +157,7 @@ public class RedisService { // class start
     public void deleteRequest(int from_rno){
         String key = "change:request:" + from_rno;
         //redisTemplate.delete(key);
-        map.remove(key);
+        requestMap.remove(key);
     }// func end
 
     /**
@@ -166,13 +175,12 @@ public class RedisService { // class start
         //    }// for end
         //    redisTemplate.delete(seatKey);
         //}//if end
-        List<Object> fromRnos = (List<Object>) map.get(seatKey);
-        if (fromRnos != null && !fromRnos.isEmpty()){
-            for (Object obj : fromRnos){
-                String rekey = "change:request:"+obj;
-                map.remove(obj);
-            }// for end
-        }// if end
+        List<Integer> fromRnos = seatMap.get(seatKey);
+        for (Integer i : fromRnos){
+            String requestKey = "change:request:"+i;
+            requestMap.remove(requestKey);
+        }// for end
+        System.out.println("fromRnos = " + fromRnos);
     }// func end
 
     /**
@@ -204,7 +212,10 @@ public class RedisService { // class start
         //redisTemplate.expire(key , Duration.ofHours(24));
         //List<Object> list = redisTemplate.opsForList().range(key, 0, -1);
         //System.out.println(key + list);
-        map.put(key , message);
+        List<String> alarmList = new ArrayList<>();
+        alarmList.add(message);
+        alarmMap.put(key , alarmList);
+        System.out.println("alarmList = " + alarmList);
     }// func end
 
     /**
@@ -213,13 +224,13 @@ public class RedisService { // class start
      * @param mno
      * @return List<String> 메시지 목록
      */
-    public String getMessage(int mno){
+    public List<String> getMessage(int mno){
         String key = "alarm:" + mno;
         //List<Object> list = redisTemplate.opsForList().range(key, 0, -1);
         //System.out.println("list 알림전체조회 = " + list);
         //List<String> messages = list.stream().map(Object::toString).collect(Collectors.toList());
         //System.out.println("messages 알림메시지들 = " + messages);
-        String messages = String.valueOf(map.get(key));
+        List<String> messages = alarmMap.get(key);
         System.out.println("messages 알림메시지들" + messages);
         return messages;
     }// func end
@@ -232,7 +243,7 @@ public class RedisService { // class start
     public void deleteMessage(int mno) {
         String key = "alarm:" + mno;
         //redisTemplate.delete(key);
-        map.remove(key);
+        alarmMap.remove(key);
     }// func end
 
 }// class end
