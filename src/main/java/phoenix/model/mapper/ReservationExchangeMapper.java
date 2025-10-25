@@ -15,5 +15,5 @@ public interface ReservationExchangeMapper {
      */
     @Insert("insert into reservation_exchanges(from_rno , to_rno , status , requested_at , responded_at)" +
             " values(#{from_rno},#{to_rno},#{status},#{requested_at},#{responded_at})")
-    public boolean changeAdd(ReservationExchangesDto dto);
+    boolean changeAdd(ReservationExchangesDto dto);
 }//inter end

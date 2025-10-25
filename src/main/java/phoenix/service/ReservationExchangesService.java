@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.Executor;
 
 @Service
@@ -85,7 +86,7 @@ public class ReservationExchangesService {
     public boolean acceptChange(int mno ,int from_rno){
         ReservationExchangesDto dto = redisService.getRequest(from_rno);
         if (dto == null) return false;
-        dto.setStatus("ACCEPTED");
+        dto.setStatus("approved");
         String nowTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         dto.setResponded_at(nowTime);
         // db에저장
@@ -98,7 +99,9 @@ public class ReservationExchangesService {
         System.out.println("ch2 = " + ch2);
         // redis 삭제
         redisService.deleteAllRequest(dto);
-        redisService.seatMap.remove(dto.getTo_rno());
+        String key = "change:seat:"+dto.getTo_rno();
+        List<Integer> list = redisService.seatMap.get(key);
+        list.removeIf(i -> i == from_rno);
         return true;
     }// func end
 
@@ -114,6 +117,9 @@ public class ReservationExchangesService {
         String nowTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         dto.setResponded_at(nowTime);
         redisService.deleteRequest(from_rno); // redis 삭제
+        String key = "change:seat:"+dto.getTo_rno();
+        List<Integer> list = redisService.seatMap.get(key);
+        list.removeIf(i -> i == from_rno);
         return true;
     }// func end
 

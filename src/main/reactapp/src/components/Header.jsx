@@ -175,6 +175,7 @@ const Header = () => {
         closeOnClick
         pauseOnHover
         theme="colored"
+        onClick={() => navigate("/mypage")}
       />
     </AppBar>
   );

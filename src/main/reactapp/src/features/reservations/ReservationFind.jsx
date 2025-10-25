@@ -58,8 +58,12 @@ export default function reservationFind( props ){
     const getAllRequest = async() => {
         try{
             const response = await axios.get(`http://localhost:8080/seat/find?rno=${rno}`, {} , {withCredentials : true});
-            setExchange(response.data);
-            console.log(response.data);
+            if(response.data == null){
+                return;
+            }else{
+                setExchange(response.data);
+                console.log(response.data);
+            }// if end            
         }catch(e){
             console.log(e);
         }// try end
@@ -142,7 +146,7 @@ export default function reservationFind( props ){
         reserveInfo();
         getAllRequest();
         seatPrint();
-    },[rno]);
+    },[rno ]);
 
     return (
         <>
@@ -223,7 +227,7 @@ export default function reservationFind( props ){
             })()
         )}
         <h2> 교환 요청 받은 목록 </h2>
-        { !exchange || exchange.length === 0 ? (
+        { exchange == null || exchange.length === 0 || exchange == [] ? (
             <p>교환 요청이 없습니다.</p>
         ) : (
             <ul>
