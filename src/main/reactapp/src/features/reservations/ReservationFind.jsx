@@ -66,10 +66,11 @@ export default function reservationFind( props ){
     }// func end
 
     // [4] 교환요청 수락
-    const acceptChange = async () => {
+    const acceptChange = async (from_rno) => {
         try{
-            const response = await axios.post(`http://localhost:8080/seat/accept?rno=${rno}`,{} , { withCredentials: true });
-            if(response.data.status == 200){
+            const response = await axios.post(`http://localhost:8080/seat/accept?rno=${from_rno}`,{} , { withCredentials: true });
+            console.log(response.data);
+            if(response.data){
                 alert('좌석이 교환되었습니다');
             }else{
                 alert('좌석교환 실패하였습니다');
@@ -80,10 +81,11 @@ export default function reservationFind( props ){
     }// func end
 
     // [5] 교환요청 거절
-    const rejectChange = async () => {
+    const rejectChange = async ( from_rno ) => {
         try{
-            const response = await axios.delete(`http://localhost:8080/seat/reject?rno=${rno}`);
-            if(response.data.status == 200){
+            const response = await axios.delete(`http://localhost:8080/seat/reject?rno=${from_rno}` , {} , { withCredentials: true });
+            console.log(response.data);
+            if(response.data){
                 alert('좌석교환을 거절하였습니다.');
             }else{
                 alert('교환 거절 실패하였습니다.');
@@ -221,15 +223,17 @@ export default function reservationFind( props ){
             })()
         )}
         <h2> 교환 요청 받은 목록 </h2>
-        {exchange.length === 0 ? (
+        { !exchange || exchange.length === 0 ? (
             <p>교환 요청이 없습니다.</p>
         ) : (
             <ul>
-                {exchange.map( (ex) => {
-                    return ( 
-                    <li key={ex.fromRno}>{ex.fromSeat} 번 좌석에서 좌석 교환 요청을 보냈습니다. 
-                    <button onClick={ (e) => {acceptChange(ex.fromRno)} }>수락</button> <button onClick={(e) => {rejectChange(ex.fromRno)} }>거절</button></li>
-                )})}
+                {exchange.map((ex) => (
+                    <li key={ex?.from_rno}>
+                    {ex?.fromSeat} 번 좌석에서 좌석 교환 요청을 보냈습니다.
+                    <button onClick={() => acceptChange(ex?.from_rno)}>수락</button>
+                    <button onClick={() => rejectChange(ex?.from_rno)}>거절</button>
+                    </li>
+                ))}
             </ul>
         )
         }

@@ -35,6 +35,7 @@ const Header = () => {
     socket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
+        console.log(event.data);
         setMessage((prev) => [...prev, data]);
         toast.info(`${typeof data === "string" ? data : data.message}`, {
           position: "bottom-right",

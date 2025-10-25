@@ -88,17 +88,17 @@ public class ReservationExchangesService {
         dto.setStatus("ACCEPTED");
         String nowTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         dto.setResponded_at(nowTime);
-        // 예매정보 조회
-        ReservationsDto toDto = (ReservationsDto) reservationsService.reserveInfo(dto.getTo_rno()); // 응답자 예매정보
-        ReservationsDto fromDto = (ReservationsDto) reservationsService.reserveInfo(from_rno); // 요청자 예매정보
         // db에저장
-        reservationExchangeMapper.changeAdd(dto);
+        boolean ch = reservationExchangeMapper.changeAdd(dto);
+        System.out.println("ch = " + ch);
         // 예매좌석 교체
-        reservationsService.reserveUpdate(fromDto.getSno(),toDto.getRno(),mno);         // 응답자 요청자 좌석으로 변경
-        reservationsService.reserveUpdate(toDto.getSno(),from_rno,dto.getFrom_mno());   // 요청자 응답자 좌석으로 변경  *** 트랜잭션해야됨
-
+        boolean ch1 = reservationsService.reserveUpdate(dto.getFromSeat(), dto.getTo_rno(), mno);         // 응답자 요청자 좌석으로 변경
+        System.out.println("ch1 = " + ch1);
+        boolean ch2 = reservationsService.reserveUpdate(dto.getToSno(),from_rno,dto.getFrom_mno());   // 요청자 응답자 좌석으로 변경  *** 트랜잭션해야됨
+        System.out.println("ch2 = " + ch2);
         // redis 삭제
         redisService.deleteAllRequest(dto);
+        redisService.seatMap.remove(dto.getTo_rno());
         return true;
     }// func end
 
