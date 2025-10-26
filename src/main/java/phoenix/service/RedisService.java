@@ -253,24 +253,29 @@ public class RedisService { // class start
 
     /**
      * 저장시간 1일지난거 자정마다 삭제
-     * map은 인덱스가 없어서 다른방법 생각해보기
      */
-//    @Scheduled(cron = "0 0 0 * * ?")
-//    public void cleanUpMap(){
-//        LocalDateTime today = LocalDateTime.now();
-//        String requestKey = "change:request:";
-//        String seatKey = "change:seat:";
-//        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-//        for (int i = 0; i < requestMap.size(); i++){
-//            ReservationExchangesDto dto = (ReservationExchangesDto) requestMap.get(i);
-//            LocalDateTime saveTime = LocalDateTime.parse(dto.getRequested_at(),formatter);
-//            if (saveTime.plusDays(1).isBefore(today)){
-//                String skey = seatKey+dto.getTo_rno();
-//                String rkey = requestKey+dto.getFrom_rno();
-//                seatMap.get(skey).remove(dto.getFrom_rno());
-//                requestMap.remove(rkey);
-//            }// if end
-//        }// for end
-//    }// func end
+    @Scheduled(cron = "0 0 0 * * ?")
+    public void cleanUpMap(){
+        LocalDateTime today = LocalDateTime.now();
+        String requestKey = "change:request:";
+        String seatKey = "change:seat:";
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        Iterator<Map.Entry<String, Object>> iterator = requestMap.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, Object> entry = iterator.next();
+            ReservationExchangesDto dto = (ReservationExchangesDto) entry.getValue();
+            LocalDateTime saveTime = LocalDateTime.parse(dto.getRequested_at(), formatter);
+
+            if (saveTime.plusDays(1).isBefore(today)) {
+                // seatMap에서 삭제
+                List<Integer> seatList = seatMap.get("change:seat:" + dto.getTo_rno());
+                if (seatList != null) {
+                    seatList.remove(Integer.valueOf(dto.getFrom_rno()));
+                }// if end
+                // requestMap에서 안전하게 삭제
+                iterator.remove();
+            }// if end
+        }// while end
+    }// func end
 
 }// class end
