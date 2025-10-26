@@ -6,10 +6,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -18,6 +22,7 @@ import phoenix.model.dto.ReservationExchangesDto;
 
 
 @Service @RequiredArgsConstructor
+@EnableScheduling
 public class RedisService { // class start
     private final RedisTemplate<String,Object> redisTemplate;
     private final RedissonClient redissonClient;
@@ -37,7 +42,7 @@ public class RedisService { // class start
      * @param dto 요청Dto
      * @return int 성공 : 1 , 요청중인사람존재 : 2 , 요청자가 다른좌석에 요청중 : 0
      */
-    public int saveRequest(ReservationExchangesDto dto) {
+    public synchronized int saveRequest(ReservationExchangesDto dto) {
         // 1️⃣ Key 정의
         String requestKey = "change:request:" + dto.getFrom_rno(); // 요청자 기준 키
         String seatKey = "change:seat:" + dto.getTo_rno();         // 응답자 기준 키 (Hash)
@@ -245,5 +250,27 @@ public class RedisService { // class start
         //redisTemplate.delete(key);
         alarmMap.remove(key);
     }// func end
+
+    /**
+     * 저장시간 1일지난거 자정마다 삭제
+     * map은 인덱스가 없어서 다른방법 생각해보기
+     */
+//    @Scheduled(cron = "0 0 0 * * ?")
+//    public void cleanUpMap(){
+//        LocalDateTime today = LocalDateTime.now();
+//        String requestKey = "change:request:";
+//        String seatKey = "change:seat:";
+//        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+//        for (int i = 0; i < requestMap.size(); i++){
+//            ReservationExchangesDto dto = (ReservationExchangesDto) requestMap.get(i);
+//            LocalDateTime saveTime = LocalDateTime.parse(dto.getRequested_at(),formatter);
+//            if (saveTime.plusDays(1).isBefore(today)){
+//                String skey = seatKey+dto.getTo_rno();
+//                String rkey = requestKey+dto.getFrom_rno();
+//                seatMap.get(skey).remove(dto.getFrom_rno());
+//                requestMap.remove(rkey);
+//            }// if end
+//        }// for end
+//    }// func end
 
 }// class end
