@@ -9,8 +9,8 @@ export default function SeniorSeatAuto() {
   const [ticketCount, setTicketCount] = useState(1);
 
   const handleAutoReserve = () => {
-    alert("시니어 자동 예매 기능은 추후 업데이트 예정입니다.");
-    // 추후 /reserve/auto API 연동
+    alert("시니어 자동 예매 기능은 곧 추가될 예정입니다.");
+    // 추후 자동예매 API 연동 (/reserve/auto)
   };
 
   return (
@@ -18,8 +18,10 @@ export default function SeniorSeatAuto() {
       <Typography variant="h5" className={styles.title}>
         🎟️ 시니어 자동 좌석 배정
       </Typography>
+
       <Typography variant="subtitle1" className={styles.subtitle}>
-        선택한 경기 : {gameId}
+        경기 ID: {gameId} <br />
+        매수를 선택하고 자동예매를 진행하세요.
       </Typography>
 
       <FormControl fullWidth style={{ marginTop: "30px" }}>
