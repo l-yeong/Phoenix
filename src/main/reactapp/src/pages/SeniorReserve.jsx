@@ -8,9 +8,24 @@ export default function SeniorReserve() {
   const navigate = useNavigate();
   const [showGuide, setShowGuide] = useState(true);
 
-  // 버튼 렌더링 후 오버레이 띄우기
+
+  // SpeechSynthesis 함수 정의
+  const speak = (text) => {
+    window.speechSynthesis.cancel(); // 중복 방지
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = "ko-KR";
+    utter.rate = 0.9;
+    utter.pitch = 1.0;
+    utter.volume = 1.0;
+    window.speechSynthesis.speak(utter);
+  };
+
+  // 버튼 렌더링 후 오버레이 + 음성 안내 실행
   useEffect(() => {
-    const timer = setTimeout(() => setShowGuide(true), 200);
+    const timer = setTimeout(() => {
+      setShowGuide(true);
+      speak("이 버튼을 눌러 예매할 경기를 선택해보세요.");
+    }, 400);
     return () => clearTimeout(timer);
   }, []);
 
@@ -43,16 +58,21 @@ export default function SeniorReserve() {
         ))}
       </Box>
 
+      {/* 튜토리얼 오버레이 + 음성 */}
       {showGuide && (
         <TutorialOverlay
           targetId="firstGameButton"
           message={
             <p style={{ textAlign: "center", lineHeight: "1.6" }}>
-              ⚾ <strong style={{ color: "#CA2E26" }}>이 버튼을 눌러</strong><br />
+              ⚾ <strong style={{ color: "#CA2E26" }}>이 버튼을 눌러</strong>
+              <br />
               예매할 경기를 선택해보세요!
             </p>
           }
-          onClose={() => setShowGuide(false)}
+          onClose={() => {
+            window.speechSynthesis.cancel(); // 음성 종료
+            setShowGuide(false);
+          }}
         />
       )}
     </Box>
