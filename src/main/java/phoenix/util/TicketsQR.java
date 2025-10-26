@@ -15,8 +15,14 @@ import java.util.Map;
 @Component
 public class TicketsQR {
 
-    // [*] qr 생성
-
+    /**
+     * QR 코드 이미지를 생성.
+     *
+     * @param url   QR 코드에 포함될 문자열 (예: URL 또는 텍스트)
+     * @param size  QR 코드 이미지의 가로·세로 크기 (픽셀 단위)
+     * @return      PNG 형식의 QR 코드 이미지 바이트 배열
+     * @throws RuntimeException QR 코드 생성 실패 시 발생
+     */
     public static byte[] TicketQrCode(String url, int size) {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         try {
@@ -33,7 +39,7 @@ public class TicketsQR {
 
         } catch (Exception e) {
             throw new RuntimeException("QR 생성 실패", e);
-        }
-    }
+        }//catch end
+    }//func end
 
 }//class end

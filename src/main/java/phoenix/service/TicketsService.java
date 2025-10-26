@@ -17,20 +17,22 @@ public class TicketsService {
     private final FileService fileService;
 
     /**
-     * 예약 rno가 'reserved' 상태일 때만 QR 문자열(이미지 경로) 생성 후 tickets 테이블에 저장합니다.
-     * rno로 예약/좌석/회원 정보 조회
-     * 예약 상태가 'reserved'인지 확인 (아니면 종료)
-     * 해당 rno에 이미 ticket_code가 존재하는지 확인 (중복 발급 방지)
-     * QR payload 구성(이름/구역/좌석/사용여부) → QR 이미지 생성/저장 → 이미지 경로 반환
-     * tickets에 (rno, ticket_code, price, valid=true) 저장
+     * 예약(rno)이 'reserved' 상태일 때만 QR 코드를 생성하여 티켓을 발급.
      * <p>
-     * * - @Transactional: 읽기/쓰기 포함. DB 갱신 단위 보장.
+     * 절차:
+     * 1. 예약/좌석/회원 정보 조회
+     * 2. 예약 상태가 'reserved'인지 검증
+     * 3. 기존 발급 티켓 여부 중복 확인
+     * 4. QR UUID 생성 → 스캔 URL 구성
+     * 5. QR 이미지 생성 및 저장 (FileService 활용)
+     * 6. DB에 신규 티켓 정보 저장
+     * @Transactional: 읽기/쓰기 포함 트랜잭션 (DB 일관성 보장)
      *
      * @param rno 예매 고유번호
-     * @return true: 신규 발급 성공 / false: 상태 부적합 또는 중복 존재 등으로 미발급
-     * <p>
+     * @return true - 발급 성공 / false - 상태 부적합 또는 중복 존재 등으로 실패
+     *
      * <연계 컨트롤러 예시>
-     * - POST /tickets/write?rno={rno}
+     * POST /tickets/write?rno={rno}
      */
     @Transactional
     public boolean ticketWrite(int rno) {
@@ -76,9 +78,9 @@ public class TicketsService {
 
     /**
      * QR 이미지 정리 스케줄러
-     * - valid=0 티켓들의 ticket_code(웹 경로)만 추적해 물리 파일 삭제
-     * - DB 컬럼 값은 그대로 유지(통계/알고리즘 활용용)
-     * - 배치 크기/주기를 조절해 부담 최소화
+     * - 유효(valid=0) 상태인 티켓의 QR 이미지 파일만 물리적으로 삭제.
+     * - DB의 ticket_code 컬럼 값은 통계/로그 분석을 위해 유지.
+     * - 하루 최대 1,000개의 파일을 삭제하며, 예외 발생 시 개별 로그 출력.
      */
 //    @Scheduled(cron = "0 * * * * *", zone = "Asia/Seoul")
     public void QRImgDelete() {
@@ -104,18 +106,19 @@ public class TicketsService {
         }//while end
     }//func end
 
-
     /**
-     * 회원별 QR payload(예: QR 이미지 URL/경로) 목록을 조회합니다.
-     * <p>
-     * <트랜잭션>
-     * - @Transactional(readOnly = true): 읽기 전용
+     * 회원별 티켓 QR payload 목록 조회
+
+     * - 발급된 티켓의 이미지 경로, 유효상태, 가격 등의 정보를 반환
+     *
+     * @Transactional(readOnly = true): 읽기 전용 트랜잭션
      *
      * @param mno 회원 고유번호
-     * @return 해당 회원의 티켓 payload(이미지 경로 등) 리스트
-     * <p>
+     * @param rno 예매 고유번호
+     * @return 티켓 payload 리스트 (이미지 경로, 발급일 등 포함)
+     *
      * <연계 컨트롤러 예시>
-     * - GET /tickets/print?mno={mno}
+     * GET /tickets/print?mno={mno}&rno={rno}
      */
     @Transactional(readOnly = true)
     public List<Map<String, Object>> findPayloads(int mno, int rno) {
@@ -123,10 +126,11 @@ public class TicketsService {
     }//func end
 
     /**
-     * <스케줄>
-     * 매일 9시~23시 사이 5분마다 자동 실행 (KST)
-     * 반환값 없음(반드시 void), 파라미터 없음(필수)
+     * 지난 경기 티켓을 자동으로 무효화(valid=0) 처리하는 스케줄러
+     * - 매일 9시~23시 사이, 5분 주기로 실행되도록 설정 가능
+     * - 내부적으로 formerGameCSV()를 호출하여 처리
      */
+
 //    @Scheduled(cron = "0 */5 9-23 * * *", zone = "Asia/Seoul")
     public void formerGame() {
         try {
@@ -140,8 +144,10 @@ public class TicketsService {
     }//func end
 
     /**
-     * CSV의 경기 날짜+시간 기준으로 지난 경기 gno를 추출하여
-     * tickets.valid=0 로 일괄 업데이트.
+     * CSV의 경기 일정 파일을 기반으로 지난 경기(gno) 목록을 추출
+     * 해당 경기의 티켓 valid 값을 0으로 일괄 업데이트
+     *
+     * @Transactional: 일괄 업데이트 트랜잭션
      *
      * @return 실제로 업데이트된 행 수
      */
@@ -157,14 +163,27 @@ public class TicketsService {
     }//func end
 
     /**
-     * uuid → 예매 상세(표시용) 바로 조회 (없으면 null)
+     * UUID를 이용해 예매 상세 정보를 즉시 조회
+     *
+     * @param uuid 티켓 UUID
+     * @return 예매 상세 정보 맵 (없을 경우 null)
      */
     public Map<String, Object> ticketUuidInfo(String uuid) {
         if (uuid == null || uuid.isBlank()) return null;
         return ticketsMapper.ticketUuidInfo(uuid);
     }//func end
 
-    //===========================================스캐너
+    /**
+     * QR 스캐너에서 티켓을 스캔했을 때 실행되는 로직
+     * <p>
+     * 절차:
+     * 1. UUID로 티켓 유효상태(valid) 조회
+     * 2. 이미 사용된 티켓(valid=false)이면 실패 응답
+     * 3. valid=1 → 0 업데이트 후 “사용 완료” 메시지 반환
+     *
+     * @param uuid 티켓 UUID
+     * @return QR 스캔 처리 결과(success/message)
+     */
     @Transactional
     public Map<String, Object> qrScan(String uuid) {
         Map<String, Object> ticket = ticketsMapper.qrScan(uuid);
@@ -185,6 +204,12 @@ public class TicketsService {
         }
     }//func end
 
+    /**
+     * 관리자 페이지용 QR 사용 로그 전체 조회
+     * - 티켓별 회원 정보(이름, 연락처), 좌석, 구역, 사용 여부 등을 포함
+     *
+     * @return 전체 티켓 로그 리스트
+     */
     public List<Map<String, Object>> adminScanLog() {
         List<Map<String, Object>> result = ticketsMapper.adminScanLog();
         return result;
