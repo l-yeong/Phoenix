@@ -169,13 +169,21 @@ const Header = () => {
 
       <ToastContainer
         position="bottom-right"
+        icon={false} // 아이콘 제거
         autoClose={4000}
         hideProgressBar={false}
         newestOnTop
         closeOnClick
         pauseOnHover
-        theme="colored"
         onClick={() => navigate("/mypage")}
+        theme="colored"
+        style={{
+          fontSize: "14px",
+          fontWeight: "bold",
+          borderRadius: "12px",
+          padding: "12px",
+          width: "300px",
+        }}
       />
     </AppBar>
   );
