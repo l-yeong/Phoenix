@@ -80,7 +80,7 @@ public class TicketsService {
      * - DB 컬럼 값은 그대로 유지(통계/알고리즘 활용용)
      * - 배치 크기/주기를 조절해 부담 최소화
      */
-    @Scheduled(cron = "0 * * * * *", zone = "Asia/Seoul")
+//    @Scheduled(cron = "0 * * * * *", zone = "Asia/Seoul")
     public void QRImgDelete() {
         final int DeleteCount = 1000; // 하루에 최대 1000개까지 QR이미지 삭제
         while (true) {
@@ -127,7 +127,7 @@ public class TicketsService {
      * 매일 9시~23시 사이 5분마다 자동 실행 (KST)
      * 반환값 없음(반드시 void), 파라미터 없음(필수)
      */
-    @Scheduled(cron = "0 */5 9-23 * * *", zone = "Asia/Seoul")
+//    @Scheduled(cron = "0 */5 9-23 * * *", zone = "Asia/Seoul")
     public void formerGame() {
         try {
             int updated = formerGameCSV();

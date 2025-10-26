@@ -56,12 +56,12 @@ function App() {
           <Route path="/zone/:zno" element={<ZoneDemoPage />} />
 
           {/* 티켓 관련 */}
-          <Route path="/tickets/:rno" element={<TicketQR />} />
           <Route path="/qr" element={<TicketQRInfo />} />
+          <Route path="/tickets/:rno" element={<TicketQR />} />
           <Route path="/tickets/ticketLog" element={<TicketLog />} />
           <Route path="/tickets/QRScanner" element={<QRScanner />} />
 
-          <Route path="/tickets/qr2" element={<Qr />} />
+          <Route path="/tickets/qr" element={<Qr />} />
 
 
         </Routes>
