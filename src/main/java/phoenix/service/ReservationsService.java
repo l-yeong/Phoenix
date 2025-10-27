@@ -77,13 +77,10 @@ public class ReservationsService {
     public boolean reserveCancle(int rno , int mno){
         boolean check1 = reservationMapper.reserveCancel(rno,mno);
         // 티켓 취소 코드
+        boolean cancelTicket = ticketsService.ticketCancel(rno);
         // 레디스 최신화 코드
         // 예매내역 dto를 가져와서 키에 해당하는 gno 대입하고 해당하는 sno 락 풀기
         return true;
-        boolean cancelReservation = reservationMapper.reserveCancel(rno,mno);
-        boolean cancelTicket = ticketsService.ticketCancel(rno);
-        return cancelReservation&&cancelTicket;
-
     }// func end
 
     /**
