@@ -148,45 +148,59 @@ const LoginForm = () => {
         </Button>
       </Box>
 
-      {/* 아이디 / 비밀번호 찾기 링크 */}
+      {/* 아이디 / 비밀번호 찾기 */}
       <Box
         sx={{
           display: "flex",
-          justifyContent: "space-between",
-          mt: 1,
-          width: "100%",
-          maxWidth: "400px",
+          justifyContent: "center",
+          alignItems: "center",
+          gap: 2,
+          mt: 2,
+          fontSize: "0.9rem",
         }}
       >
         <Link
           component="button"
           underline="hover"
-          sx={{ fontSize: "0.9rem", color: "gray" }}
+          sx={{
+            color: "gray",
+            "&:hover": { color: "#CA2E26" },
+          }}
           onClick={() => navigate("/find-id")}
         >
           아이디 찾기
         </Link>
+
+        <Typography sx={{ color: "#ccc" }}>|</Typography>
+
         <Link
           component="button"
           underline="hover"
-          sx={{ fontSize: "0.9rem", color: "gray" }}
+          sx={{
+            color: "gray",
+            "&:hover": { color: "#CA2E26" },
+          }}
           onClick={() => navigate("/find-pwd")}
         >
           비밀번호 찾기
         </Link>
       </Box>
 
-      {/* 안내문 */}
+      {/* 안내문 스타일 */}
       <Typography
         variant="body2"
         sx={{
-          mt: 4,
-          mb: 1,
-          color: "gray",
-          fontSize: "0.9rem",
+          mt: 5,
+          mb: 2,
+          color: "#666",
+          fontSize: "0.95rem",
+          fontWeight: 500,
+          letterSpacing: "0.3px",
         }}
       >
-        SNS 계정으로 빠르게 로그인하세요
+        SNS 계정으로{" "}
+        <span style={{ color: "#CA2E26", fontWeight: "bold" }}>빠르게</span>{" "}
+        로그인하세요
       </Typography>
 
       {/* 소셜 로그인 버튼 */}
@@ -194,51 +208,62 @@ const LoginForm = () => {
         sx={{
           display: "flex",
           justifyContent: "center",
-          gap: 3,
-          mt: 1,
+          gap: 4,
+          mt: 2,
         }}
       >
         {/* Google */}
         <Button
           onClick={() => handleSocialLogin("google")}
           sx={{
-            minWidth: "50px",
-            height: "50px",
+            minWidth: 64,
+            height: 64,
             borderRadius: "50%",
             bgcolor: "white",
-            boxShadow: 1,
-            "&:hover": { boxShadow: 3 },
+            boxShadow: 2,
+            "&:hover": { boxShadow: 4 },
           }}
         >
-          <img src="/구글로고.jpg" alt="Google Login" width="24" />
+          <img src="/구글로고.jpg" alt="Google Login" style={{ width: 36, height: 36 }} />
         </Button>
+
 
         {/* GitHub */}
         <Button
           onClick={() => handleSocialLogin("github")}
           sx={{
-            minWidth: "50px",
-            height: "50px",
+            width: 64,
+            height: 64,
             borderRadius: "50%",
-            bgcolor: "black",
-            "&:hover": { bgcolor: "#333" },
+            boxShadow: 2,
+            bgcolor: "white",
+            "&:hover": { boxShadow: 4 },
           }}
         >
-          <img src="/깃로고.jpg" alt="GitHub Login" width="24" />
+          <img
+            src="/깃로고.png"
+            alt="GitHub Login"
+            style={{ width: 36, height: 36 }}
+          />
         </Button>
 
         {/* Facebook */}
         <Button
           onClick={() => handleSocialLogin("facebook")}
           sx={{
-            minWidth: "50px",
-            height: "50px",
+            width: 64,
+            height: 64,
             borderRadius: "50%",
-            bgcolor: "#1877f2",
-            "&:hover": { bgcolor: "#155dc0" },
+            boxShadow: 2,
+            bgcolor: "#white",
+            "&:hover": { boxShadow: 4 },
           }}
         >
-          <img src="/페북로고.png" alt="Facebook Login" width="24" />
+          <img
+            src="/페북로고.png"
+            alt="Facebook Login"
+            style={{ width: 36, height: 36 }}
+          />
         </Button>
       </Box>
     </div>
