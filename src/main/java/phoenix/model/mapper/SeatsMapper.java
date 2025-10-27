@@ -37,7 +37,6 @@ public interface SeatsMapper {
         boolean insertReservation(ReservationsDto dto);
 
 
-
         @Select("SELECT * FROM seats WHERE zno = (SELECT s.zno FROM reservations r INNER JOIN seats s ON s.sno = r.sno WHERE r.rno = #{rno});")
         List<SeatDto> seatPrint(int rno);
 
