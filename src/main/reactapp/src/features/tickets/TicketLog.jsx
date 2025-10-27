@@ -12,43 +12,28 @@ export default function TicketLog() {
   const [valid, setValid] = useState("ALL");
   const [error, setError] = useState("");
 
-  // ✅ 진입 가드: admin 계정만 접근 허용
   useEffect(() => {
     let ignore = false;
     (async () => {
-      try {
-        // 로그인 사용자 조회 (세션/쿠키 기반이면 credentials 포함)
-        const me = await api.get("/members/info", { withCredentials: true });
-        const mid = me?.data?.mid;
-        if (!mid || mid.toLowerCase() !== "admin") {
-          alert("관리자 페이지입니다.");
-          navigate("/", { replace: true });
-          return;
-        }
-        if (!ignore) fetchData(); // 통과 시 목록 불러오기
-      } catch (e) {
-        // 로그인 안됨 또는 권한 없음
-        alert("관리자 페이지입니다.");
-        navigate("/", { replace: true });
-      }
+      await fetchData(); // ✅ 사전 admin 체크 없이 바로 요청
     })();
     return () => { ignore = true; };
-  }, [navigate]);
+  }, []);
 
   const fetchData = async () => {
     setLoading(true);
     setError("");
     try {
-      const res = await api.get("/tickets/ticketLog", { withCredentials: true });
+      // axiosInstance에 baseURL/withCredentials/Authorization 인터셉터가 있다고 가정
+      const res = await api.get("/tickets/ticketLog");
       if (res.status === 200 && Array.isArray(res.data)) {
         setRows(res.data);
       } else {
-        console.log("응답 데이터:", res.data);
         setError(`목록 조회 실패: ${res.status}`);
       }
     } catch (e) {
       const code = e?.response?.status;
-      // ✅ 서버가 401/403을 주면 즉시 차단
+      // ✅ 서버가 관리자가 아니면 401/403을 돌려줌 → 바로 차단
       if (code === 401 || code === 403) {
         alert("관리자 페이지입니다.");
         navigate("/", { replace: true });
@@ -115,14 +100,7 @@ export default function TicketLog() {
         <h2 style={{ margin: 0, flex: 1 }}>관리자 QR 사용 기록</h2>
         <button
           onClick={() => navigate("/tickets/QRScanner")}
-          style={{
-            padding: "8px 12px",
-            borderRadius: 8,
-            border: "1px solid #1976d2",
-            background: "#1976d2",
-            color: "#fff",
-            fontWeight: 600,
-          }}
+          style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #1976d2", background: "#1976d2", color: "#fff", fontWeight: 600 }}
         >
           QR 스캐너
         </button>
