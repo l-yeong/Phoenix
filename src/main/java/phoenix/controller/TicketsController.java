@@ -132,7 +132,14 @@ public class TicketsController {
      */
     @GetMapping("/ticketLog")
     public ResponseEntity<?>adminScanLog(){
-        List<Map<String, Object>> result = ticketsService.adminScanLog();
+        MembersDto loginAdmin = membersService.getLoginMember();
+        if(loginAdmin ==null){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인이 필요합니다.");
+        }//if end
+        if(!"admin".equalsIgnoreCase(loginAdmin.getMid())){ // equalsIgnoreCase = 대소문자 구분없음,ex)Admin,admin
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("관리자만 접근 가능합니다.");
+        }//func end
+        List<Map<String,Object>> result = ticketsService.adminScanLog();
         return ResponseEntity.ok(result);
     }//func end
 }//class end
