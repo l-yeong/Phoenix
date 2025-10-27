@@ -14,6 +14,6 @@ public interface ReservationExchangeMapper {
      * @return true : 성공 , false : 실패
      */
     @Insert("insert into reservation_exchanges(from_rno , to_rno , status , requested_at , responded_at)" +
-            " values(#{dto.getFrom_rno},#{dto.getTo_rno},#{dto.getStatus},#{dto.getRequested_at},#{dto.getResponded_at})")
-    public boolean changeAdd(ReservationExchangesDto dto);
+            " values(#{from_rno},#{to_rno},#{status},#{requested_at},#{responded_at})")
+    boolean changeAdd(ReservationExchangesDto dto);
 }//inter end

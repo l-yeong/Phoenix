@@ -78,7 +78,6 @@ public class ReservationsController {
         }
         int mno = loginMember.getMno();
         boolean result = reservationsService.reserveCancle(rno , mno);
-        System.out.println("result = " + result);
         return ResponseEntity.ok().body(result);
     }// func end
 
