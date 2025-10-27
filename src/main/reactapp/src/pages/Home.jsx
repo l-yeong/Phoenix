@@ -21,6 +21,10 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const logoB = () => {
+
+  }
+
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -34,6 +38,8 @@ export default function Home() {
           time: g.time,
           teamA: g.homeTeam,
           teamB: g.awayTeam,
+          logoA:`/public/${g.homeTeam}.jpg`,
+          logoB:`/public/${g.awayTeam}.jpg`,
           score: g.score,
           result: g.result,
           stadium: g.stadium || DEFAULT_STADIUM,
