@@ -146,9 +146,9 @@ export default function reservationFind( props ){
     return (
         <>
         <h2> 예매 상세내역 </h2>
-                             <div style={{ margin: "20px 0" }}>
-                                        <TicketQR />
-                              </div>
+<div style={{ margin: "20px 0", display: "flex", justifyContent: "center" }}>
+  <TicketQR />
+</div>
         {!reservation || !reservation.reservation || !reservation.game ? (
             <p> 예매 정보를 불러오는중... </p>
         ) : (
