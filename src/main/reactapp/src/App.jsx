@@ -14,6 +14,7 @@ import SeatsPolygonPage from "./features/seats/SeatsPolygonPage";
 import ZoneDemoPage from "./features/seats/ZoneDemoPage";
 import FindIdPage from "./pages/FindIdPage";
 import FindPwdPage from "./pages/FindPwdPage";
+import SeniorSeatAuto from "./pages/SeniorSeatAuto";
 
 import { AuthProvider } from "./api/loginstate.jsx";
 import Mypage from "./features/members/Mypage.jsx";
@@ -34,6 +35,7 @@ function App() {
 
           {/* 시니어 예매 */}
           <Route path="/senior-reserve" element={<SeniorReserve />} />
+          <Route path="/senior/seats" element={<SeniorSeatAuto />} />
 
           {/* 회원 관련 */}
           <Route path="/login" element={<LoginPage />} />
