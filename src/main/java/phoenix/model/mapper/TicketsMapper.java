@@ -48,6 +48,10 @@ public interface TicketsMapper {
             " WHERE r.mno = #{mno} AND t.rno = #{rno} ORDER BY t.issued_at DESC")
     List<Map<String, Object>> findPayloads(@Param("mno") int mno, @Param("rno") long rno);
 
+    // 티켓 취소
+    @Update("UPDATE tickets SET valid = 0 WHERE rno = #{rno}")
+    boolean ticketCancel(int rno);
+
     /**
      * 지난 경기 티켓 무효화 처리
      * - 유효(valid=1) 상태의 티켓을 무효(valid=0)로 변경
@@ -108,5 +112,6 @@ public interface TicketsMapper {
      */
     @Select("SELECT ticket_code FROM tickets WHERE valid=0 AND ticket_code IS NOT NULL LIMIT #{limit}")
     List<String> QRImgDelete (@Param("limit")int limit);
+
 
 }//inter end
