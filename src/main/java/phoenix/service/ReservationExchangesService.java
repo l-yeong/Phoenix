@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executor;
 
 @Service
@@ -62,7 +63,8 @@ public class ReservationExchangesService {
                 System.out.println("msg = " + msg);
                 if (session != null && session.isOpen()) {
                     try {
-                        session.sendMessage(new TextMessage(msg));
+                        String alarmMsg = objectMapper.writeValueAsString(Map.of("message",msg));
+                        session.sendMessage(new TextMessage(alarmMsg));
                         System.out.println("푸시알림발송 :" + msg);
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -134,7 +136,8 @@ public class ReservationExchangesService {
             try{
                 WebSocketSession session = baseballSocketHandler.getSession(mno);
                 if (session != null && session.isOpen()){
-                    session.sendMessage(new TextMessage(msg));
+                    String alarmMsg = objectMapper.writeValueAsString(Map.of("message",msg));
+                    session.sendMessage(new TextMessage(alarmMsg));
                     System.out.println("접속 = " + msg);
                 }else { // 요청자가 접속 안되어 있을때 redis에 메시지 저장
                     redisService.saveMessage(mno , msg);

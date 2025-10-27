@@ -40,15 +40,15 @@ create table members (
 
     -- 회원 탈퇴 날짜
     last_status_change timestamp default null
-
+    
 );
 
 -- 소셜 회원 unique 유지하면서 null 허용
 ALTER TABLE members MODIFY COLUMN mphone VARCHAR(13) NULL UNIQUE;
 
--- ---------------------- 시니어 회원 뷰 ----------------------
+-- ---------------------- 시니어 회원 뷰 ---------------------- 
 create or replace view member_view as
-select m.*,
+select m.*, 
        (timestampdiff(year, m.birthdate, curdate()) >= 65) as is_senior
 from members m;
 
@@ -282,13 +282,6 @@ select * from tickets;
 select * from reservation_exchanges;
 select * from auto_assign_log;
 DESC members;
-
-# 교환가능한 좌석정보
-select r.* from reservations r inner join seats s on r.sno = s.sno where
-  r.gno = (select gno from reservations where rno = 40001) and s.zno = (select s2.zno from reservations r2 inner join seats s2 on r2.sno = s2.sno where r2.rno = 40001)
-  and r.status = 'reserved' and r.rno != 40001;
-  select s.* from seats s inner join reservations r on s.zno = (select zno from reservations r inner join seats s on s.sno = r.sno where rno = 40004);
-  SELECT * FROM seats WHERE zno = (SELECT s.zno FROM reservations r INNER JOIN seats s ON s.sno = r.sno WHERE r.rno = 40004);
 
 # 교환가능한 좌석정보
 select r.* from reservations r inner join seats s on r.sno = s.sno where

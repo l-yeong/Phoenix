@@ -4,7 +4,8 @@ import {
   Button,
   TextField,
   Typography,
-  Link
+  Link,
+  styled 
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axiosInstance";
@@ -88,6 +89,20 @@ const LoginForm = () => {
     window.location.href = `http://localhost:8080/oauth2/authorization/${provider}`;
   };
 
+  const RedButton = styled(Button)({
+    mt: 2,
+    background: "linear-gradient(45deg, #CA2E26 30%, #FF4C4C 90%)",
+    color: "white",
+    fontWeight: "bold",
+    borderRadius: 8,
+    padding: "10px 0",
+    transition: "all 0.3s ease",
+    "&:hover": {
+      background: "linear-gradient(45deg, #b22720 30%, #ff2a2a 90%)",
+      transform: "scale(1.03)",
+    },
+  });
+
   return (
     <div
       style={{
@@ -98,148 +113,126 @@ const LoginForm = () => {
         alignItems: "center",
       }}
     >
-      {/* 제목 */}
-      <Typography
-        variant="h5"
-        sx={{ mb: 3, color: "#CA2E26", fontWeight: "bold" }}
-      >
-        🔥 Phoenix 로그인
-      </Typography>
+    
 
       {/* 로그인 폼 */}
-      <Box
-        component="form"
-        onSubmit={handleLogin}
+       <Box
         sx={{
+          width: 400,
+          margin: "auto",
+          mt: 10,
+          p: 4,
+          mb: 10,
+          borderRadius: 3,
+          boxShadow: 3,
+          bgcolor: "#fafafa",
           display: "flex",
           flexDirection: "column",
-          gap: 2,
-          width: "100%",
-          maxWidth: "400px",
+          alignItems: "center",
         }}
       >
-        <TextField
-          label="아이디"
-          fullWidth
-          value={mid}
-          onChange={(e) => setMid(e.target.value)}
-        />
-
-        <TextField
-          label="비밀번호"
-          type="password"
-          fullWidth
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-
-        <Button
-          variant="contained"
-          type="submit"
-          sx={{
-            mt: 1,
-            bgcolor: "#CA2E26",
-            color: "white",
-            fontWeight: "bold",
-            "&:hover": { bgcolor: "#b22720" },
-          }}
+        <Typography
+          variant="h5"
+          sx={{ mb: 3, fontWeight: "bold", color: "#CA2E26", textAlign: "center" }}
         >
-          로그인
-        </Button>
-      </Box>
+          🔥 Phoenix 로그인
+        </Typography>
 
-      {/* 아이디 / 비밀번호 찾기 링크 */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          mt: 1,
-          width: "100%",
-          maxWidth: "400px",
-        }}
-      >
-        <Link
-          component="button"
-          underline="hover"
-          sx={{ fontSize: "0.9rem", color: "gray" }}
-          onClick={() => navigate("/find-id")}
-        >
-          아이디 찾기
-        </Link>
-        <Link
-          component="button"
-          underline="hover"
-          sx={{ fontSize: "0.9rem", color: "gray" }}
-          onClick={() => navigate("/find-pwd")}
-        >
-          비밀번호 찾기
-        </Link>
-      </Box>
+        <Box component="form" onSubmit={handleLogin} sx={{ width: "100%" }}>
+          <TextField
+            label="아이디"
+            fullWidth
+            value={mid}
+            onChange={(e) => setMid(e.target.value)}
+            sx={{
+              mb: 2,
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 2,
+                "&.Mui-focused fieldset": { borderColor: "#CA2E26" },
+              },
+            }}
+          />
+          <TextField
+            label="비밀번호"
+            type="password"
+            fullWidth
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            sx={{
+              mb: 2,
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 2,
+                "&.Mui-focused fieldset": { borderColor: "#CA2E26" },
+              },
+            }}
+          />
+          <RedButton fullWidth type="submit">
+            로그인
+          </RedButton>
+        </Box>
 
-      {/* 안내문 */}
-      <Typography
-        variant="body2"
-        sx={{
-          mt: 4,
-          mb: 1,
-          color: "gray",
-          fontSize: "0.9rem",
-        }}
-      >
-        SNS 계정으로 빠르게 로그인하세요
-      </Typography>
+        <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2, width: "100%" }}>
+          <Link
+            component="button"
+            underline="hover"
+            sx={{ fontSize: "0.9rem", color: "gray" }}
+            onClick={() => navigate("/find-id")}
+          >
+            아이디 찾기
+          </Link>
+          <Link
+            component="button"
+            underline="hover"
+            sx={{ fontSize: "0.9rem", color: "gray" }}
+            onClick={() => navigate("/find-pwd")}
+          >
+            비밀번호 찾기
+          </Link>
+        </Box>
 
-      {/* 소셜 로그인 버튼 */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          gap: 3,
-          mt: 1,
-        }}
-      >
-        {/* Google */}
-        <Button
-          onClick={() => handleSocialLogin("google")}
-          sx={{
-            minWidth: "50px",
-            height: "50px",
-            borderRadius: "50%",
-            bgcolor: "white",
-            boxShadow: 1,
-            "&:hover": { boxShadow: 3 },
-          }}
-        >
-          <img src="/구글로고.jpg" alt="Google Login" width="24" />
-        </Button>
+        <Typography variant="body2" sx={{ mt: 4, mb: 1, color: "gray", fontSize: "0.9rem" }}>
+          SNS 계정으로 빠르게 로그인하세요
+        </Typography>
 
-        {/* GitHub */}
-        <Button
-          onClick={() => handleSocialLogin("github")}
-          sx={{
-            minWidth: "50px",
-            height: "50px",
-            borderRadius: "50%",
-            bgcolor: "black",
-            "&:hover": { bgcolor: "#333" },
-          }}
-        >
-          <img src="/깃로고.jpg" alt="GitHub Login" width="24" />
-        </Button>
-
-        {/* Facebook */}
-        <Button
-          onClick={() => handleSocialLogin("facebook")}
-          sx={{
-            minWidth: "50px",
-            height: "50px",
-            borderRadius: "50%",
-            bgcolor: "#1877f2",
-            "&:hover": { bgcolor: "#155dc0" },
-          }}
-        >
-          <img src="/페북로고.png" alt="Facebook Login" width="24" />
-        </Button>
+        <Box sx={{ display: "flex", justifyContent: "center", gap: 3, mt: 1 }}>
+          <Button
+            onClick={() => handleSocialLogin("google")}
+            sx={{
+              minWidth: "50px",
+              height: "50px",
+              borderRadius: "50%",
+              bgcolor: "white",
+              boxShadow: 1,
+              "&:hover": { boxShadow: 3 },
+            }}
+          >
+            <img src="/구글로고.jpg" alt="Google Login" width="24" />
+          </Button>
+          <Button
+            onClick={() => handleSocialLogin("github")}
+            sx={{
+              minWidth: "50px",
+              height: "50px",
+              borderRadius: "50%",
+              bgcolor: "black",
+              "&:hover": { bgcolor: "#333" },
+            }}
+          >
+            <img src="/깃로고.jpg" alt="GitHub Login" width="24" />
+          </Button>
+          <Button
+            onClick={() => handleSocialLogin("facebook")}
+            sx={{
+              minWidth: "50px",
+              height: "50px",
+              borderRadius: "50%",
+              bgcolor: "#1877f2",
+              "&:hover": { bgcolor: "#155dc0" },
+            }}
+          >
+            <img src="/페북로고.png" alt="Facebook Login" width="24" />
+          </Button>
+        </Box>
       </Box>
     </div>
   );
