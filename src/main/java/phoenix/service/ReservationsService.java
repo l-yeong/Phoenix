@@ -16,6 +16,7 @@ import java.util.Map;
 public class ReservationsService {
     private final ReservationMapper reservationMapper;
     private final FileService fileService;
+    private final TicketsService ticketsService;
 
     /**
      * 예매내역조회
@@ -72,7 +73,10 @@ public class ReservationsService {
      * @return boolean
      */
     public boolean reserveCancle(int rno , int mno){
-        return reservationMapper.reserveCancel(rno, mno);
+        boolean cancelReservation = reservationMapper.reserveCancel(rno,mno);
+        boolean cancelTicket = ticketsService.ticketCancel(rno);
+        return cancelReservation&&cancelTicket;
+
     }// func end
 
     /**
