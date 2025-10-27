@@ -38,11 +38,11 @@ public class TicketsController {
      *
      * POST /tickets/write?rno=40001
      */
-    @PostMapping("/write")
-    public ResponseEntity<Boolean> ticketWrite(@RequestParam int rno) {
-        boolean result = ticketsService.ticketWrite(rno);
-        return ResponseEntity.ok(result);
-    }//func end
+    //@PostMapping("/write")
+    //public ResponseEntity<Boolean> ticketWrite(@RequestParam int rno) {
+    //    boolean result = ticketsService.ticketWrite(rno);
+    //    return ResponseEntity.ok(result);
+    //}//func end
 
     /**
      * 회원별 티켓 payload(QR 이미지 경로) 조회
