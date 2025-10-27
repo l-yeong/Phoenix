@@ -58,7 +58,8 @@ export default function reservationFind( props ){
             console.log(response.data);
             if (response.data) {
                 alert('예매를 취소 하였습니다');
-                getAllRequest();
+                await getAllRequest();
+                await reserveInfo();
             } else {
                 alert('예매 취소를 실패하였습니다');
             }
@@ -89,7 +90,8 @@ export default function reservationFind( props ){
             console.log(response.data);
             if(response.data){
                 alert('좌석이 교환되었습니다');
-                getAllRequest();
+                await getAllRequest();
+                await reserveInfo();
             }else{
                 alert('좌석교환 실패하였습니다');
             }// if end
@@ -105,7 +107,8 @@ export default function reservationFind( props ){
             console.log(response.data);
             if(response.data){
                 alert('좌석교환을 거절하였습니다.');
-                getAllRequest();
+                await getAllRequest();
+                await reserveInfo();
             }else{
                 alert('교환 거절 실패하였습니다.');
             }// if end
