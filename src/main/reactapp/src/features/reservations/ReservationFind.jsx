@@ -237,11 +237,17 @@ export default function reservationFind( props ){
                             <InfoItem label="경기날짜" value={reservation.game?.date ?? "-"} />
                             <InfoItem label="경기시간" value={reservation.game?.time ?? "-"} />
                             <InfoItem
-                                label="취소가능여부"
+                                label="취소 상태"
                                 value={
-                                <Typography level="body-md" fontWeight="lg" color={cancel ? "success" : "danger"}>
-                                    {cancel ? "취소 가능" : "취소 불가"}
-                                </Typography>
+                                    reservation.reservation.status === "cancelled" ? (
+                                    <Typography level="body-md" fontWeight="lg" color="neutral">
+                                        취소 완료
+                                    </Typography>
+                                    ) : (
+                                    <Typography level="body-md" fontWeight="lg" color={cancel ? "success" : "danger"}>
+                                        {cancel ? "취소 가능" : "취소 불가"}
+                                    </Typography>
+                                    )
                                 }
                             />
                             </Stack>
@@ -254,7 +260,7 @@ export default function reservationFind( props ){
                             variant="solid"
                             color="primary"
                             size="lg"
-                            disabled={!cancel}
+                            disabled={!cancel || reservation.reservation.status === "cancelled"}
                             onClick={openModalEvent}
                             sx={{
                                 fontSize: "1rem",
