@@ -1,6 +1,7 @@
 package phoenix.controller;
 
 import com.beust.ah.A;
+import jakarta.annotation.security.PermitAll;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -96,12 +97,36 @@ public class MembersController {
                     .body(new ApiResponseUtil<>(false, "아이디 또는 비밀번호가 일치하지 않습니다.", null));
         }
 
+        // 2. Authentication 객체 생성
+        UsernamePasswordAuthenticationToken authenticationToken =
+                new UsernamePasswordAuthenticationToken(member, null,
+                        List.of(new SimpleGrantedAuthority("ROLE_USER")));
+
+        // 3. SecurityContext 에 등록
+        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+
+        // 4. 세션에 인증정보 저장 (Spring Security가 세션기반 인증 유지 가능하게)
+        HttpSession session = httpRequest.getSession(true);
+        session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
+
         // 상태값 검사 추가(정상(active)/휴면(dormant)/탈퇴(withdrawn) 계정 로그인 불가)
         switch (member.getStatus()){
                 case "withdrawn" -> {
+
+                    // 2. Authentication 객체 생성
+                    UsernamePasswordAuthenticationToken auth =
+                            new UsernamePasswordAuthenticationToken(member, null,
+                                    List.of(new SimpleGrantedAuthority("ROLE_WITHDRAWN")));
+
+                    // 3. SecurityContext 에 등록
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+
+                    // 4. 세션에 인증정보 저장 (Spring Security가 세션기반 인증 유지 가능하게)
+                    HttpSession session1 = httpRequest.getSession(true);
+                    session1.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
                     // ChangeStatus 페이지로 이동하도록 URL 전달
                     String redirectUrl = String.format(
-                            "http://localhost:5173/chagestatus?mid=%s",
+                            "http://localhost:5173/changestatus?mid=%s",
                             URLEncoder.encode(member.getMid() , StandardCharsets.UTF_8)
                     );
                     return ResponseEntity
@@ -124,30 +149,25 @@ public class MembersController {
 
         } // switch e
 
-        // 2. Authentication 객체 생성
-        UsernamePasswordAuthenticationToken authenticationToken =
-                new UsernamePasswordAuthenticationToken(member, null,
-                        List.of(new SimpleGrantedAuthority("ROLE_USER")));
-
-        // 3. SecurityContext 에 등록
-        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-
-        // 4. 세션에 인증정보 저장 (Spring Security가 세션기반 인증 유지 가능하게)
-        HttpSession session = httpRequest.getSession(true);
-        session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
 
         // 5. JWT 발급은 유지 — Redis 통계나 추후 로그아웃용으로만
         String token = jwtUtil.generateToken(member);
+        String role = "ROLE_USER";
+        if ("withdrawn".equalsIgnoreCase(member.getStatus())) {
+            role = "ROLE_WITHDRAWN";
+        }
 
         Map<String, Object> data = Map.of(
-                    "member" , member
+                    "member" , member,
+                    "role" , role
                 // 필요 시 accessToken도 함께 내려보낼 수 있음 (디버깅용 or 참고용)
         );
 
         return ResponseEntity
-                .ok(new ApiResponseUtil<>(true, "로그인 성공 (세션 저장 완료)", member));
+                .ok(new ApiResponseUtil<>(true, "로그인 성공 (세션 저장 완료)", data));
 
     } // func e
+
 
     /**
      * 현재 로그인한 회원 정보 반환 (세션 기반)
