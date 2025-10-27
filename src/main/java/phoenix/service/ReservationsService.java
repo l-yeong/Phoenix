@@ -17,6 +17,7 @@ import java.util.Map;
 public class ReservationsService {
     private final ReservationMapper reservationMapper;
     private final FileService fileService;
+    private final TicketsService ticketsService;
 
     /**
      * 예매내역조회
@@ -79,6 +80,10 @@ public class ReservationsService {
         // 레디스 최신화 코드
         // 예매내역 dto를 가져와서 키에 해당하는 gno 대입하고 해당하는 sno 락 풀기
         return true;
+        boolean cancelReservation = reservationMapper.reserveCancel(rno,mno);
+        boolean cancelTicket = ticketsService.ticketCancel(rno);
+        return cancelReservation&&cancelTicket;
+
     }// func end
 
     /**

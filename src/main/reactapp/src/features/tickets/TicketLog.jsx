@@ -1,10 +1,10 @@
 // src/features/admin/TicketLog.jsx
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";          // ★ 추가
+import { useNavigate } from "react-router-dom";
 import api from "../../api/axiosInstance";
 
 export default function TicketLog() {
-  const navigate = useNavigate();                        // ★ 추가
+  const navigate = useNavigate();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [q, setQ] = useState("");
@@ -12,24 +12,53 @@ export default function TicketLog() {
   const [valid, setValid] = useState("ALL");
   const [error, setError] = useState("");
 
+  // ✅ 진입 가드: admin 계정만 접근 허용
+  useEffect(() => {
+    let ignore = false;
+    (async () => {
+      try {
+        // 로그인 사용자 조회 (세션/쿠키 기반이면 credentials 포함)
+        const me = await api.get("/members/info", { withCredentials: true });
+        const mid = me?.data?.mid;
+        if (!mid || mid.toLowerCase() !== "admin") {
+          alert("관리자 페이지입니다.");
+          navigate("/", { replace: true });
+          return;
+        }
+        if (!ignore) fetchData(); // 통과 시 목록 불러오기
+      } catch (e) {
+        // 로그인 안됨 또는 권한 없음
+        alert("관리자 페이지입니다.");
+        navigate("/", { replace: true });
+      }
+    })();
+    return () => { ignore = true; };
+  }, [navigate]);
+
   const fetchData = async () => {
     setLoading(true);
     setError("");
     try {
-      const res = await api.get("/tickets/ticketLog");
-      if (res.status === 200 && Array.isArray(res.data)) setRows(res.data);
-      else {
+      const res = await api.get("/tickets/ticketLog", { withCredentials: true });
+      if (res.status === 200 && Array.isArray(res.data)) {
+        setRows(res.data);
+      } else {
         console.log("응답 데이터:", res.data);
         setError(`목록 조회 실패: ${res.status}`);
       }
     } catch (e) {
+      const code = e?.response?.status;
+      // ✅ 서버가 401/403을 주면 즉시 차단
+      if (code === 401 || code === 403) {
+        alert("관리자 페이지입니다.");
+        navigate("/", { replace: true });
+        return;
+      }
       setError(e?.message || "네트워크 오류");
     } finally {
       setLoading(false);
     }
   };
-
-  useEffect(() => { fetchData(); }, []);
 
   const filtered = useMemo(() => {
     return rows
@@ -84,8 +113,6 @@ export default function TicketLog() {
     <div style={{ maxWidth: 1100, margin: "24px auto", padding: 16 }}>
       <div style={{ display: "flex", alignItems: "center", marginBottom: 12, gap: 8 }}>
         <h2 style={{ margin: 0, flex: 1 }}>관리자 QR 사용 기록</h2>
-
-        {/* ★ QR 스캐너 이동 버튼 */}
         <button
           onClick={() => navigate("/tickets/QRScanner")}
           style={{
