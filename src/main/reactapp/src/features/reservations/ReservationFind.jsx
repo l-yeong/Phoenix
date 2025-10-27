@@ -162,14 +162,19 @@ export default function reservationFind( props ){
         seatPrint();
     },[rno]);
 
-    // [*]
+    // [*] 예매정보 출력 반복코드 
     function InfoItem({ label, value }) {
         return (
-            <Box display="flex" justifyContent="space-between" alignItems="center">
-            <Typography level="body-sm" color="neutral">
+            <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+            sx={{ py: 0.8 }}
+            >
+            <Typography level="body-md" color="neutral">
                 {label}
             </Typography>
-            <Typography level="body-sm" fontWeight="md">
+            <Typography level="body-md" fontWeight="md">
                 {value}
             </Typography>
             </Box>
@@ -178,43 +183,51 @@ export default function reservationFind( props ){
 
     return (
         <>
-        <h2 style={{marginLeft: "12px" , paddingLeft: "24px"}}> 예매 상세내역 </h2>
-        <h2> 예매 상세내역 </h2>
-                             <div style={{ margin: "20px 0" }}>
-                                        <TicketQR />
-                              </div>
-        {!reservation || !reservation.reservation || !reservation.game ? (
-            <p> 예매 정보를 불러오는중... </p>
-        ) : (
-            (() => {
-            // 렌더링 시점에 계산
-            const now = new Date();
-            const gameDate = new Date(`${reservation.game.date}T${reservation.game.time}`);
-            const cancel = now < gameDate;
+        <div
+            style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center", // 가로 가운데
+                justifyContent: "center", // 세로 가운데 (필요 시)
+                width: "100%",
+                minHeight: "100vh", // 세로 중앙 정렬 원하면 추가
+                backgroundColor: "#f9f9f9", // 배경색은 선택사항
+            }}
+            >
+            <div style={{ margin: "20px 0" }}>
+                <TicketQR />
+            </div>
 
-            return (
-                <div>
+            {!reservation || !reservation.reservation || !reservation.game ? (
+                <p>예매 정보를 불러오는 중...</p>
+            ) : (
+                (() => {
+                const now = new Date();
+                const gameDate = new Date(`${reservation.game.date}T${reservation.game.time}`);
+                const cancel = now < gameDate;
 
-                     <Card
+                return (
+                    <div>
+                    <Card
                         variant="outlined"
                         sx={{
-                            width: 600,             // 🔹 카드 너비 크게 (기존 400 → 600)
-                            height: "auto",         // 🔹 높이는 내용에 따라 자동
-                            ml: 4,                  // 🔹 왼쪽 여백 (margin-left)
-                            mt: 3,                  // 🔹 위쪽 여백
-                            p: 3,                   // 🔹 안쪽 여백 넉넉하게
+                            width: 1280,
+                            height: "auto",
+                            mt: 3,
+                            p: 4, // 여백 조금 더
                             borderRadius: "lg",
                             boxShadow: "sm",
                             bgcolor: "background.body",
                         }}
                         >
-                        <Typography level="title-lg" textAlign="center" mb={1}>
+                        <Typography level="h4" textAlign="center" mb={2} fontWeight="bold">
                             예매 정보
                         </Typography>
+
                         <Divider inset="none" />
 
                         <CardContent>
-                            <Stack spacing={1.2} mt={1}>
+                            <Stack spacing={2} mt={2}>
                             <InfoItem label="예매번호" value={reservation.reservation?.rno ?? "-"} />
                             <InfoItem label="좌석번호" value={reservation.reservation?.sno ?? "-"} />
                             <InfoItem label="홈팀" value={reservation.game?.homeTeam ?? "-"} />
@@ -226,11 +239,7 @@ export default function reservationFind( props ){
                             <InfoItem
                                 label="취소가능여부"
                                 value={
-                                <Typography
-                                    level="body-sm"
-                                    fontWeight="lg"
-                                    color={cancel ? "success" : "danger"}
-                                >
+                                <Typography level="body-md" fontWeight="lg" color={cancel ? "success" : "danger"}>
                                     {cancel ? "취소 가능" : "취소 불가"}
                                 </Typography>
                                 }
@@ -240,87 +249,95 @@ export default function reservationFind( props ){
 
                         <Divider inset="none" />
 
-                        <CardActions sx={{ justifyContent: "flex-end", pt: 1 }}>
+                        <CardActions sx={{ justifyContent: "flex-end", pt: 2, gap: 2 }}>
                             <Button
-                            variant="outlined"
+                            variant="solid"
                             color="primary"
+                            size="lg"
                             disabled={!cancel}
                             onClick={openModalEvent}
+                            sx={{
+                                fontSize: "1rem",
+                                px: 3,
+                                py: 1.2,
+                                borderRadius: "md",
+                            }}
                             >
                             좌석교환
                             </Button>
                             <Button
-                            variant="outlined"
+                            variant="solid"
                             color="danger"
+                            size="lg"
                             disabled={!cancel || reservation.reservation.status === "cancelled"}
                             onClick={reserveCancle}
+                            sx={{
+                                fontSize: "1rem",
+                                px: 3,
+                                py: 1.2,
+                                borderRadius: "md",
+                            }}
                             >
                             예매취소
                             </Button>
                         </CardActions>
                         </Card>
+
+                    {/* 모달 */}
                     <Modal
                         aria-labelledby="modal-title"
                         aria-describedby="modal-desc"
                         open={open}
                         onClose={() => setOpen(false)}
                         sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
-                        >
+                    >
                         <Sheet
-                            variant="soft"
-                            color="neutral"
-                            sx={{
+                        variant="soft"
+                        color="neutral"
+                        sx={{
                             width: 520,
                             borderRadius: "lg",
                             p: 4,
                             boxShadow: "xl",
                             bgcolor: "background.surface",
                             textAlign: "center",
-                            }}
+                        }}
                         >
-                            <ModalClose variant="plain" sx={{ m: 1 }} />
+                        <ModalClose variant="plain" sx={{ m: 1 }} />
 
-                            <Typography
-                            id="modal-title"
-                            level="h4"
-                            sx={{ fontWeight: "lg", mb: 2 }}
-                            >
+                        <Typography id="modal-title" level="h4" sx={{ fontWeight: "lg", mb: 2 }}>
                             🎟️ 좌석 교환
-                            </Typography>
+                        </Typography>
 
-                            <Typography
-                            id="modal-desc"
-                            textColor="text.tertiary"
-                            sx={{ mb: 3 }}
-                            >
+                        <Typography id="modal-desc" textColor="text.tertiary" sx={{ mb: 3 }}>
                             교환 가능한 좌석을 선택해주세요.
-                            </Typography>
+                        </Typography>
 
-                            <Box
+                        <Box
                             sx={{
-                                display: "grid",
-                                gridTemplateColumns: "repeat(5, 1fr)", // 한 줄에 5개씩
-                                gap: 1.5,
-                                justifyItems: "center",
-                                mb: 3,
+                            display: "grid",
+                            gridTemplateColumns: "repeat(5, 1fr)",
+                            gap: 1.5,
+                            justifyItems: "center",
+                            mb: 3,
                             }}
                             className="seat-grid"
-                            >
+                        >
                             {seatList.map((s) => {
-                                const seatInfo = changeSeat.find((cs) => cs.sno === s.sno);
-                                const to_rno = seatInfo ? seatInfo.rno : undefined;
-                                const isAvailable = changeSeat.some((cs) => cs.sno === s.sno);
+                            const seatInfo = changeSeat.find((cs) => cs.sno === s.sno);
+                            const to_rno = seatInfo ? seatInfo.rno : undefined;
+                            const isAvailable = changeSeat.some((cs) => cs.sno === s.sno);
 
-                                return (
+                            return (
                                 <Button
-                                    key={s.sno}
-                                    onClick={() => saveRequest(s.sno,to_rno)}
-                                    disabled={!isAvailable}
-                                    variant={isAvailable ? "soft" : "outlined"}
-                                    color={isAvailable ? "success" : "neutral"}
-                                    sx={{
-                                    width: "100%",       // 🔹 셀 너비에 맞춤
-                                    maxWidth: 90,        // 최대 폭 제한
+                                key={s.sno}
+                                onClick={() => saveRequest(s.sno, to_rno)}
+                                disabled={!isAvailable}
+                                variant={isAvailable ? "soft" : "outlined"}
+                                color={isAvailable ? "success" : "neutral"}
+                                sx={{
+                                    width: "100%",
+                                    maxWidth: 90,
                                     height: 50,
                                     fontWeight: "md",
                                     borderRadius: "md",
@@ -328,109 +345,96 @@ export default function reservationFind( props ){
                                     opacity: isAvailable ? 1 : 0.5,
                                     transition: "all 0.2s ease",
                                     "&:hover": {
-                                        transform: isAvailable ? "scale(1.05)" : "none",
+                                    transform: isAvailable ? "scale(1.05)" : "none",
                                     },
-                                    }}
+                                }}
                                 >
-                                    {s.seatName}
+                                {s.seatName}
                                 </Button>
-                                );
+                            );
                             })}
-                            </Box>
+                        </Box>
 
-                            <Button
+                        <Button
                             fullWidth
                             variant="soft"
                             color="neutral"
                             onClick={() => setOpen(false)}
                             sx={{ mt: 1 }}
-                            >
+                        >
                             닫기
-                            </Button>
+                        </Button>
                         </Sheet>
-                        </Modal>
-                </div>
-            );
-            })()
-        )}
-        <h2 style={{marginLeft: "12px" , paddingLeft: "24px"}}> 교환 요청 받은 목록 </h2>
-        <Card
-            variant="outlined"
-            sx={{
-                width: 600,
-                mt: 2,
-                ml: 4,
-                p: 2,
-                mb: 6,
-                borderRadius: "lg",
-                boxShadow: "sm",
-            }}
-            >
-            <CardContent>
-                <Typography level="title-md" mb={1}>
-                좌석 교환 요청
-                </Typography>
-                <Divider inset="none" sx={{ mb: 1 }} />
+                    </Modal>
+                    </div>
+                );
+                })()
+            )}
 
-                {isEmpty ? (
-                <Typography
-                    level="body-sm"
-                    color="neutral"
-                    sx={{ ml: 2, pl: 2, py: 1 }}
+            <Card
+                variant="outlined"
+                sx={{
+                    width: 1280,
+                    mt: 2,
+                    mb: 6,
+                    p: 2.5,
+                    borderRadius: "lg",
+                    boxShadow: "sm",
+                }}
                 >
-                    교환 요청이 없습니다.
-                </Typography>
-                ) : (
-                <List
-                    variant="outlined"
-                    sx={{
-                    border: "none",
-                    pl: 2,
-                    ml: 1,
-                    gap: 1,
-                    }}
-                >
-                    {exchange.map((ex) => (
-                    <ListItem
-                        key={ex?.from_rno}
-                        sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        bgcolor: "background.level1",
-                        borderRadius: "md",
-                        p: 1.2,
-                        }}
-                    >
-                        <Typography level="body-sm">
-                        <strong>{ex?.fromSeat}</strong> 번 좌석에서 교환 요청을 보냈습니다.
-                        </Typography>
+                <CardContent>
+                    <Typography level="title-lg" mb={1}>
+                    좌석 교환 요청
+                    </Typography>
+                    <Divider inset="none" sx={{ mb: 1 }} />
 
-                        <Box display="flex" gap={1}>
-                        <Button
-                            size="sm"
-                            variant="outlined"
-                            color="success"
-                            onClick={() => acceptChange(ex?.from_rno)}
+                    {isEmpty ? (
+                    <Typography level="body-md" color="neutral" sx={{ py: 1, fontSize: "16px" }}>
+                        교환 요청이 없습니다.
+                    </Typography>
+                    ) : (
+                    <List variant="outlined" sx={{ border: "none", gap: 1 }}>
+                        {exchange.map((ex) => (
+                        <ListItem
+                            key={ex?.from_rno}
+                            sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            bgcolor: "background.level1",
+                            borderRadius: "md",
+                            p: 1.5,
+                            }}
                         >
-                            수락
-                        </Button>
-                        <Button
-                            size="sm"
-                            variant="outlined"
-                            color="danger"
-                            onClick={() => rejectChange(ex?.from_rno)}
-                        >
-                            거절
-                        </Button>
-                        </Box>
-                    </ListItem>
-                    ))}
-                </List>
-                )}
-            </CardContent>
-            </Card>
+                            <Typography level="body-md" sx={{ fontSize: "15px" }}>
+                            <strong>{ex?.fromSeat}</strong> 번 좌석에서 교환 요청을 보냈습니다.
+                            </Typography>
 
+                            <Box display="flex" gap={1.5}>
+                            <Button
+                                size="md"
+                                variant="outlined"
+                                color="success"
+                                onClick={() => acceptChange(ex?.from_rno)}
+                            >
+                                수락
+                            </Button>
+                            <Button
+                                size="md"
+                                variant="outlined"
+                                color="danger"
+                                onClick={() => rejectChange(ex?.from_rno)}
+                            >
+                                거절
+                            </Button>
+                            </Box>
+                        </ListItem>
+                        ))}
+                    </List>
+                    )}
+                </CardContent>
+                </Card>
+            </div>
         </>
     )
 }// func end
