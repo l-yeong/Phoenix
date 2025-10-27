@@ -40,7 +40,7 @@ export default function Qr() {
           e.response?.data?.message ||
           e.response?.data?.error ||
           e.message ||
-          "요청 중 오류가 발생했습니다.";
+          "관리자만 사용 가능한 페이지 입니다.";
         setError(msg);
       } finally {
         setLoading(false);
@@ -53,7 +53,7 @@ export default function Qr() {
 
   if (!qr) return <div>요청 파라미터가 없습니다. (?qr=값)</div>;
   if (loading) return <div>조회 중...</div>;
-  if (error) return <div style={{ color: "crimson" }}>에러: {error}</div>;
+  if (error) return <div style={{ color: "crimson" }}>{"관리자만 사용 가능한 페이지 입니다."}</div>;
 
   return (
     <div style={{ padding: 16 }}>
