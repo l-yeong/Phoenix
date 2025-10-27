@@ -58,6 +58,7 @@ export default function reservationFind( props ){
             console.log(response.data);
             if (response.data) {
                 alert('예매를 취소 하였습니다');
+                getAllRequest();
             } else {
                 alert('예매 취소를 실패하였습니다');
             }
