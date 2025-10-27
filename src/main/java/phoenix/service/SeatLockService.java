@@ -222,6 +222,7 @@ public class SeatLockService {
         }   // for end
     }   // func end
 
+
     // =========================
     // (부분) 상태 조회
     // =========================
