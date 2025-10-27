@@ -92,7 +92,7 @@ public class ReservationsController {
         MembersDto loginMember = membersService.getLoginMember();
         System.out.println("loginMember = " + loginMember);
         if (loginMember == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(false);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         }
         int mno = loginMember.getMno();
         List<ReservationsDto> list = reservationsService.seatPossible(rno,mno);
