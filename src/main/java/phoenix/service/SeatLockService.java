@@ -211,7 +211,7 @@ public class SeatLockService {
             dto.setGno(gno);
             dto.setStatus("reserved");
 
-            seatsMapper.insertReservation(dto); // rno가 DTO 안에 자동 주입됨
+            if(!seatsMapper.insertReservation(dto)) throw new IllegalStateException("예약테이블 insert 오류"); // rno가 DTO 안에 자동 주입됨
             int rno = dto.getRno();
 
             boolean result = ticketsService.ticketWrite(rno);
