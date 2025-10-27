@@ -116,7 +116,7 @@ export default function TicketQR({ rno: rnoProp }) {
             })()
           ) : (
             <div style={{ fontWeight: 600, padding: 12, textAlign: "center" }}>
-              지난 경기 티켓입니다
+              사용 불가
             </div>
           )}
 
