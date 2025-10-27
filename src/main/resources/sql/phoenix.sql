@@ -82,6 +82,7 @@ create table tickets (
     issued_at timestamp default current_timestamp,
     valid boolean default true,               -- 유효 여부
     price int not null,                       -- 티켓 발급 시 가격
+    ticket_uuid varchar(20),
     foreign key(rno) references reservations(rno)
 );
 
