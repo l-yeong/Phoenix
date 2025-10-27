@@ -139,7 +139,7 @@ export default function reservationFind( props ){
     // [7] 모달오픈 클릭이벤트
     const openModalEvent = async () => {
         try{
-            const response = await axios.get(`http://localhost:8080/reserve/possible?rno=${rno}`);
+            const response = await axios.get(`http://localhost:8080/reserve/possible`, {params : {rno : rno} , withCredentials: true });
             setChangeSeat(response.data);
             setOpen(true);
         }catch(e){
@@ -151,7 +151,7 @@ export default function reservationFind( props ){
     // [8] 전체좌석 가져오기
     const seatPrint = async () => {
         try{
-            const response = await axios.get(`http://localhost:8080/seat/print?rno=${rno}`);
+            const response = await axios.get(`http://localhost:8080/seat/print`, {params : {rno : rno} , withCredentials: true });
             setSeatList(response.data);
         }catch(e){ console.log(e); }
     }// func end
