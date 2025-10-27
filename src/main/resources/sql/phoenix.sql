@@ -138,6 +138,7 @@ insert into members (
     provider, provider_id, pno,
     email_verified
 ) values
+('admin','$2a$12$BmTCnFtvOFKtV0DlJDGeYuy4k.WKQtbFENI/uqvwMAFh7paIbI2u2','관리자','010-0000-0000','2025-10-01','admin@test.com','null','null',0,true),
 ('user1','$2a$12$BmTCnFtvOFKtV0DlJDGeYuy4k.WKQtbFENI/uqvwMAFh7paIbI2u2','홍길동','010-1111-1111','1960-05-10','user1@test.com','google','g123',10,true),
 ('user2','$2a$12$BmTCnFtvOFKtV0DlJDGeYuy4k.WKQtbFENI/uqvwMAFh7paIbI2u2','이순신','010-1111-1112','1990-02-20','user2@test.com','github','gh456',11,true),
 ('user3','$2a$12$BmTCnFtvOFKtV0DlJDGeYuy4k.WKQtbFENI/uqvwMAFh7paIbI2u2','강감찬','010-1111-1113','1985-07-15','user3@test.com','facebook','fb789',12,true),
@@ -227,17 +228,17 @@ insert into reservations (mno, sno, gno, status) values
 (20004, 30091, 4, 'reserved');     -- 찬영석 A1
 
 -- 티켓
-insert into tickets(rno, ticket_code, valid, price) values
-(40001,'TCKT001',true,30000),
-(40002,'TCKT002',true,30000),
-(40003,'TCKT003',true,20000),
-(40004,'TCKT004',true,20000),
-(40005,'TCKT005',true,50000),
-(40006,'TCKT006',true,50000),
-(40007,'TCKT007',true,80000),
-(40008,'TCKT008',true,15000),
-(40009,'TCKT009',true,120000),
-(40010,'TCKT010',false,35000);
+insert into tickets(rno, ticket_code, valid, price,ticket_uuid) values
+(40001,'/upload/20251027_d86e59_qr.png',true,30000,'a5bc97'),
+(40002,'/upload/20251027_6f869a_qr.png',true,30000,'cbb5ae'),
+(40003,'/upload/20251027_2ca50e_qr.png',true,20000,'d81a3e'),
+(40004,'/upload/20251027_e4a44c_qr.png',true,20000,'cbb119'),
+(40005,'/upload/20251027_7f125e_qr.png',true,50000,'13c6b2'),
+(40006,'/upload/20251027_3d802d_qr.png',true,50000,'2c2ed4'),
+(40007,'/upload/20251027_5d2d25_qr.png',true,80000,'e86a22'),
+(40008,'/upload/20251027_a1a760_qr.png',true,15000,'f2qdsf'),
+(40009,'/upload/20251027_4ca5ca_qr.png',true,120000,'gsdf4z'),
+(40010,'/upload/20251027_9dc6e8_qr.png',false,35000,'gqw31a');
 
 -- 예매 교환
 insert into reservation_exchanges(from_rno, to_rno, status) values

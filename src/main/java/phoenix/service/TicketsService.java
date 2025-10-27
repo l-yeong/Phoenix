@@ -76,6 +76,12 @@ public class TicketsService {
 
     }//func end
 
+    //티켓취소
+    public boolean ticketCancel(int rno){
+        boolean result = ticketsMapper.ticketCancel(rno);
+        return result;
+    }//func end
+
     /**
      * QR 이미지 정리 스케줄러
      * - 유효(valid=0) 상태인 티켓의 QR 이미지 파일만 물리적으로 삭제.
