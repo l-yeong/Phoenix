@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Box, Typography, Button } from "@mui/material";
+import { Box, Typography, Button , CircularProgress } from "@mui/material";
 import styles from "../styles/SeniorReserve.module.css";
 import { useNavigate } from "react-router-dom";
 import TutorialOverlay from "../components/TutorialOverlay";
 
 export default function SeniorReserve() {
   const navigate = useNavigate();
-  const [showGuide, setShowGuide] = useState(true);
+  const [showGuide, setShowGuide] = useState(false);
+  const [ loading , setLoading ] = useState(true);
 
 
   // SpeechSynthesis 함수 정의
@@ -20,14 +21,48 @@ export default function SeniorReserve() {
     window.speechSynthesis.speak(utter);
   };
 
-  // 버튼 렌더링 후 오버레이 + 음성 안내 실행
+  // 페이지 진입 시 시니어 접근 검증
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowGuide(true);
-      speak("이 버튼을 눌러 예매할 경기를 선택해보세요.");
-    }, 400);
-    return () => clearTimeout(timer);
+    const checkSeniorAccess = async () => {
+      try {
+        const res = await axios.get(`${API}/senior/reserve`, {
+          withCredentials: true,
+        });
+        if (res.data.success) {
+          // 접근 허용
+          setShowGuide(true);
+          speak("이 버튼을 눌러 예매할 경기를 선택해보세요.");
+        }
+      } catch (err) {
+        const status = err.response?.status;
+        if (status === 401) {
+          alert("로그인이 필요합니다.");
+          navigate("/login");
+        } else if (status === 403) {
+          alert("시니어 전용 서비스입니다. 65세 이상 회원만 이용 가능합니다.");
+          navigate("/");
+        } else {
+          alert("접근이 거부되었습니다.");
+          navigate("/");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkSeniorAccess();
+    // cleanup 시 음성 중단
+    return () => window.speechSynthesis.cancel();
   }, []);
+
+  // 로딩 중 화면
+  if (loading)
+    return (
+      <Box sx={{ textAlign: "center", mt: 10 }}>
+        <CircularProgress />
+        <Typography sx={{ mt: 2 }}>접근 권한 확인 중...</Typography>
+      </Box>
+    );
 
   const games = [
     { id: 1, date: "10월 29일 (화)", teams: "PHOENIX vs LIONS", place: "서울구장" },
