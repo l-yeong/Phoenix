@@ -2,6 +2,8 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../api/loginstate";
+import { Button } from "@mui/joy";
+import Table from '@mui/joy/Table';
 
 export default function Mypage() {
     const [mode, setMode] = useState("reservation"); // reservation | edit | password | delete
@@ -164,13 +166,13 @@ export default function Mypage() {
 
             {/* 탭 메뉴 */}
             <div style={{ marginBottom: "20px" }}>
-                <button onClick={() => setMode("reservation")}>예매 내역</button>
-                <button onClick={() => setMode("edit")}>회원정보 수정</button>
+                <Button variant="soft" color="success" onClick={() => setMode("reservation")} style={{marginRight: "10px"}}>예매 내역</Button>
+                <Button variant="soft" onClick={() => setMode("edit")} style={{marginRight: "10px"}}>회원정보 수정</Button>
                 {/* 소셜회원이면 비밀번호 변경 탭 숨김 */}
                 {!provider && (
-                    <button onClick={() => setMode("password")}>비밀번호 변경</button>
+                    <Button onClick={() => setMode("password")} style={{marginRight: "10px"}}>비밀번호 변경</Button>
                 )}
-                <button onClick={() => setMode("delete")}>회원 탈퇴</button>
+                <Button variant="soft" color="danger" onClick={() => setMode("delete")} style={{marginRight: "10px"}}>회원 탈퇴</Button>
             </div>
 
             {/* 예매내역 */}
@@ -180,7 +182,7 @@ export default function Mypage() {
                     {reservations.length === 0 ? (
                         <p>예매 내역이 없습니다.</p>
                     ) : (
-                        <table border="1" cellPadding="8" style={{ borderCollapse: "collapse" }}>
+                        <Table aria-label="striped table" stripe="odd" border="1" cellPadding="8" style={{ borderCollapse: "collapse" }}>
                             <thead>
                                 <tr>
                                     <th>예매번호</th>
@@ -215,7 +217,7 @@ export default function Mypage() {
                                     </tr>
                                 ))}
                             </tbody>
-                        </table>
+                        </Table>
                     )}
                 </>
             )}

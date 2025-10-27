@@ -10,6 +10,7 @@ import phoenix.model.dto.GateDto;
 import phoenix.service.GateService;
 import phoenix.service.MembersService;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -28,15 +29,6 @@ public class GateController {
         return ResponseEntity.ok(new GateDto.EnqueueResponse(res.queued(), res.waiting()));
     }
 
-    // === [2] 퇴장: 바디/쿼리 어느 쪽이든 gno 수용 (before unload용 keepalive POST) ===
-    @PostMapping("/leave")
-    public ResponseEntity<GateDto.LeaveResponse> leave(@RequestBody int gno) {
-
-        int mno = membersService.getLoginMember().getMno();
-        boolean ok = gateService.leave(mno, gno);
-        return ResponseEntity.ok(new GateDto.LeaveResponse(ok));
-
-    }
 
     // === [3] 상태 조회: 쿼리로 gno 받기 (선택 사용)
     @GetMapping("/status")
@@ -47,19 +39,39 @@ public class GateController {
         ));
     }
 
-    // === [5] 세션 alive 확인: 패스 파라미터 방식(/check/{gno})을 지원 (프론트 호출과 1:1 매칭) ===
+    // === [5] 세션 alive + TTL + 메타 ===
     @GetMapping("/check/{gno}")
-    public ResponseEntity<Map<String, Boolean>> check(@PathVariable int gno) {
+    public ResponseEntity<Map<String, Object>> check(@PathVariable int gno) {
         int mno = membersService.getLoginMember().getMno();
         boolean ready = gateService.isEntered(mno, gno);
-        return ResponseEntity.ok(Map.of("ready", ready));
+        long ttlMs = ready ? gateService.remainTtlMillis(mno, gno) : 0L;
+        Map<String, Object> body = new HashMap<>();
+        body.put("ready", ready);
+        body.put("ttlSec", (int)Math.ceil(ttlMs / 1000.0));
+        body.put("permits", gateService.availablePermits(gno));
+        body.put("waiting", gateService.waitingCount(gno));
+        return ResponseEntity.ok(body);
     }
 
-    // === [6] 포지션 조회: 패스 파라미터 방식(/position/{gno}) 지원 ===
+    // === [pos] 내 순번 ===
     @GetMapping("/position/{gno}")
-    public ResponseEntity<Map<String, Integer>> position(@PathVariable int gno) {
+    public ResponseEntity<Map<String, Object>> position(@PathVariable int gno) {
         int mno = membersService.getLoginMember().getMno();
         Integer pos = gateService.positionOf(mno, gno);
         return ResponseEntity.ok(Map.of("position", pos == null ? -1 : pos));
+    }
+
+    // GateController
+    @PostMapping("/leave")
+    public ResponseEntity<GateDto.LeaveResponse> leave(
+            @RequestParam(value = "gno", required = false) Integer gnoParam,
+            @RequestBody(required = false) Integer gnoBody
+    ) {
+        int gno = (gnoParam != null ? gnoParam : (gnoBody != null ? gnoBody : 0));
+        if (gno <= 0) return ResponseEntity.badRequest().body(new GateDto.LeaveResponse(false));
+
+        int mno = membersService.getLoginMember().getMno();
+        boolean ok = gateService.leave(mno, gno);
+        return ResponseEntity.ok(new GateDto.LeaveResponse(ok));
     }
 }

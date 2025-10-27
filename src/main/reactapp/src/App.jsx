@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, HashRouter } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
@@ -14,6 +14,7 @@ import SeatsPolygonPage from "./features/seats/SeatsPolygonPage";
 import ZoneDemoPage from "./features/seats/ZoneDemoPage";
 import FindIdPage from "./pages/FindIdPage";
 import FindPwdPage from "./pages/FindPwdPage";
+import SeniorSeatAuto from "./pages/SeniorSeatAuto";
 import TicketQR from "./features/tickets/TicketQR.jsx";
 import TicketQRInfo from "./features/tickets/TicketQRInfo.jsx";
 import TicketLog from "./features/tickets/TicketLog";
@@ -39,6 +40,7 @@ function App() {
 
           {/* 시니어 예매 */}
           <Route path="/senior-reserve" element={<SeniorReserve />} />
+          <Route path="/senior/seats" element={<SeniorSeatAuto />} />
 
           {/* 회원 관련 */}
           <Route path="/login" element={<LoginPage />} />
@@ -66,6 +68,8 @@ function App() {
 
         </Routes>
         <Footer />
+
+
       </AuthProvider>
     </BrowserRouter>
   );

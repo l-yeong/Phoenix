@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.Executor;
 
 @Service
@@ -39,34 +40,39 @@ public class ReservationExchangesService {
         String nowTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         dto.setRequested_at(nowTime); // 요청시간 저장
         System.out.println("dto = " + dto);
-        // redis 에 저장
-        int saved = redisService.saveRequest(dto);
-        System.out.println(saved);
-        if (saved == 0 || saved == 2) return saved;
-        Executor executor = threadPoolConfing.changeExecutor();
         ReservationsDto fromDto = (ReservationsDto) reservationsService.reserveInfo(dto.getFrom_rno()).get("reservation");
         int fromSeat = fromDto.getSno();
         dto.setFromSeat(fromSeat);
-        // 쓰레드풀에서 후속처리
-        executor.execute( () -> { // 여기에 푸시알림 보낼메시지 작성해서 웹소켓에 보내기
-            HashMap<String,Object> map = (HashMap<String, Object>) reservationsService.reserveInfo(dto.getTo_rno());
-            ReservationsDto toDto = objectMapper.convertValue(map, ReservationsDto.class);
-            int mno = toDto.getMno();
-            WebSocketSession session = baseballSocketHandler.getSession(mno);
-            String msg = fromSeat + "번 좌석에서 좌석 교환 요청을 보냈습니다.";
-            System.out.println("msg = " + msg);
-            if(session != null && session.isOpen()){
-                try{
-                    session.sendMessage(new TextMessage(msg));
-                    System.out.println("푸시알림발송 :" + msg);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }// try end
-            }else { // 응답자가 서버에 접속이 안되있으면 redis에 저장
-                redisService.saveMessage(mno,msg);
-                System.out.println("응답자 미접속 Redis에 저장"+msg);
-            }// if end
-        });
+        // redis 에 저장
+        int saved = redisService.saveRequest(dto);
+        System.out.println("saved = " + saved);
+        if (saved == 0 || saved == 2) return saved;
+        if (saved == 1) {
+            Executor executor = threadPoolConfing.changeExecutor();
+            // 쓰레드풀에서 후속처리
+            executor.execute(() -> { // 여기에 푸시알림 보낼메시지 작성해서 웹소켓에 보내기
+                HashMap<String, Object> map = (HashMap<String, Object>) reservationsService.reserveInfo(dto.getTo_rno());
+                System.out.println("map = " + map);
+                ReservationsDto toDto = (ReservationsDto) map.get("reservation");
+                System.out.println("toDto = " + toDto);
+                int mno = toDto.getMno();
+                System.out.println("mno = " + mno);
+                WebSocketSession session = baseballSocketHandler.getSession(mno);
+                String msg = fromSeat + "번 좌석에서 좌석 교환 요청을 보냈습니다.";
+                System.out.println("msg = " + msg);
+                if (session != null && session.isOpen()) {
+                    try {
+                        session.sendMessage(new TextMessage(msg));
+                        System.out.println("푸시알림발송 :" + msg);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }// try end
+                } else { // 응답자가 서버에 접속이 안되있으면 redis에 저장
+                    redisService.saveMessage(mno, msg);
+                    System.out.println("응답자 미접속 Redis에 저장" + msg);
+                }// if end
+            });
+        }// if end
         return saved;
     }// func end
 
@@ -80,20 +86,22 @@ public class ReservationExchangesService {
     public boolean acceptChange(int mno ,int from_rno){
         ReservationExchangesDto dto = redisService.getRequest(from_rno);
         if (dto == null) return false;
-        dto.setStatus("ACCEPTED");
+        dto.setStatus("approved");
         String nowTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         dto.setResponded_at(nowTime);
-        // 예매정보 조회
-        ReservationsDto toDto = (ReservationsDto) reservationsService.reserveInfo(dto.getTo_rno()); // 응답자 예매정보
-        ReservationsDto fromDto = (ReservationsDto) reservationsService.reserveInfo(from_rno); // 요청자 예매정보
         // db에저장
-        reservationExchangeMapper.changeAdd(dto);
+        boolean ch = reservationExchangeMapper.changeAdd(dto);
+        System.out.println("ch = " + ch);
         // 예매좌석 교체
-        reservationsService.reserveUpdate(fromDto.getSno(),toDto.getRno(),mno);         // 응답자 요청자 좌석으로 변경
-        reservationsService.reserveUpdate(toDto.getSno(),from_rno,dto.getFrom_mno());   // 요청자 응답자 좌석으로 변경  *** 트랜잭션해야됨
-
+        boolean ch1 = reservationsService.reserveUpdate(dto.getFromSeat(), dto.getTo_rno(), mno);         // 응답자 요청자 좌석으로 변경
+        System.out.println("ch1 = " + ch1);
+        boolean ch2 = reservationsService.reserveUpdate(dto.getToSno(),from_rno,dto.getFrom_mno());   // 요청자 응답자 좌석으로 변경  *** 트랜잭션해야됨
+        System.out.println("ch2 = " + ch2);
         // redis 삭제
         redisService.deleteAllRequest(dto);
+        String key = "change:seat:"+dto.getTo_rno();
+        List<Integer> list = redisService.seatMap.get(key);
+        list.removeIf(i -> i == from_rno);
         return true;
     }// func end
 
@@ -109,6 +117,9 @@ public class ReservationExchangesService {
         String nowTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         dto.setResponded_at(nowTime);
         redisService.deleteRequest(from_rno); // redis 삭제
+        String key = "change:seat:"+dto.getTo_rno();
+        List<Integer> list = redisService.seatMap.get(key);
+        list.removeIf(i -> i == from_rno);
         return true;
     }// func end
 

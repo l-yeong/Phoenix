@@ -1,5 +1,6 @@
 package phoenix.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -36,7 +37,6 @@ public class ReservationExchangesController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "로그인 정보가 없습니다."));
         }
-        System.out.println("mno = " + mno);
         dto.setFrom_mno(mno);
         int result = reservationexchangesService.requestChange(dto);
         System.out.println("result = " + result);
@@ -52,6 +52,7 @@ public class ReservationExchangesController {
     @GetMapping("/find")
     public ResponseEntity<List<ReservationExchangesDto>> getAllRequest(@RequestParam int rno){
         List<ReservationExchangesDto> list = redisService.getAllRequest(rno);
+        System.out.println("list = " + list);
         return ResponseEntity.ok(list);
     }// func end
 
@@ -61,7 +62,7 @@ public class ReservationExchangesController {
      * @param rno 요청자 예매번호
      * @return boolean 성공 : true , 실패 : false
      */
-    @DeleteMapping("")
+    @DeleteMapping("/reject")
     public ResponseEntity<?> rejectChange(@RequestParam int rno){
         ReservationExchangesDto dto = redisService.getRequest(rno);
         boolean result = reservationexchangesService.rejectChange(rno);
@@ -84,12 +85,14 @@ public class ReservationExchangesController {
     public ResponseEntity<?> acceptChange(@RequestParam int rno ){
         MembersDto loginMember = membersService.getLoginMember();
         int mno = loginMember.getMno();
+        System.out.println("mno = " + mno);
         if (loginMember == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "로그인 정보가 없습니다."));
         }
         ReservationExchangesDto dto = redisService.getRequest(rno);
         boolean result = reservationexchangesService.acceptChange(mno, rno);
+        System.out.println("result = " + result);
         if (result){
             if (dto != null){
                 String msg = "좌석 교환 요청이 수락되었습니다.";

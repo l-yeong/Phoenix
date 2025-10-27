@@ -35,6 +35,7 @@ const Header = () => {
     socket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
+        console.log(event.data);
         setMessage((prev) => [...prev, data]);
         toast.info(`${typeof data === "string" ? data : data.message}`, {
           position: "bottom-right",
@@ -123,7 +124,7 @@ const Header = () => {
         </Box>
 
         <Box className={styles.auth}>
-          {user ? (
+          {user && user?.role !== "ROLE_WITHDRAWN" ? (
             <>
               <Typography
                 variant="body1"
@@ -175,12 +176,21 @@ const Header = () => {
 
       <ToastContainer
         position="bottom-right"
+        icon={false} // 아이콘 제거
         autoClose={4000}
         hideProgressBar={false}
         newestOnTop
         closeOnClick
         pauseOnHover
+        onClick={() => navigate("/mypage")}
         theme="colored"
+        style={{
+          fontSize: "14px",
+          fontWeight: "bold",
+          borderRadius: "12px",
+          padding: "12px",
+          width: "300px",
+        }}
       />
     </AppBar>
   );
