@@ -137,6 +137,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth // URL별 인가 규칙 시작
                         .requestMatchers(HttpMethod.OPTIONS , "/**").permitAll() // 프리플라이트 요청 허용
                         .requestMatchers("/members/email/**").permitAll()
+                        //.requestMatchers("/tickets/ticketLog/**").hasRole("ADMIN")
+                        //.requestMatchers("/tickets/qr/**").hasRole("ADMIN")
                         .requestMatchers(
                                 "/members/**", // 회원 하위 모두
                                 "/oauth2/**",           // 소셜 회원

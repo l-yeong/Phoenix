@@ -19,7 +19,7 @@ public class TicketsDto {
     private String issued_at;       // 발급일
     private boolean valid;           // 유효여부
     private int price;              // 가격
-
+    private String ticket_uuid;     // QR코드 링크 파라미터
     private int gno;
     private LocalDateTime dateTime;
 

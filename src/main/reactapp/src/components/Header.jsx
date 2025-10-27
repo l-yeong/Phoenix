@@ -35,6 +35,7 @@ const Header = () => {
     socket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
+        console.log(event.data);
         setMessage((prev) => [...prev, data]);
         toast.info(`${typeof data === "string" ? data : data.message}`, {
           position: "bottom-right",
@@ -55,7 +56,7 @@ const Header = () => {
     return () => {
       try {
         socket.close();
-      } catch {}
+      } catch { }
       wsRef.current = null;
     };
   }, [user]);
@@ -109,7 +110,14 @@ const Header = () => {
 
         <Box className={styles.nav}>
           {["TICKET", "PLAYERS", "GAME", "CONTENTS", "MEMBERSHIP"].map((menu) => (
-            <Button key={menu} className={styles.navButton}>
+            <Button
+              key={menu}
+              className={styles.navButton}
+              onClick={() => {
+                if (menu === "TICKET") navigate("/tickets/ticketLog");
+                else toast.info(`${menu} 페이지는 준비 중입니다.`);
+              }}
+            >
               {menu}
             </Button>
           ))}
@@ -168,12 +176,21 @@ const Header = () => {
 
       <ToastContainer
         position="bottom-right"
+        icon={false} // 아이콘 제거
         autoClose={4000}
         hideProgressBar={false}
         newestOnTop
         closeOnClick
         pauseOnHover
+        onClick={() => navigate("/mypage")}
         theme="colored"
+        style={{
+          fontSize: "14px",
+          fontWeight: "bold",
+          borderRadius: "12px",
+          padding: "12px",
+          width: "300px",
+        }}
       />
     </AppBar>
   );

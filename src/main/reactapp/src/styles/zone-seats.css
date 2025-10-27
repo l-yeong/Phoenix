@@ -110,3 +110,57 @@
   color: #6b7280;
   font-size: 12px;
 }
+/* zone-seats.css 추가 */
+
+.seat-chip--blocked {
+  pointer-events: none;
+  opacity: 0.5;
+  border-style: dashed;
+}
+
+.legend__swatch--blocked {
+  background: repeating-linear-gradient(
+    45deg,
+    #999,
+    #999 4px,
+    #bbb 4px,
+    #bbb 8px
+  );
+}
+/* 게이트 TTL 배지 */
+.gate-ttl-badge {
+  margin-left: 10px;
+  font-weight: 800;
+  font-size: 12px;
+  background: #eef2ff;
+  color: #1e3a8a;
+  border: 1px solid #c7d2fe;
+  padding: 10px 8px;
+  border-radius: 999px;
+}
+.gate-ttl-badge.warn { background: #fee2e2; color:#991b1b; border-color:#fecaca; }
+
+.gate-ttl-mini {
+  margin-left: 8px;
+  font-weight: 700;
+  font-size: 11px;
+  background: #f3f4f6;
+  color: #111827;
+  border: 1px solid #e5e7eb;
+  padding: 2px 6px;
+  border-radius: 999px;
+}
+.gate-ttl-mini.warn { background:#fee2e2; color:#991b1b; border-color:#fecaca; }
+/* 선택 불가 좌석을 흰색(고스트) 처리: 공간은 유지, 클릭 불가 */
+.seat-chip--ghost {
+  background: #fff !important;
+  border-color: #fff !important;
+  color: transparent !important;       /* 라벨 글자 숨김 */
+  box-shadow: none !important;
+  pointer-events: none;                /* 클릭 방지 */
+}
+.seat-chip--ghost .seat-label,
+.seat-chip--ghost .ttl-badge {
+  visibility: hidden;                  /* 배지/텍스트 모두 숨김 */
+}
+.seat-chip { width: 64px; height: 36px; justify-content:center; align-items:center; }

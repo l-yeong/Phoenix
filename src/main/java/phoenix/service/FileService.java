@@ -3,6 +3,7 @@ package phoenix.service;
 import com.opencsv.CSVReader;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import phoenix.model.dto.GameDto;
@@ -31,27 +32,51 @@ public class FileService {
     private String baseDir = System.getProperty("user.dir"); //루트 디렉터리 경로
     private String uploadPath = baseDir + "/src/main/resources/static/upload/"; //QR 이미지 저장 경로
 
-    public String saveQRImg(Object data) {
+    public String saveQRImg(String url) {
         try {
             Path dir = Paths.get(uploadPath);
             if (!Files.exists(dir)) Files.createDirectories(dir);
 
-            // Map → JSON 문자열 변환 (text 키로 감싸지 않음)
-            com.fasterxml.jackson.databind.ObjectMapper om = new com.fasterxml.jackson.databind.ObjectMapper();
-            String json = om.writeValueAsString(data);
+            // 날짜+UUID 조합 파일명 지정
+            String date = java.time.LocalDate.now()
+                    .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
 
-            String fileName = UUID.randomUUID() + "_qr.png";
+            // 6자리 짧은 UUID 생성
+            String uuid = java.util.UUID.randomUUID()
+                    .toString()
+                    .replace("-","")
+                    .substring(0,6);
+
+            // 날짜+UUID 파일명
+            String fileName = date +"_"+uuid+"_qr.png";
             Path output = dir.resolve(fileName);
 
             // QR 텍스트를 직접 전달
-            byte[] png = ticketsQR.TicketQrCode(json, 200);
+            byte[] png = ticketsQR.TicketQrCode(url, 200);
             Files.write(output, png);
 
+            // 웹 접근 경로 반환
             return "/upload/" + fileName;
+
         } catch (Exception e) {
             throw new RuntimeException("QR 파일 저장 실패", e);
-        }
-    }
+        }//catch end
+    }//func end
+
+
+
+    public boolean deleteQRImg(String fileImgDelete) {
+        try {
+            if ( fileImgDelete == null || !fileImgDelete.startsWith("/upload/")) return false;
+            String filePath = uploadPath + fileImgDelete.replace("/upload/", "");
+            File file = new File(filePath);
+            return file.exists() && file.delete();
+        } catch (Exception e) {
+            System.out.println("[QR 파일 삭제 실패] " + fileImgDelete + " | " + e.getMessage());
+        }//catch end
+        return false;
+    }//func end
+
 
     /**
      * 서비스 생성시 csv파일 읽어오는 기능

@@ -16,6 +16,6 @@ public class CaptchaDto {
     }
     @Data @AllArgsConstructor @NoArgsConstructor
     public static class VerifyResponse {
-        private boolean ok;
+        private int ok;
     }
 }

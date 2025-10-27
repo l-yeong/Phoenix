@@ -6,85 +6,61 @@ import org.redisson.api.*;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import phoenix.model.dto.ReservationsDto;
 import phoenix.model.mapper.SeatsMapper;
 import phoenix.util.RedisKeys;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-/**
- * 좌석 락/보류/확정까지 전부 처리하는 핵심 서비스
- * - 좌석 식별은 sno(PK)로 통일
- * - 모든 존의 좌석 수/패턴이 동일 → 프론트는 공용 그리드 템플릿 사용 + 부분 상태만 조회
- *
- * Redis 키:
- *  - SEAT_HOLD_MAP (RMapCache<String,String>): "gno:sno" -> "mno" (TTL 지원)
- *  - SEAT_SOLD_SET:<gno> (RSet<Integer>): sold snos
- *  - user:hold:<mno>:<gno> (RSetCache<Integer>): 유저의 임시 보유 sno 목록(TTL)
- *  - gate:{gno}:session:{mno} (RBucket<?>): 게이트 세션 alive 여부(키 존재)  ← ✅ 신규(스코프)
- *  - session:{mno}              (RBucket<?>): 레거시 전역 세션 키                ← (fallback)
- *  - user_booking:<mno>:<gno>   (RBucket<Boolean>): 공연 단위 결제 완료 플래그(중복 방지)
- */
 @Service
 @EnableScheduling
 @RequiredArgsConstructor
 public class SeatLockService {
 
+    // 의존성 주입
     private final SeatsMapper seatsMapper;
     private final RedissonClient redisson;
+    private final SeatCsvService seatCsvService; // ⬅️ CSV 메타 (시니어석 판별용)
+    private final GameService gameService;       // ⬅️ 경기 시작 시각 조회(D-2 계산)
+    private final TicketsService ticketsService;
 
-    /** 임시 보류 TTL (초) — 2분 */
+    // 상수 정의
     private static final long HOLD_TTL_SECONDS = 120;
-    /** 1인당 동시 보유 가능 좌석 수 */
-    private static final int MAX_SEATS_PER_USER = 4;
+    private static final int  MAX_SEATS_PER_USER = 4;
+    private static final ZoneId ZONE_SEOUL = ZoneId.of("Asia/Seoul");
 
-    /* =========================
-     * Redis Accessors
-     * ========================= */
-    /** 좌석 임시 보류 맵(키 TTL 지원) — key:"gno:sno", val:"mno" */
-    private RMapCache<String, String> holdMap() {
-        return redisson.getMapCache(RedisKeys.SEAT_HOLD_MAP);
-    }
-    /** gno별 매진 좌석 세트 — 원소:sno */
-    private RSet<Integer> soldSet(int gno) {
-        return redisson.getSet(RedisKeys.SEAT_SOLD_SET + ":" + gno);
-    }
-    /** 유저별 임시 보유 좌석 세트 — 원소:sno, TTL 지원 */
-    private RSetCache<Integer> userHoldSet(int mno, int gno) {
-        return redisson.getSetCache("user:hold:" + mno + ":" + gno);
-    }
-    /** 좌석 분산락 키/객체 */
-    private String seatKey(int gno, int sno) { return gno + ":" + sno; }
-    private RLock seatLock(int gno, int sno) { return redisson.getLock("seat:lock:" + seatKey(gno, sno)); }
+    // =========================
+    // 내부 Redis 접근자
+    // =========================
+    private RMapCache<String, String> holdMap() { return redisson.getMapCache(RedisKeys.SEAT_HOLD_MAP); }
+    private RSet<Integer> soldSet(int gno)       { return redisson.getSet(RedisKeys.SEAT_SOLD_SET + ":" + gno); }
+    private RSetCache<Integer> userHoldSet(int mno, int gno) { return redisson.getSetCache("user:hold:" + mno + ":" + gno); }
+    private String seatKey(int gno, int sno)     { return gno + ":" + sno; }
+    private RLock seatLock(int gno, int sno)     { return redisson.getLock("seat:lock:" + seatKey(gno, sno)); }
 
-    /* =========================
-     * Gate / Duplicate guards
-     * ========================= */
-    /**
-     * 게이트 세션 생존 여부
-     * - GateService는 gno 스코프 키(gate:{gno}:session:{mno})를 사용
-     * - 레거시 전역 키(session:{mno})도 fallback 으로 허용(점진 이행)
-     */
+    // =========================
+    // 게이트/중복 가드 (변경 없음)
+    // =========================
     private boolean hasActiveSession(int mno, int gno) {
-        boolean scoped = redisson.getBucket(RedisKeys.keySession(gno, mno)).isExists();     // gate:{gno}:session:{mno}
-        boolean legacy = redisson.getBucket(RedisKeys.SESSION_PREFIX + mno).isExists();     // session:{mno}
+        boolean scoped = redisson.getBucket(RedisKeys.keySession(gno, mno)).isExists();
+        boolean legacy = redisson.getBucket(RedisKeys.SESSION_PREFIX + mno).isExists();
         return scoped || legacy;
     }
-
-    /** 공연 단위 중복 예매 여부 */
     private boolean hasUserAlreadyBooked(int mno, int gno) {
         RBucket<Boolean> b = redisson.getBucket("user_booking:" + mno + ":" + gno);
         return Boolean.TRUE.equals(b.get());
     }
-
-    /** 예매 완료 플래그 세팅 (중복 방지) */
     private void markUserAsBooked(int mno, int gno) {
         redisson.getBucket("user_booking:" + mno + ":" + gno).set(true, 6, TimeUnit.HOURS);
     }
 
-    /* =========================
-     * SOLD 세트 복구 (서버 기동 시)
-     * ========================= */
+    // =========================
+    // 서버 기동 시 SOLD 복구 (변경 없음)
+    // =========================
     @PostConstruct
     public void initSoldFromDb() {
         try {
@@ -109,88 +85,95 @@ public class SeatLockService {
         }
     }
 
-    /* =========================
-     * 좌석 선택 (락 시도)
-     * ========================= */
+    // =========================
+    // ⏰ 일반예매용 시니어석 오픈 판정 (D-2)
+    // =========================
     /**
-     * 좌석 선택 시도 (락 → holdMap/userHoldSet 기록)
-     * @return 코드
+     * 일반 예매 기준: 시니어석은 경기 시작 2일 전부터만 오픈.
+     * - games.csv → GameService → date/time 이용
+     * - date/time 미존재 시 보수적으로 '미오픈' 처리
+     */
+    private boolean isSeniorOpenForGeneral(int gno) {
+        var game = gameService.findByGno(gno);
+        if (game == null || game.getDate() == null || game.getTime() == null) return false;
+        ZonedDateTime startAt = ZonedDateTime.of(game.getDate(), game.getTime(), ZONE_SEOUL);
+        ZonedDateTime gate = startAt.minusDays(2);
+        return !ZonedDateTime.now(ZONE_SEOUL).isBefore(gate); // now >= gate
+    }
+
+    // =========================
+    // 좌석 선택(락) — 수동/자동 공통 진입점
+    // =========================
+    /**
+     * 좌석 선택 시도
+     * @return
      *   1  : OK
      *  -1  : 세션 없음
      *  -2  : 이미 해당 gno 결제완료
-     *  -3  : 매진이거나 락 선점 실패(동시성)
+     *  -3  : 매진/락선점 실패
      *  -4  : 한도(4개) 초과
-     *  -5  : INVALID_SEAT (sno가 zno에 속하지 않음 등)
+     *  -5  : INVALID_SEAT (sno가 zno에 속하지 않음)
+     *  -6  : SENIOR_NOT_OPEN (시니어석은 일반예매에서 D-2부터만 허용)
      */
     public int tryLockSeat(int mno, int gno, int zno, int sno) throws InterruptedException {
-        // ✅ gno 스코프 세션 체크 (레거시도 fallback)
+
+        // 1) 세션/중복 가드
         if (!hasActiveSession(mno, gno)) return -1;
         if (hasUserAlreadyBooked(mno, gno)) return -2;
 
-        // 유효성 검증: sno ∈ zno (클라 변조 방지)
-        if (!seatsMapper.existsSeatInZone(zno, sno)) return -5;
+        // 2) 무결성: sno ∈ zno
+        if (!seatCsvService.existsSeatInZone(zno, sno)) return -5;
 
-        // 매진 여부
+        // 3) ⛔ 시니어석 일반예매 D-2 제한
+        if (seatCsvService.isSeniorSeat(sno) && !isSeniorOpenForGeneral(gno)) return -6;
+
+        // 4) 매진/한도/락
         if (soldSet(gno).contains(sno)) return -3;
-
-        // 한도 확인
         RSetCache<Integer> myHolds = userHoldSet(mno, gno);
         if (myHolds.size() >= MAX_SEATS_PER_USER) return -4;
 
-        // 분산락 즉시 시도(대기 0, 임대 120초)
         RLock lock = seatLock(gno, sno);
-        boolean acquired = lock.tryLock(0, HOLD_TTL_SECONDS, TimeUnit.SECONDS);
-        if (!acquired) return -3;
+        if (!lock.tryLock(0, HOLD_TTL_SECONDS, TimeUnit.SECONDS)) return -3;
 
-        // 임시 보류 기록
+        // 5) 홀드 등록
         holdMap().put(seatKey(gno, sno), String.valueOf(mno), HOLD_TTL_SECONDS, TimeUnit.SECONDS);
         myHolds.add(sno, HOLD_TTL_SECONDS, TimeUnit.SECONDS);
-
         return 1;
     }
 
-    /* =========================
-     * 좌석 해제
-     * ========================= */
+    // =========================
+    // 좌석 해제 (변경 없음)
+    // =========================
     /**
      * 내 임시 좌석 해제
-     * @return true: 성공, false: 권한 없음/유효하지 않음
      */
     public boolean releaseSeat(int mno, int gno, int zno, int sno) {
-        // 유효성 검증 실패 시 바로 종료
-        if (!seatsMapper.existsSeatInZone(zno, sno)) return false;
-
+        if (!seatCsvService.existsSeatInZone(zno, sno)) return false;
         String key = seatKey(gno, sno);
         String holder = holdMap().get(key);
-
-        // 내가 보유자가 아니면 해제 불가
         if (holder == null || !holder.equals(String.valueOf(mno))) return false;
 
-        // holdMap / 내 보유세트 제거
         holdMap().remove(key);
         userHoldSet(mno, gno).remove(sno);
-
-        // 좌석락 즉시 해제
         try { seatLock(gno, sno).forceUnlock(); } catch (Exception ignore) {}
-
         return true;
     }
 
-    /* =========================
-     * 결제 확정
-     * ========================= */
+    // =========================
+    // 결제 확정 (변경 없음)
+    // =========================
+    /**
+     * 임시 보유 좌석들을 결제로 확정 (SOLD 세트 반영)
+     */
     public boolean confirmSeats(int mno, int gno, List<Integer> snos, StringBuilder failReason) {
-        // ✅ gno 스코프 세션 체크 (레거시도 fallback)
         if (!hasActiveSession(mno, gno)) { failReason.append("no session"); return false; }
         if (hasUserAlreadyBooked(mno, gno)) { failReason.append("already booked"); return false; }
         if (snos == null || snos.isEmpty()) { failReason.append("empty"); return false; }
 
-        // 검증 1: SOLD 아님
         RSet<Integer> sold = soldSet(gno);
         for (int sno : snos) {
             if (sold.contains(sno)) { failReason.append(sno).append(" sold; "); return false; }
         }
-        // 검증 2: HOLD_BY_ME
         RMapCache<String, String> holds = holdMap();
         for (int sno : snos) {
             String holder = holds.get(seatKey(gno, sno));
@@ -200,7 +183,6 @@ public class SeatLockService {
             }
         }
 
-        // 커밋: SOLD 추가, hold/보유세트/락 정리
         for (int sno : snos) {
             sold.add(sno);
             holds.remove(seatKey(gno, sno));
@@ -208,25 +190,67 @@ public class SeatLockService {
             try { seatLock(gno, sno).forceUnlock(); } catch (Exception ignore) {}
         }
         markUserAsBooked(mno, gno);
+        // db 추가 호출
+        persistReservationsOrThrow(mno, gno, snos);
+
         return true;
     }
 
-    /* =========================
-     * (부분) 상태 조회
-     * ========================= */
+
+    // DB에 reservations insert (트랜잭션)
+    @Transactional(rollbackFor = Exception.class)
+    public void persistReservationsOrThrow(int mno, int gno, List<Integer> snos) {
+        if (snos == null || snos.isEmpty()) {
+            throw new IllegalArgumentException("snos is empty");
+        }
+
+        for (int sno : snos) {
+            ReservationsDto dto = new ReservationsDto();
+            dto.setMno(mno);
+            dto.setSno(sno);
+            dto.setGno(gno);
+            dto.setStatus("reserved");
+
+            if(!seatsMapper.insertReservation(dto)) throw new IllegalStateException("예약테이블 insert 오류"); // rno가 DTO 안에 자동 주입됨
+            int rno = dto.getRno();
+
+            boolean result = ticketsService.ticketWrite(rno);
+            if (!result) {
+                throw new IllegalStateException("Failed to insert reservation (mno=" + mno +
+                        ", gno=" + gno + ", sno=" + sno + ")");
+            }   // if end
+        }   // for end
+    }   // func end
+
+
+    // =========================
+    // (부분) 상태 조회
+    // =========================
+    /**
+     * 좌석 상태 조회(프론트 비활성화용)
+     * - "BLOCKED" : 시니어 전용석이지만 일반예매 D-2 이전이라 비공개
+     * - "SOLD" / "HELD" / "HELD_BY_ME" / "AVAILABLE" / "INVALID"
+     */
     public Map<Integer, String> getSeatStatusFor(int gno, int mno, List<Integer> snos) {
         Map<Integer, String> res = new LinkedHashMap<>();
         if (snos == null || snos.isEmpty()) return res;
 
+        boolean seniorOpen = isSeniorOpenForGeneral(gno);
         RSet<Integer> sold = soldSet(gno);
         RMapCache<String, String> holds = holdMap();
 
         for (int sno : snos) {
-            // 최소 무결성: sno 존재 여부
-            if (!seatsMapper.existsSeatBySno(sno)) { res.put(sno, "INVALID"); continue; }
+            // 1) 무결성
+            if (!seatCsvService.existsSeatBySno(sno)) { res.put(sno, "INVALID"); continue; }
 
+            // 2) 시니어석 블록 표시
+            if (seatCsvService.isSeniorSeat(sno) && !seniorOpen) {
+                res.put(sno, "BLOCKED");
+                continue;
+            }
+
+            // 3) SOLD/HELD/AVAILABLE
             if (sold.contains(sno)) { res.put(sno, "SOLD"); continue; }
-
             String holder = holds.get(seatKey(gno, sno));
             if (holder != null) {
                 res.put(sno, holder.equals(String.valueOf(mno)) ? "HELD_BY_ME" : "HELD");
@@ -237,9 +261,9 @@ public class SeatLockService {
         return res;
     }
 
-    /* =========================
-     * 고아 hold 자동 청소
-     * ========================= */
+    // =========================
+    // 고아 hold 자동 청소 (변경 없음)
+    // =========================
     @Scheduled(fixedDelay = 2000)
     public void cleanupExpiredSeatHolds() {
         try {
@@ -248,17 +272,15 @@ public class SeatLockService {
                 String key = e.getKey();   // "gno:sno"
                 String mnoStr = e.getValue();
 
-                // key 파싱
                 int idx = key.indexOf(':');
                 if (idx <= 0 || idx >= key.length() - 1) {
-                    map.remove(key); // 포맷 비정상 → 안전 제거
+                    map.remove(key);
                     continue;
                 }
                 int gno = Integer.parseInt(key.substring(0, idx));
                 int sno = Integer.parseInt(key.substring(idx + 1));
                 int mno = Integer.parseInt(mnoStr);
 
-                // ✅ gno 스코프 세션 + 레거시 전역 키 둘 다 체크
                 boolean alive =
                         redisson.getBucket(RedisKeys.keySession(gno, mno)).isExists()
                                 || redisson.getBucket(RedisKeys.SESSION_PREFIX + mno).isExists();

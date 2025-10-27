@@ -14,10 +14,13 @@ function toImgSrc(code) {
   // 2) 절대 URL(http/https) 허용
   if (/^https?:\/\//i.test(code)) return code;
 
-  // 3) 서버 정적 경로(상대/절대 경로) 허용: /upload/..., ./upload/...
+  // 3) 서버 정적 경로 처리
+  // "/upload/..." 는 8080으로 강제
+  if (code.startsWith("/upload/")) return `http://localhost:8080${code}`;
+
+  // 그 외 절대/상대 경로는 그대로 허용
   if (code.startsWith("/")) return code;
   if (code.startsWith("./") || code.startsWith("../")) return code;
-  // 필요시: if (/^\/?upload\/.+\.(png|jpe?g|gif|webp)$/i.test(code)) return code;
 
   // 4) 긴 base64 문자열 추정 → data URL 생성
   const stripped = code.replace(/\s+/g, "");
@@ -45,9 +48,10 @@ export default function TicketQR({ rno: rnoProp }) {
 
     const token = localStorage.getItem("accessToken");
     const client = axios.create({
+      baseURL: "http://localhost:8080", // ✅ 백엔드 직접 호출
       withCredentials: true,
       headers: token ? { Authorization: `Bearer ${token}` } : {},
-      validateStatus: () => true, //
+      validateStatus: () => true,
     });
 
     (async () => {
@@ -95,7 +99,7 @@ export default function TicketQR({ rno: rnoProp }) {
 
           {t.valid ? (
             (() => {
-              const src = toImgSrc(t.ticket_code); // ✅ 상대경로(/upload/...) 허용
+              const src = toImgSrc(t.ticket_code);
               return src ? (
                 <img
                   src={src}

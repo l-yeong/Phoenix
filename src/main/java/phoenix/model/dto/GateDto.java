@@ -2,6 +2,7 @@ package phoenix.model.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 public class GateDto {
@@ -36,5 +37,13 @@ public class GateDto {
     public static class StatusResponse {
         private int waiting;           // 대기열 길이
         private int availablePermits;  // 남은 퍼밋(빈 슬롯)
+    }
+    @Getter
+    @AllArgsConstructor
+    public static class CheckResponse {
+        private boolean ready;
+        private int ttlSec;
+        private int permits;
+        private int waiting;
     }
 }

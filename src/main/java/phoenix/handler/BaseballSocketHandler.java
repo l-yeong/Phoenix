@@ -59,9 +59,11 @@ public class BaseballSocketHandler extends TextWebSocketHandler { // class start
             List<String> waitMessage = redisService.getMessage(userId);
             if (waitMessage != null && !waitMessage.isEmpty()){
                 for (String alamMsg : waitMessage) {
-                    session.sendMessage(new TextMessage(alamMsg));
+                    //String jsonMsg = objectMapper.writeValueAsString(Map.of("message",alamMsg));
+                    String alarm = objectMapper.writeValueAsString(Map.of("message",alamMsg));
+                    session.sendMessage(new TextMessage(alarm));
+                    redisService.deleteMessage(userId);
                 }// for end
-                redisService.deleteMessage(userId);
             }// if end
         }// if end
     }// func end
