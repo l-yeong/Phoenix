@@ -2,7 +2,7 @@
 .seats-layout {
   display: flex;
   gap: 10px;
-  max-width: 900px;
+  max-width: 1000px;
   margin: 0 auto;
   padding: 16px 20px 28px;
 }
@@ -17,6 +17,7 @@
 .ghost-btn {
   border: 1px solid #e5e7eb; background:#fff; padding:8px 12px;
   border-radius:8px; font-size:13px; cursor:pointer;
+  margin-right: 35px;
 }
 .ghost-btn:hover { background:#f9fafb; }
 .primary-btn {
@@ -43,7 +44,7 @@
 .canvas-wrap--contain {
   aspect-ratio: 1 / 1;
   min-height: 420px;
-  height: 520px;
+  height: 595px;
 }
 .canvas-bg {
   position: absolute; inset: 0;

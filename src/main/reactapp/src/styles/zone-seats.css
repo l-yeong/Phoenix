@@ -151,3 +151,16 @@
   border-radius: 999px;
 }
 .gate-ttl-mini.warn { background:#fee2e2; color:#991b1b; border-color:#fecaca; }
+/* 선택 불가 좌석을 흰색(고스트) 처리: 공간은 유지, 클릭 불가 */
+.seat-chip--ghost {
+  background: #fff !important;
+  border-color: #fff !important;
+  color: transparent !important;       /* 라벨 글자 숨김 */
+  box-shadow: none !important;
+  pointer-events: none;                /* 클릭 방지 */
+}
+.seat-chip--ghost .seat-label,
+.seat-chip--ghost .ttl-badge {
+  visibility: hidden;                  /* 배지/텍스트 모두 숨김 */
+}
+.seat-chip { width: 64px; height: 36px; justify-content:center; align-items:center; }

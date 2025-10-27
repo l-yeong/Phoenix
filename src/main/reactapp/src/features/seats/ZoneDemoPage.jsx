@@ -90,14 +90,11 @@ export default function ZoneDemoPage() {
     window.addEventListener("beforeunload", onUnload);
     window.addEventListener("pagehide", onUnload);
 
-    // 뒤로가기(popstate) → leave + Gate로
+        // 뒤로가기(popstate) → 내부 이동 플래그만 세팅 (leave 금지)
     const onPop = () => {
-      leaveGateQuick({ gno, authHeaders });
-      if (!leavingRef.current) {
-        leavingRef.current = true;
-        sessionStorage.removeItem("gate_gno");
-        navigate(`/gate?requeue=1&gno=${encodeURIComponent(gno)}`, { replace: true, state: { gno } });
-      }
+      // 브라우저 기본 뒤로 이동에 맞춰 언마운트 시 leave 방지
+      markKeepGateNext();
+      // navigate 호출 없이 기본 back 동작에 맡깁니다.
     };
     window.addEventListener("popstate", onPop);
 
@@ -219,13 +216,11 @@ export default function ZoneDemoPage() {
       if (ar === br) return ac - bc;
       return ar.localeCompare(br);
     });
-    return byName
-      .map((s) => {
+    return byName.map((s) => {
         const st = statusBySno[String(s.sno)] || "AVAILABLE";
         const ttl = st === "HELD_BY_ME" ? (myTtlBySno[String(s.sno)] ?? 0) : 0;
         return { ...s, st, ttl };
-      })
-      .filter((s) => (onlyAvailable ? s.st === "AVAILABLE" : true));
+      });
   }, [seatsMeta, statusBySno, myTtlBySno, onlyAvailable]);
 
   // 토글
@@ -250,7 +245,7 @@ export default function ZoneDemoPage() {
           data?.code === -1 ? "세션 없음" :
           data?.code === -2 ? "이미 해당 경기 예매됨" :
           data?.code === -3 ? "이미 홀드/매진" :
-          data?.code === -4 ? "선택 한도(4개) 초과" :
+          data?.code === -4 ? "임시 좌석 4개 초과됨" :
           data?.code === -5 ? "유효하지 않은 좌석" :
           data?.code === -6 ? "시니어 전용석은 일반 예매에서 경기 2일 전부터 오픈됩니다." :
           data?.msg || "선택 실패";
@@ -307,14 +302,14 @@ export default function ZoneDemoPage() {
           </button>
           <button
             onClick={() => {
-              // 명시적 뒤로 → 재-큐
-              leaveGateQuick({ gno, authHeaders });
-              sessionStorage.removeItem("gate_gno");
-              navigate(`/gate?requeue=1&gno=${encodeURIComponent(gno)}`, { replace: true, state: { gno } });
+              // 내부 이동: 존(구역 선택) 페이지로 이동 (leave 금지)
+              markKeepGateNext();
+              // 필요에 따라 replace true/false 선택. seats로 돌아가면 보통 true가 UX 깔끔합니다.
+              navigate("/seats", { replace: true, state: { gno } });
             }}
             className="btn btn--ghost"
           >
-            뒤로(재-큐)
+            존 선택으로
           </button>
           <button onClick={confirmSeats} className="btn btn--primary" disabled={!myHeldSnos.length}>
             결제(확정) · {myHeldSnos.length}석
@@ -350,18 +345,33 @@ export default function ZoneDemoPage() {
 
       {!loading && (
         <div className="seat-grid">
-          {gridSeats.map(({ sno, seatName, st, ttl }) => (
-            <button
-              key={sno}
-              onClick={() => toggleSeat({ sno, st, seatName })}
-              disabled={st === "SOLD" || st === "HELD" || st === "BLOCKED"}
-              title={st === "BLOCKED" ? `${seatName} · 시니어 전용석 (일반 예매 D-2부터)` : `${seatName} · ${st}`}
-              className={`seat-chip seat-chip--${st.toLowerCase()}`}
-            >
-              <span className="seat-label">{seatName}</span>
-              {(st === "HELD_BY_ME") && (ttl ?? 0) > 0 && <span className="ttl-badge ttl-badge--mine">{ttl}s</span>}
-            </button>
-          ))}
+          {gridSeats.map(({ sno, seatName, st, ttl }) => {
+            const isGhost = onlyAvailable && st !== "AVAILABLE";
+            const isDisabled =
+              isGhost || st === "SOLD" || st === "HELD" || st === "BLOCKED";
+            const titleText = isGhost
+              ? ""
+              : st === "BLOCKED"
+              ? `${seatName} · 시니어 전용석 (일반 예매 D-2부터)`
+              : `${seatName} · ${st}`;
+
+            return (
+              <button
+                key={sno}
+                onClick={() => { if (!isGhost) toggleSeat({ sno, st, seatName }); }}
+                disabled={isDisabled}
+                title={titleText}
+                aria-hidden={isGhost || undefined}
+                tabIndex={isGhost ? -1 : 0}
+                className={`seat-chip seat-chip--${st.toLowerCase()} ${isGhost ? "seat-chip--ghost" : ""}`}
+              >
+                <span className="seat-label">{seatName}</span>
+                {!isGhost && st === "HELD_BY_ME" && (ttl ?? 0) > 0 && (
+                  <span className="ttl-badge ttl-badge--mine">{ttl}s</span>
+                )}
+              </button>
+            );
+          })}
         </div>
       )}
 
