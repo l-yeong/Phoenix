@@ -6,6 +6,8 @@ import org.redisson.api.*;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import phoenix.model.dto.ReservationsDto;
 import phoenix.model.mapper.SeatsMapper;
 import phoenix.util.RedisKeys;
 
@@ -24,6 +26,7 @@ public class SeatLockService {
     private final RedissonClient redisson;
     private final SeatCsvService seatCsvService; // ⬅️ CSV 메타 (시니어석 판별용)
     private final GameService gameService;       // ⬅️ 경기 시작 시각 조회(D-2 계산)
+    private final TicketsService ticketsService;
 
     // 상수 정의
     private static final long HOLD_TTL_SECONDS = 120;
@@ -187,8 +190,37 @@ public class SeatLockService {
             try { seatLock(gno, sno).forceUnlock(); } catch (Exception ignore) {}
         }
         markUserAsBooked(mno, gno);
+        // db 추가 호출
+        persistReservationsOrThrow(mno, gno, snos);
+
         return true;
     }
+
+
+    // DB에 reservations insert (트랜잭션)
+    @Transactional(rollbackFor = Exception.class)
+    public void persistReservationsOrThrow(int mno, int gno, List<Integer> snos) {
+        if (snos == null || snos.isEmpty()) {
+            throw new IllegalArgumentException("snos is empty");
+        }
+
+        for (int sno : snos) {
+            ReservationsDto dto = new ReservationsDto();
+            dto.setMno(mno);
+            dto.setSno(sno);
+            dto.setGno(gno);
+            dto.setStatus("reserved");
+
+            seatsMapper.insertReservation(dto); // rno가 DTO 안에 자동 주입됨
+            int rno = dto.getRno();
+
+            boolean result = ticketsService.ticketWrite(rno);
+            if (!result) {
+                throw new IllegalStateException("Failed to insert reservation (mno=" + mno +
+                        ", gno=" + gno + ", sno=" + sno + ")");
+            }   // if end
+        }   // for end
+    }   // func end
 
     // =========================
     // (부분) 상태 조회
