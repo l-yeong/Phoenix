@@ -26,7 +26,7 @@ public interface SeatsMapper {
         List<Integer> findReservedSnosByGno(@Param("gno") int gno);
         // 끝
 
-        @Select("select * from seats")
-        List<SeatDto> seatPrint();
+        @Select("SELECT * FROM seats WHERE zno = (SELECT s.zno FROM reservations r INNER JOIN seats s ON s.sno = r.sno WHERE r.rno = #{rno});")
+        List<SeatDto> seatPrint(int rno);
 
 }       // class end
