@@ -87,7 +87,7 @@ public class ReservationsService {
      * @param rno
      * @return List<ReservationsDto>
      */
-    public List<ReservationsDto> seatPossible(int rno){
-        return reservationMapper.seatPossible(rno);
+    public List<ReservationsDto> seatPossible(int rno,int mno){
+        return reservationMapper.seatPossible(rno,mno);
     }// func end
 }//func end
