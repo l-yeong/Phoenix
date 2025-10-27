@@ -95,14 +95,15 @@ public class CaptchaService {
         return new CaptchaPair(token, img);
     }
 
-    public boolean verify(String token, String answer) {
+    public int verify(String token, String answer) {
         RBucket<String> b = redisson.getBucket(REDIS_PREFIX + token);
         String saved = b.get();
-        if (saved == null) return false;
+        if (saved == null) return -1;
         boolean ok = saved.equals(hash(answer));
         // 단발성 사용: 성공/실패 상관없이 삭제 권장(재사용 방지)
         b.delete();
-        return ok;
+        if(ok) return 1;
+        else return 0;
     }
 
     public record CaptchaPair(String token, String imageBase64) {}

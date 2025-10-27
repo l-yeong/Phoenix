@@ -123,6 +123,17 @@ public class GateService {
         return new EnqueueResult(true, queue(gno).size());
     }
 
+    // gate 남은 세션 ttl 보기
+    public long remainTtlMillis(int mno, int gno) {
+        RBucket<String> b = sessionBucket(gno, mno);
+        try {
+            long ms = b.remainTimeToLive(); // Redisson: 남은 TTL(ms), TTL 없으면 -1
+            return Math.max(0L, ms);
+        } catch (Exception e) {
+            return 0L;
+        }
+    }
+
     /** 🚪 세마포어 여유가 있으면 다음 대기자 입장 */
     public void assignNextIfPossible(int gno) {
 
@@ -176,13 +187,17 @@ public class GateService {
         return ok;
     }
 
-    /** 🚪 퇴장 처리 */
+    // 퇴장
     public boolean leave(int mno, int gno) {
-
         System.out.println("\n🚪 [leave] mno=" + mno + ", gno=" + gno);
 
+        // 세션 제거
         sessionBucket(gno, mno).delete();
-        boolean wasActive = activeSet(gno).remove(mno);
+
+        // active/queue/waiting 모두 제거
+        boolean wasActive  = activeSet(gno).remove(mno);
+        boolean wasQueued1 = waitingSet(gno).remove(mno);
+        boolean wasQueued2 = queue(gno).remove(mno); // RBlockingQueue도 remove 지원
 
         if (wasActive) {
             try {
@@ -190,8 +205,14 @@ public class GateService {
                 System.out.println(" 🔄 퍼밋 반환됨 → 남은 퍼밋=" + semaphore(gno).availablePermits());
             } catch (Exception ignore) {}
         }
+
+        // 다음 사람 입장 시도
         assignNextIfPossible(gno);
-        return true;
+
+        System.out.printf("🧹 [leave] active=%s, waitingSet=%s, queue=%s 제거%n",
+                wasActive, wasQueued1, wasQueued2);
+
+        return wasActive || wasQueued1 || wasQueued2;
     }
 
     /** 📊 대기열 길이 */

@@ -99,11 +99,11 @@ export default function Home() {
                 sx={{ mt: 2, backgroundColor: "#CA2E26" }}
                 onClick={() => handleReserveClick(selectedMatch.gno)}
               >
-                예매하기
+                예매 하러 가기
               </Button>
             ) : (
               <Typography sx={{ mt: 2, color: "gray" }}>
-                예매 불가 (기간 외 or 종료)
+                예매 불가 (기간 외 or 종료된 경기)
               </Typography>
             )}
           </>
