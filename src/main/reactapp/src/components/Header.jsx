@@ -61,7 +61,7 @@ const Header = () => {
     };
   }, [user]);
 
-    const onLogout = async () => {
+  const onLogout = async () => {
     console.log("[Header] 🚪 로그아웃 시작");
 
     const gno = Number(sessionStorage.getItem("gate_gno"));
@@ -80,7 +80,7 @@ const Header = () => {
 
     try {
       wsRef.current?.close();
-    } catch {}
+    } catch { }
     wsRef.current = null;
 
     localStorage.removeItem("jwt");
@@ -128,10 +128,17 @@ const Header = () => {
             <>
               <Typography
                 variant="body1"
-                sx={{ color: "white", marginRight: "20px", fontWeight: "500" }}
+                sx={{
+                  color: "white",
+                  fontWeight: "600",
+                  fontSize: "1.1rem", // ✅ 폰트 크기 확대
+                  lineHeight: 2.0,
+                }}
               >
-                {user.mid}님
+
+                {user.mname}님
               </Typography>
+
               <Button
                 variant="outlined"
                 color="inherit"
