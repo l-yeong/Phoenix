@@ -3,6 +3,7 @@ import { Box, Typography, Button , CircularProgress } from "@mui/material";
 import styles from "../styles/SeniorReserve.module.css";
 import { useNavigate } from "react-router-dom";
 import TutorialOverlay from "../components/TutorialOverlay";
+import axios from "axios";
 
 export default function SeniorReserve() {
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ export default function SeniorReserve() {
   useEffect(() => {
     const checkSeniorAccess = async () => {
       try {
-        const res = await axios.get(`${API}/senior/reserve`, {
+        const res = await axios.get(`http://localhost:8080/senior/reserve`, {
           withCredentials: true,
         });
         if (res.data.success) {
