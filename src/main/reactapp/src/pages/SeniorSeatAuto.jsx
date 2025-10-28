@@ -11,11 +11,15 @@ import {
 import { useSearchParams } from "react-router-dom";
 import styles from "../styles/SeniorSeatAuto.module.css";
 import TutorialOverlay from "../components/TutorialOverlay";
+import axios from "axios";
 
 export default function SeniorSeatAuto() {
     const [searchParams] = useSearchParams();
-    const gameId = searchParams.get("gameId");
+    const [game, setGame] = useState(null);
+    const [loading, setLoading] = useState(true);
     const [ticketCount, setTicketCount] = useState(1);
+
+    const gameId = searchParams.get("gameId");
 
     // 튜토리얼 단계 관리
     const [guideStep, setGuideStep] = useState(0); // 0: 비활성, 1: 매수선택, 2: 자동예매버튼
@@ -32,6 +36,26 @@ export default function SeniorSeatAuto() {
         utter.volume = 1.0; // 볼륨
         window.speechSynthesis.speak(utter);
     };
+
+    // 게임 정보 가져오기
+    useEffect(() => {
+        const fetchGame = async () => {
+            try {
+                const res = await axios.get(`http://localhost:8080/senior/games${gameId} `, { withCredentials: true });
+                if (res.data.success) {
+                    setGame(res.data.data);
+                } else {
+                    alert("경기 정보를 불러오지 못했습니다.");
+                }
+            } catch (e) {
+                console.log("경기 로드 실패", e);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchGame();
+    }, [gameId]);
 
     // 단계 변경될 때 음성 안내 실행
     useEffect(() => {
@@ -58,11 +82,20 @@ export default function SeniorSeatAuto() {
                 🎟️ 시니어 자동 좌석 배정
             </Typography>
 
-            <Typography variant="subtitle1" className={styles.subtitle}>
-                경기 ID: {gameId}
-                <br />
-                매수를 선택하고 자동예매를 진행해보세요!
-            </Typography>
+            {loading ? (
+                <Typography sx={{ mt: 4 }}> 경기 정보를 불러오는중...</Typography>
+            ) : game ? (
+                <>
+                    <Typography variant="h5" sx={{ color: "#CA2E26", fontWeight: "bold", mb: 1 }}>
+                        {game.homeTeam} vs {game.awayTeam}
+                    </Typography>
+                    <Typography variant="subtitle1" sx={{ mb: 4 }}>
+                        📅 {game.date} {game.time} / 🏟️ 인천 피닉스 파크
+                    </Typography>
+                </>
+            ) : (
+                <Typography sx={{ mt: 4 }}>경기 정보를 찾을 수 없습니다.</Typography>
+            )}
 
             <Box className={styles.formWrapper}>
                 <FormControl className={styles.selectBox}>

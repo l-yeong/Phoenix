@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import phoenix.model.dto.GameDto;
@@ -75,6 +76,22 @@ public class SeniorController {
         return ResponseEntity.ok(new ApiResponseUtil<>(true , "예매 가능한 경기" , games));
 
     } // func e
+
+    /**
+     * 시니어 예매 두번째 페이지 경기제목 가져오기
+     */
+    @GetMapping("/games{gno}")
+    public ResponseEntity<ApiResponseUtil<?>> getGame(@PathVariable int gno){
+        GameDto game = gameService.findByGno(gno);
+
+        if(game == null){
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponseUtil<>(false , "경기 정보를 찾을 수 없습니다." , null));
+        }
+
+        return ResponseEntity.ok(new ApiResponseUtil<>(true , "경기 조회 성공" , game));
+    }
 
 
 } // class e

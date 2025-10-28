@@ -22,8 +22,8 @@
   text-align: center;
   font-size: 1.3rem !important;
   color: #555;
-  margin-bottom: 150px !important; /* 기존 100px → 120px, 카드와의 간격을 조금 더 확보 */
-  margin-top: 100px;
+  margin-bottom: 30px !important; /* 기존 100px → 120px, 카드와의 간격을 조금 더 확보 */
+  margin-top: 30px !important;
 }
 
 /* 카드 컨테이너 */

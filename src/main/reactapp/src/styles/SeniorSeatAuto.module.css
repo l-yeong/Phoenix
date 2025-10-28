@@ -15,7 +15,7 @@
   color: #ca2e26;
   font-weight: 800;
   text-align: center;
-  margin-bottom: 25px;
+  margin-bottom: 25px !important;
   font-size: 2.6rem !important;
   letter-spacing: -0.5px;
 }
@@ -39,7 +39,7 @@
 /* 🎟 매수 선택 Select */
 .selectBox {
   width: 450px !important;
-  margin-bottom: 50px !important;
+  margin-bottom: 30px !important;
   font-size: 2.8rem !important;
 
   /* 추가된 부분 */
@@ -82,7 +82,7 @@
   letter-spacing: -0.5px;
   box-shadow: 0 10px 22px rgba(0, 0, 0, 0.25); /* 더 깊은 그림자 */
   transition: all 0.25s ease;
-  margin-top: 40px !important;
+  margin-top: 20px !important;
 }
 
 /* hover 효과 */
