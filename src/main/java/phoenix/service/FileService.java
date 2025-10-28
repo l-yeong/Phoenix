@@ -134,37 +134,6 @@ public class FileService {
         return (s == null) ? null : s.trim();
     }
 
-
-    /**
-     * 티켓 만료기간 위한 메소드
-     * 날짜 문자열 파서 (다양한 포맷 지원)
-     * 지원 포맷: "2025-10-20", "2025/10/20", "20251020"
-     */
-    private static LocalDate parseDate(String s) {
-        List<DateTimeFormatter> fs = List.of(
-                DateTimeFormatter.ISO_LOCAL_DATE    // 2025-10-20
-        );
-        for (DateTimeFormatter f : fs) {
-            try { return LocalDate.parse(s, f); } catch (Exception ignore) {}
-        }
-        throw new IllegalArgumentException("지원하지 않는 날짜 포맷: " + s);
-    }//func end
-
-    /**
-     * 티켓 만료기간 위한 메소드
-     * 시간 문자열 파서 (HH:mm 또는 HH:mm:ss 지원)
-     */
-    private static LocalTime parseTime(String s) {
-        List<DateTimeFormatter> fs = List.of(
-                DateTimeFormatter.ofPattern("HH:mm")    // 19:05
-        );
-        for (DateTimeFormatter f : fs) {
-            try { return LocalTime.parse(s, f); } catch (Exception ignore) {}
-        }
-        throw new IllegalArgumentException("지원하지 않는 시간 포맷: " + s);
-    }
-
-
     /**
      * 티켓 만료기간 위한 헬퍼메소드
      * 지난 경기(gno) 목록 추출
