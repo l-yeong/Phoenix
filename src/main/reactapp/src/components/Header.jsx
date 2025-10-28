@@ -30,6 +30,7 @@ const Header = () => {
     socket.onopen = () => {
       console.log("[Header] WebSocket 연결성공");
       socket.send(JSON.stringify({ type: "login", mno: user.mno }));
+      console.log(user);
     };
 
     socket.onmessage = (event) => {

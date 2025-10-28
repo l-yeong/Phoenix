@@ -35,6 +35,7 @@ const LoginForm = () => {
       login({
         mid: resData.member.mid,
         mno: resData.member.mno,
+        mname: resData.member.mname,
         role: resData.role,
         status: resData.member.status,
       });
