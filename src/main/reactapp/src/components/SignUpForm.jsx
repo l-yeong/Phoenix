@@ -225,176 +225,215 @@ const SignUpPage = () => {
     <div
       style={{
         textAlign: "center",
-        marginTop: "100px",
+        marginTop: "80px",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
       }}
     >
-      <Typography
-        variant="h5"
-        sx={{ mb: 3, color: "#CA2E26", fontWeight: "bold" }}
-      >
-        📝 회원가입
-      </Typography>
-
+      {/* 카드형 박스 */}
       <Box
-        component="form"
-        onSubmit={handleSubmit}
         sx={{
+          width: 500,
+          p: 4,
+          mb: 10,
+          borderRadius: 3,
+          boxShadow: 3,
+          bgcolor: "#fafafa",
           display: "flex",
           flexDirection: "column",
-          gap: 2,
-          width: "100%",
-          maxWidth: "400px",
+          alignItems: "center",
         }}
       >
-        <TextField
-          label="아이디"
-          name="mid"
-          value={form.mid}
-          onChange={handleChange}
-          onBlur={(e) => validateField("mid", e.target.value)}
-          error={!!errors.mid}
-          helperText={errors.mid}
-          fullWidth
-        />
-
-        <TextField
-          label="비밀번호"
-          type="password"
-          name="password_hash"
-          value={form.password_hash}
-          onChange={handleChange}
-          onBlur={(e) => validateField("password_hash", e.target.value)}
-          error={!!errors.password_hash}
-          helperText={errors.password_hash}
-          fullWidth
-        />
-
-        <TextField
-          label="이름"
-          name="mname"
-          value={form.mname}
-          onChange={handleChange}
-          onBlur={(e) => validateField("mname", e.target.value)} // 블러 시 즉시 검증
-          error={!!errors.mname}  // 빨간 테두리 표시 여부
-          helperText={errors.mname || ""} // 에러 문구 표시
-          fullWidth
-        />
-
-        <TextField
-          label="전화번호 (010-0000-0000)"
-          name="mphone"
-          value={form.mphone}
-          onChange={handleChange}
-          onBlur={(e) => validateField("mphone", e.target.value)}
-          error={!!errors.mphone}
-          helperText={errors.mphone}
-          fullWidth
-        />
-
-        <TextField
-          label="생년월일"
-          type="date"
-          name="birthdate"
-          value={form.birthdate}
-          onChange={handleChange}
-          onBlur={(e) => validateField("birthdate", e.target.value)}
-          error={!!errors.birthdate}
-          helperText={errors.birthdate || ""}
-          InputLabelProps={{ shrink: true }}
-          fullWidth
-        />
-
-        {/* 이메일 + 인증 */}
-        <Box sx={{ display: "flex", gap: 1 }}>
-          <TextField
-            label="이메일"
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-            onBlur={(e) => validateField("email", e.target.value)}
-            error={!!errors.email}
-            helperText={errors.email}
-            fullWidth
-            disabled={emailVerified}
-          />
-          <Button
-            variant="outlined"
-            onClick={sendEmailCode}
-            disabled={loading || emailVerified}
-            sx={{ whiteSpace: "nowrap" }}
-          >
-            코드전송
-          </Button>
-        </Box>
-
-        <Box sx={{ display: "flex", gap: 1 }}>
-          <TextField
-            label="인증코드 입력"
-            value={emailCode}
-            onChange={(e) => setEmailCode(e.target.value)}
-            fullWidth
-            disabled={emailVerified}
-          />
-          <Button
-            variant="outlined"
-            onClick={verifyEmail}
-            disabled={emailVerified}
-          >
-            {emailVerified ? "확인완료" : "인증확인"}
-          </Button>
-        </Box>
-
-        <TextField
-          select
-          label="선호 선수"
-          name="pno"
-          value={form.pno}
-          onChange={handleChange}
-          fullWidth
+        {/* 제목 */}
+        <Typography
+          variant="h5"
+          sx={{ mb: 3, color: "#CA2E26", fontWeight: "bold" }}
         >
-          {playerList.length > 0 ? (
-            playerList.map((p) => (
-              <MenuItem key={p.pno} value={p.pno}>
-                {p.name} ({p.position} · {p.teamName})
-              </MenuItem>
-            ))
-          ) : (
-            <MenuItem disabled>불러오는 중...</MenuItem>
-          )}
-        </TextField>
+          📝 Phoenix 회원가입
+        </Typography>
 
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={form.exchange}
-              onChange={handleChange}
-              name="exchange"
-            />
-          }
-          label="예매 교환 가능"
-        />
-
-        <Button
-          variant="contained"
-          type="submit"
+        {/* 폼 영역 */}
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
           sx={{
-            mt: 2,
-            bgcolor: "#CA2E26",
-            color: "white",
-            fontWeight: "bold",
-            "&:hover": { bgcolor: "#b22720" },
-            height: 55,
-            fontSize: "1.1rem",
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+            width: "100%",
+            maxWidth: "400px",
           }}
         >
-          회원가입
-        </Button>
+          <TextField
+            label="아이디"
+            name="mid"
+            value={form.mid}
+            onChange={handleChange}
+            onBlur={(e) => validateField("mid", e.target.value)}
+            error={!!errors.mid}
+            helperText={errors.mid}
+            fullWidth
+          />
+
+          <TextField
+            label="비밀번호"
+            type="password"
+            name="password_hash"
+            value={form.password_hash}
+            onChange={handleChange}
+            onBlur={(e) => validateField("password_hash", e.target.value)}
+            error={!!errors.password_hash}
+            helperText={errors.password_hash}
+            fullWidth
+          />
+
+          <TextField
+            label="이름"
+            name="mname"
+            value={form.mname}
+            onChange={handleChange}
+            onBlur={(e) => validateField("mname", e.target.value)}
+            error={!!errors.mname}
+            helperText={errors.mname}
+            fullWidth
+          />
+
+          <TextField
+            label="전화번호 (010-0000-0000)"
+            name="mphone"
+            value={form.mphone}
+            onChange={handleChange}
+            onBlur={(e) => validateField("mphone", e.target.value)}
+            error={!!errors.mphone}
+            helperText={errors.mphone}
+            fullWidth
+          />
+
+          <TextField
+            label="생년월일"
+            type="date"
+            name="birthdate"
+            value={form.birthdate}
+            onChange={handleChange}
+            onBlur={(e) => validateField("birthdate", e.target.value)}
+            error={!!errors.birthdate}
+            helperText={errors.birthdate}
+            InputLabelProps={{ shrink: true }}
+            fullWidth
+          />
+
+          {/* 이메일 + 코드 전송 */}
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <TextField
+              label="이메일"
+              name="email"
+              value={form.email}
+              onChange={handleChange}
+              onBlur={(e) => validateField("email", e.target.value)}
+              error={!!errors.email}
+              helperText={errors.email}
+              fullWidth
+              disabled={emailVerified}
+            />
+            <Button
+              variant="outlined"
+              onClick={sendEmailCode}
+              disabled={loading || emailVerified}
+              sx={{ whiteSpace: "nowrap" }}
+            >
+              코드전송
+            </Button>
+          </Box>
+
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <TextField
+              label="인증코드 입력"
+              value={emailCode}
+              onChange={(e) => setEmailCode(e.target.value)}
+              fullWidth
+              disabled={emailVerified}
+            />
+            <Button
+              variant="outlined"
+              onClick={verifyEmail}
+              disabled={emailVerified}
+            >
+              {emailVerified ? "확인완료" : "인증확인"}
+            </Button>
+          </Box>
+
+          <TextField
+            select
+            label="선호 선수"
+            name="pno"
+            value={form.pno}
+            onChange={handleChange}
+            fullWidth
+          >
+            {playerList.length > 0 ? (
+              playerList.map((p) => (
+                <MenuItem key={p.pno} value={p.pno}>
+                  {p.name} ({p.position} · {p.teamName})
+                </MenuItem>
+              ))
+            ) : (
+              <MenuItem disabled>불러오는 중...</MenuItem>
+            )}
+          </TextField>
+
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={form.exchange}
+                onChange={handleChange}
+                name="exchange"
+              />
+            }
+            label="예매 교환 가능"
+          />
+
+          <Button
+            variant="contained"
+            type="submit"
+            sx={{
+              mt: 2,
+              bgcolor: "#CA2E26",
+              color: "white",
+              fontWeight: "bold",
+              "&:hover": { bgcolor: "#b22720" },
+              height: 55,
+              fontSize: "1.1rem",
+            }}
+          >
+            회원가입
+          </Button>
+          <Typography
+            variant="body2"
+            sx={{
+              textAlign: "center",
+              mt: 3,
+              color: "#777",
+              fontSize: "0.95rem",
+            }}
+          >
+            이미 계정이 있으신가요?{" "}
+            <span
+              style={{
+                color: "#CA2E26",
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+              onClick={() => navigate("/login")}
+            >
+              로그인하기
+            </span>
+          </Typography>
+        </Box>
       </Box>
     </div>
   );
+
 };
 
 export default SignUpPage;
