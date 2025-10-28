@@ -37,6 +37,7 @@ const SignUpPage = () => {
     password: /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,20}$/, // 영문, 숫자, 특수문자 포함 8~20자
     email: /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/, // 이메일 형식
     phone: /^010-\d{4}-\d{4}$/, // 010-0000-0000 형식
+    mname : /^[가-힣A-Za-z]{2,20}$/, // 한글 또는 영문 2~20자, 공백 불가
   };
 
   /** 입력 변경 */
@@ -52,18 +53,32 @@ const SignUpPage = () => {
 
     switch (name) {
       case "mid":
-        if (!regex.mid.test(value)) message = "아이디는 영문/숫자 4~12자여야 합니다.";
+        if(!value.trim()) message = "아이디를 입력해주세요.";
+        else if (!regex.mid.test(value)) 
+          message = "아이디는 영문/숫자 4~12자여야 합니다.";
         break;
+
       case "password_hash":
-        if (!regex.password.test(value))
+        if(!value.trim()) message = "비밀번호를 입력해주세요.";
+        else if (!regex.password.test(value))
           message = "비밀번호는 영문, 숫자, 특수문자를 포함한 8~20자여야 합니다.";
         break;
+
       case "email":
-        if (!regex.email.test(value)) message = "올바른 이메일 형식이 아닙니다.";
+        if(!value.trim()) message = "이메일을 입력해주세요.";
+        else if (!regex.email.test(value)) message = "올바른 이메일 형식이 아닙니다.";
         break;
+
       case "mphone":
-        if (!regex.phone.test(value)) message = "전화번호는 010-0000-0000 형식으로 입력해주세요.";
+        if(!value.trim()) message = "전화번호를 입력해주세요.";
+        else if (!regex.phone.test(value)) message = "전화번호는 010-0000-0000 형식으로 입력해주세요.";
         break;
+
+      case "mname":
+        if(!value.trim()) message = "이름을 입력해주세요.";
+        else if(!regex.mname.test(value)) message = "이름은 한글 또는 영문으로 2~20자 이내여야 합니다.";
+        break;
+
       default:
         break;
     }
@@ -76,14 +91,30 @@ const SignUpPage = () => {
   const validateAll = () => {
     const newErrors = {};
 
-    if (!regex.mid.test(form.mid))
+    if(!form.mid.trim())
+      newErrors.mid = "아이디를 입력해주세요.";
+    else if (!regex.mid.test(form.mid))
       newErrors.mid = "아이디는 영문/숫자 4~12자여야 합니다.";
-    if (!regex.password.test(form.password_hash))
+
+    if(!form.password_hash.trim())
+      newErrors.password_hash = "비밀번호를 입력해주세요.";
+    else if (!regex.password.test(form.password_hash))
       newErrors.password_hash = "비밀번호는 영문, 숫자, 특수문자를 포함한 8~20자여야 합니다.";
-    if (!regex.email.test(form.email))
+
+    if(!form.email.trim()) 
+      newErrors.email = "이메일을 입력해주세요.";
+    else if (!regex.email.test(form.email))
       newErrors.email = "올바른 이메일 형식이 아닙니다.";
-    if (!regex.phone.test(form.mphone))
+
+    if(!form.mphone.trim()) 
+      newErrors.mphone = "전화번호를 입력해주세요.";
+    else if (!regex.phone.test(form.mphone))
       newErrors.mphone = "전화번호는 010-0000-0000 형식으로 입력해주세요.";
+
+    if(!form.mname.trim()) 
+      newErrors.mname = "이름을 입력해주세요";
+    else if (!regex.mname.test(form.mname))
+      newErrors.mname = "이름은 한글 또는 영문으로 2~20자 이내여야 합니다.";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -234,6 +265,9 @@ const SignUpPage = () => {
           name="mname"
           value={form.mname}
           onChange={handleChange}
+          onBlur={(e) => validateField("mname" , e.target.value)} // 블러 시 즉시 검증
+          error={!!errors.mname}  // 빨간 테두리 표시 여부
+          helperText={errors.mname || "" } // 에러 문구 표시
           fullWidth
         />
 
