@@ -1,3 +1,4 @@
+// src/pages/ZoneDemoPage.jsx
 import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import axios from "axios";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
@@ -8,7 +9,6 @@ const api = axios.create({ baseURL: API, withCredentials: true });
 
 const HOLD_TTL_SECONDS = 120;
 
-/** 공통: 게이트 leave (JSON 바디 통일) */
 async function leaveGateQuick({ gno, authHeaders = {} }) {
   const url = `${API}/gate/leave?gno=${encodeURIComponent(gno)}`;
   try {
@@ -30,7 +30,6 @@ async function leaveGateQuick({ gno, authHeaders = {} }) {
   } catch { return false; }
 }
 
-/** 내부 이동 유지 플래그 */
 function markKeepGateNext() { sessionStorage.setItem("gate_keep_next", "1"); }
 function consumeKeepGateNext() {
   const keep = sessionStorage.getItem("gate_keep_next") === "1";
@@ -41,7 +40,7 @@ function consumeKeepGateNext() {
 export default function ZoneDemoPage() {
   const { zno } = useParams();
   const znoNum = Number(zno);
-  const { state } = useLocation();      // { gno, zoneLabel }
+  const { state } = useLocation();
   const navigate = useNavigate();
 
   const gno = state?.gno ?? Number(sessionStorage.getItem("gate_gno") || 0);
@@ -55,7 +54,6 @@ export default function ZoneDemoPage() {
   const [gateTtl, setGateTtl] = useState(null);
   const leavingRef = useRef(false);
 
-  // ───────────────── Gate 체크/폴링 ─────────────────
   useEffect(() => {
     if (!Number.isInteger(znoNum)) { alert("잘못된 존 URL입니다."); navigate("/gate", { replace: true }); return; }
     if (!Number.isInteger(Number(gno))) { navigate("/gate", { replace: true }); return; }
@@ -85,17 +83,11 @@ export default function ZoneDemoPage() {
     poll();
     tickTimer = setInterval(() => setGateTtl((v) => (v == null ? v : Math.max(0, v - 1))), 1000);
 
-    // 새로고침/닫기 → leave
     const onUnload = () => { leaveGateQuick({ gno, authHeaders }); };
     window.addEventListener("beforeunload", onUnload);
     window.addEventListener("pagehide", onUnload);
 
-        // 뒤로가기(popstate) → 내부 이동 플래그만 세팅 (leave 금지)
-    const onPop = () => {
-      // 브라우저 기본 뒤로 이동에 맞춰 언마운트 시 leave 방지
-      markKeepGateNext();
-      // navigate 호출 없이 기본 back 동작에 맡깁니다.
-    };
+    const onPop = () => { markKeepGateNext(); };
     window.addEventListener("popstate", onPop);
 
     return () => {
@@ -106,7 +98,6 @@ export default function ZoneDemoPage() {
       window.removeEventListener("pagehide", onUnload);
       window.removeEventListener("popstate", onPop);
 
-      // 내부 이동(Seats/다른 Zone) 아니면 Gate 반환
       const keep = consumeKeepGateNext();
       if (!keep && gno) leaveGateQuick({ gno, authHeaders });
     };
@@ -114,8 +105,7 @@ export default function ZoneDemoPage() {
 
   const fmt = (s) => (s == null ? "--:--" : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`);
 
-  // ─────────────── 좌석 메타/상태 ───────────────
-  const [seatsMeta, setSeatsMeta] = useState([]); // [{ sno, seatName }]
+  const [seatsMeta, setSeatsMeta] = useState([]);
   const [metaErr, setMetaErr] = useState("");
   const loadSeatsMeta = useCallback(async () => {
     try {
@@ -130,6 +120,7 @@ export default function ZoneDemoPage() {
   useEffect(() => { loadSeatsMeta(); }, [loadSeatsMeta]);
 
   const [statusBySno, setStatusBySno] = useState({});
+  const [remain, setRemain] = useState(null); // 남은 선택 가능 수(=확정+홀드 포함 4장 한도 기준)
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
   const [onlyAvailable, setOnlyAvailable] = useState(false);
@@ -141,12 +132,13 @@ export default function ZoneDemoPage() {
       const seatsPayload = seatsMeta.map((s) => ({ zno: znoNum, sno: s.sno }));
       const { data } = await api.post("/seat/status", { gno, seats: seatsPayload }, { headers: { "Content-Type": "application/json", ...authHeaders } });
       setStatusBySno(data?.statusBySno || {});
+      if (typeof data?.remain === "number") setRemain(data.remain);
     } catch { setErr("좌석 상태를 불러오지 못했습니다."); }
     finally { setLoading(false); }
   }, [gno, znoNum, seatsMeta, authHeaders]);
   useEffect(() => { loadStatus(); }, [loadStatus]);
 
-  // 로컬 TTL
+  // local TTLs
   const [myTtlBySno, setMyTtlBySno] = useState({});
   useEffect(() => {
     const t = setInterval(() => {
@@ -208,7 +200,6 @@ export default function ZoneDemoPage() {
     if (Object.keys(restored).length) setMyTtlBySno((prev) => ({ ...prev, ...restored }));
   }, [gno, seatsMeta, statusBySno]);
 
-  // 표시용
   const gridSeats = useMemo(() => {
     const byName = [...seatsMeta].sort((a, b) => {
       const [ar, ac] = [a.seatName[0], Number(a.seatName.slice(1))];
@@ -217,13 +208,20 @@ export default function ZoneDemoPage() {
       return ar.localeCompare(br);
     });
     return byName.map((s) => {
-        const st = statusBySno[String(s.sno)] || "AVAILABLE";
-        const ttl = st === "HELD_BY_ME" ? (myTtlBySno[String(s.sno)] ?? 0) : 0;
-        return { ...s, st, ttl };
-      });
+      const st = statusBySno[String(s.sno)] || "AVAILABLE";
+      const ttl = st === "HELD_BY_ME" ? (myTtlBySno[String(s.sno)] ?? 0) : 0;
+      return { ...s, st, ttl };
+    });
   }, [seatsMeta, statusBySno, myTtlBySno, onlyAvailable]);
 
-  // 토글
+  // ★ Helper: fetch remaining selectable seats (optional UX)
+  const fetchRemaining = useCallback(async () => {
+    try {
+      const { data } = await api.post("/seat/status", { gno, seats: [] }, { headers: { "Content-Type": "application/json", ...authHeaders } });
+       return typeof data?.remain === "number" ? data.remain : null;
+    } catch { return null; }
+  }, [gno, authHeaders]);
+
   const toggleSeat = async ({ sno, st, seatName }) => {
     if (st === "SOLD" || st === "HELD" || st === "BLOCKED") {
       if (st === "BLOCKED") alert("시니어 전용석은 일반 예매에서 경기 2일 전부터 오픈됩니다.");
@@ -241,11 +239,15 @@ export default function ZoneDemoPage() {
     try {
       const { data } = await api.post("/seat/select", { gno, zno: znoNum, sno }, { headers: { "Content-Type": "application/json", ...authHeaders } });
       if (!data?.ok) {
+        // ★ updated mapping (no more -2)
+        if (data?.code === -4) {
+          const remain = await fetchRemaining();
+          const extra = remain == null ? "" : `\n• 현재 추가 구매 가능: ${remain}장`;
+          return alert(`한도 초과(최대 4장).\n확정 + 임시 보유 합이 4장을 넘을 수 없습니다.${extra}`);
+        }
         const msg =
           data?.code === -1 ? "세션 없음" :
-          data?.code === -2 ? "이미 해당 경기 예매됨" :
           data?.code === -3 ? "이미 홀드/매진" :
-          data?.code === -4 ? "임시 좌석 4개 초과됨" :
           data?.code === -5 ? "유효하지 않은 좌석" :
           data?.code === -6 ? "시니어 전용석은 일반 예매에서 경기 2일 전부터 오픈됩니다." :
           data?.msg || "선택 실패";
@@ -256,7 +258,6 @@ export default function ZoneDemoPage() {
     } catch { alert("네트워크 오류로 선택 실패"); }
   };
 
-  // 결제
   const myHeldSnos = useMemo(() =>
     seatsMeta.map(s => s.sno).filter(sno => statusBySno[String(sno)] === "HELD_BY_ME"),
   [seatsMeta, statusBySno]);
@@ -270,14 +271,16 @@ export default function ZoneDemoPage() {
       if (data?.ok) {
         alert("결제(확정) 완료!");
         setMyTtlBySno({}); myHeldSnos.forEach((sno) => sessionStorage.removeItem(`holdStartedAt:${gno}:${sno}`));
-        try { await api.post(`/gate/leave`, gno, { headers: { "Content-Type": "application/json", ...authHeaders } }); } catch {}
+        try {
+          // ★ unify to query form
+          await api.post(`/gate/leave?gno=${encodeURIComponent(gno)}`, null, { headers: { ...authHeaders } });
+        } catch {}
         finally { sessionStorage.removeItem("gate_gno"); navigate("/home", { replace: true }); }
       }
       await loadStatus();
     } catch { alert("네트워크 오류로 결제에 실패했습니다."); }
   };
 
-  // 요약
   const summary = useMemo(() => {
     let avail = 0, mine = 0, sold = 0, blocked = 0;
     for (const [, st] of Object.entries(statusBySno)) {
@@ -302,9 +305,7 @@ export default function ZoneDemoPage() {
           </button>
           <button
             onClick={() => {
-              // 내부 이동: 존(구역 선택) 페이지로 이동 (leave 금지)
               markKeepGateNext();
-              // 필요에 따라 replace true/false 선택. seats로 돌아가면 보통 true가 UX 깔끔합니다.
               navigate("/seats", { replace: true, state: { gno } });
             }}
             className="btn btn--ghost"
@@ -330,7 +331,8 @@ export default function ZoneDemoPage() {
             <span>선택 가능만</span>
           </label>
           <div className="zone-summary">
-            남은 {summary.avail} · 내 임시 {summary.mine} · 매진 {summary.sold} · 잠금 {summary.blocked}
+            남은 {summary.avail} · 내 임시 {summary.mine} · 매진 {summary.sold} · 잠금 {summary.blocked} <br/>
+            {typeof remain === "number" && <> <strong>예매가능 좌석 수 : {remain}석</strong></>}
           </div>
         </div>
       </div>

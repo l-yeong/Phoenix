@@ -6,15 +6,19 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import phoenix.model.dto.GameDto;
 import phoenix.model.dto.MembersDto;
+import phoenix.service.GameService;
 import phoenix.service.MembersService;
 import phoenix.util.ApiResponseUtil;
 
 import java.time.LocalDate;
 import java.time.Period;
 import java.time.format.DateTimeParseException;
+import java.util.List;
 
 @RestController
 @RequestMapping("/senior")
@@ -22,6 +26,7 @@ import java.time.format.DateTimeParseException;
 public class SeniorController {
 
     private final MembersService membersService;
+    private final GameService gameService;
 
 
     /**
@@ -29,8 +34,8 @@ public class SeniorController {
      */
 
     @GetMapping("/reserve")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> seniorReserve(HttpServletRequest req) {
+    public ResponseEntity<?> seniorReserve() {
+
         MembersDto member = membersService.getLoginMember();
         if (member == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -61,6 +66,32 @@ public class SeniorController {
         return ResponseEntity.ok(new ApiResponseUtil<>(true, "접근 허용", null));
 
     } // func e
+
+    /**
+     * 오늘 경기 포함 , 아직 시작하지 않은 경기 3개 반환
+     */
+    @GetMapping("/games")
+    public ResponseEntity<ApiResponseUtil<?>> getUpcomingGames(){
+        List<GameDto> games = gameService.findUpcomingGames();
+        return ResponseEntity.ok(new ApiResponseUtil<>(true , "예매 가능한 경기" , games));
+
+    } // func e
+
+    /**
+     * 시니어 예매 두번째 페이지 경기제목 가져오기
+     */
+    @GetMapping("/games{gno}")
+    public ResponseEntity<ApiResponseUtil<?>> getGame(@PathVariable int gno){
+        GameDto game = gameService.findByGno(gno);
+
+        if(game == null){
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponseUtil<>(false , "경기 정보를 찾을 수 없습니다." , null));
+        }
+
+        return ResponseEntity.ok(new ApiResponseUtil<>(true , "경기 조회 성공" , game));
+    }
 
 
 } // class e

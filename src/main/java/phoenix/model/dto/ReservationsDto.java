@@ -16,4 +16,7 @@ public class ReservationsDto {
     private String reserved_at;     // 예매 시각
     private String status;          // 상태
 
+    private int count;           // 몇 개의 좌석이 예매가 되어있는지 좌석 락에서 확인용 멤버변수
+    private int zno;            // 존 넘버 => 예매 취소에 필요
+
 }//func end

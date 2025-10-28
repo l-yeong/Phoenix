@@ -37,7 +37,7 @@ create table members (
     
     -- 이메일 인증 여부( 이메일 인증 완료 여부 저장 )
     email_verified boolean default false not null,   -- 이메일 인증 여부
-
+    
     -- 회원 탈퇴 날짜
     last_status_change timestamp default null
     
@@ -235,17 +235,16 @@ insert into reservations (mno, sno, gno, status) values
 
 -- 티켓
 insert into tickets(rno, ticket_code, valid, price,ticket_uuid) values
-(40001,'/upload/20251027_d86e59_qr.png',true,30000,'a5bc97'),
-(40002,'/upload/20251027_6f869a_qr.png',true,30000,'cbb5ae'),
-(40003,'/upload/20251027_2ca50e_qr.png',true,20000,'d81a3e'),
-(40004,'/upload/20251027_e4a44c_qr.png',true,20000,'cbb119'),
-(40005,'/upload/20251027_7f125e_qr.png',true,50000,'13c6b2'),
-(40006,'/upload/20251027_3d802d_qr.png',true,50000,'2c2ed4'),
-(40007,'/upload/20251027_5d2d25_qr.png',true,80000,'e86a22'),
-(40008,'/upload/20251027_a1a760_qr.png',true,15000,'f2qdsf'),
-(40009,'/upload/20251027_4ca5ca_qr.png',true,120000,'gsdf4z'),
-(40010,'/upload/20251027_9dc6e8_qr.png',false,35000,'gqw31a');
-
+(40001,'/upload/20251028_3d6003_qr.png',true,30000,'a5bc97'),
+(40002,'/upload/20251028_4e0eb3_qr.png',true,30000,'cbb5ae'),
+(40003,'/upload/20251028_5dc27c_qr.png',true,20000,'d81a3e'),
+(40004,'/upload/20251028_7f4a7e_qr.png',true,20000,'3150a1'),
+(40005,'/upload/20251028_4489a0_qr.png',true,50000,'c27143'),
+(40006,'/upload/20251028_769745_qr.png',true,50000,'ce2978'),
+(40007,'/upload/20251028_a450b9_qr.png',true,80000,'8c47ea'),
+(40008,'/upload/20251028_b10462_qr.png',true,15000,'ca73c6'),
+(40009,'/upload/20251028_ba3a3d_qr.png',true,120000,'650139'),
+(40010,'/upload/20251028_f88e45_qr.png',false,35000,'1d552a');
 -- 예매 교환
 insert into reservation_exchanges(from_rno, to_rno, status) values
 (40001,40002,'pending'),

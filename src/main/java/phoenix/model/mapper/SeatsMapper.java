@@ -26,6 +26,16 @@ public interface SeatsMapper {
             """)
 
         List<Integer> findReservedSnosByGno(@Param("gno") int gno);
+
+        /* ===== SOLD + 예매 카운터 복구용 ===== */
+        @Select("""
+            SELECT mno, gno, COUNT(*) AS count
+            FROM reservations
+            WHERE status = 'reserved'
+            GROUP BY mno, gno
+            """)
+        List<ReservationsDto> findUserReservedCountSummary();
+
         // 끝
 
         // 좌석 확정시 reservation 만드는 로직

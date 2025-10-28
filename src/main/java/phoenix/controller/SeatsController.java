@@ -41,22 +41,41 @@ public class SeatsController {  // class start
     private final SeatsService sService;
     private final AutoSeatsService autoSeatsService;
 
-    /** (부분) 상태 조회 — 화면에 보이는 좌석만 물어본다(네트워크/서버 비용 최소화) */
-    @PostMapping("/status")
-    public ResponseEntity<Map<String, Object>> status(@RequestBody SeatsDto.StatusReq req) {
-        int mno = membersService.getLoginMember().getMno();
-        var statusMap = seatService.getSeatStatusFor(
-                req.getGno(), mno, req.getSeats().stream().map(SeatsDto.SeatRef::getSno).toList()
-        );
-        return ResponseEntity.ok(Map.of("statusBySno", statusMap));
-    }
-
     /** 좌석 선택(락 시도 → 임시 보유) */
     @PostMapping("/select")
     public ResponseEntity<Map<String, Object>> select(@RequestBody SeatsDto.SingleSeatReq req) throws InterruptedException {
         int mno = membersService.getLoginMember().getMno();
         int code = seatService.tryLockSeat(mno, req.getGno(), req.getZno(), req.getSno());
-        return ResponseEntity.ok(Map.of("ok", code == 1, "code", code));
+        int remain = seatService.remainingSelectableSeats(mno, req.getGno()); // ⬅️ 추가
+        return ResponseEntity.ok(Map.of(
+                "ok", code == 1,
+                "code", code,
+                "remain", remain            // ⬅️ 추가
+        ));
+    }
+
+    /** (부분) 상태 조회 — 화면에 보이는 좌석만 물어본다(네트워크/서버 비용 최소화) */
+    @PostMapping("/status")
+    public ResponseEntity<Map<String, Object>> status(@RequestBody SeatsDto.StatusReq req) {
+        int mno = membersService.getLoginMember().getMno();
+
+
+        // seats null 안전 처리 + sno만 추출
+        var snos = (req.getSeats() == null ? List.<SeatsDto.SeatRef>of() : req.getSeats())
+                .stream()
+                .map(SeatsDto.SeatRef::getSno)
+                .toList();
+
+        // 기존 좌석 상태 맵
+        var statusMap = seatService.getSeatStatusFor(req.getGno(), mno, snos);
+
+        // 추가: 남은 선택 가능 수(확정 + 임시홀드 포함해서 4매 제한 계산)
+        int remain = seatService.remainingSelectableSeats(mno, req.getGno());
+
+        return ResponseEntity.ok(Map.of(
+                "statusBySno", statusMap,
+                "remain", remain
+        ));
     }
 
     /** 좌석 해제(내 임시 보유 해제) */
@@ -64,8 +83,13 @@ public class SeatsController {  // class start
     public ResponseEntity<Map<String, Object>> release(@RequestBody SeatsDto.SingleSeatReq req) {
         int mno = membersService.getLoginMember().getMno();
         boolean ok = seatService.releaseSeat(mno, req.getGno(), req.getZno(), req.getSno());
-        return ResponseEntity.ok(Map.of("ok", ok));
+        int remain = seatService.remainingSelectableSeats(mno, req.getGno()); // ⬅️ 추가
+        return ResponseEntity.ok(Map.of(
+                "ok", ok,
+                "remain", remain            // ⬅️ 추가
+        ));
     }
+
     // ---------- 결제(초기: Redis만 반영) ----------
     @PostMapping("/confirm")
     public ResponseEntity<Map<String, Object>> confirm(@RequestBody SeatsDto.ConfirmReq req) {

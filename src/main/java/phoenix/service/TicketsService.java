@@ -59,7 +59,7 @@ public class TicketsService {
                 .substring(0, 6);
 
         // QR코드 스캔 URL(도메인생기면 여기만 수정)
-        String baseUrl = "http:/localhost:8080";
+        String baseUrl = "http://localhost:8080";
         String qrUrl = baseUrl + "/tickets/qr?qr=" + qrUuid;
 
         // QR 이미지 파일 생성 및 저장
@@ -161,11 +161,7 @@ public class TicketsService {
     public int formerGameCSV() {
         List<Integer> expired = fileService.getExpiredGames(); // game.csv 호출
         if (expired.isEmpty()) return 0; // 만료된 경기가 없으면 종료
-
-        String gnoList = expired.stream()
-                .map(String::valueOf)
-                .collect(Collectors.joining(","));
-        return ticketsMapper.formerGame(gnoList);
+        return ticketsMapper.formerGame(expired);
     }//func end
 
     /**

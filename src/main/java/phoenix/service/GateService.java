@@ -79,11 +79,6 @@ public class GateService {
         }
     }
 
-    // 이미 예매 완료했는지 체크
-    private boolean hasUserAlreadyBooked(int mno, int gno) {
-        RBucket<Boolean> b = redisson.getBucket("user_booking:" + mno + ":" + gno);
-        return Boolean.TRUE.equals(b.get());
-    }
 
     // ============ Public APIs ============
 
@@ -105,10 +100,6 @@ public class GateService {
         if (!gameService.isReservable(gno)) {
             System.out.println(" 🚫 예약 불가 경기입니다.");
             return new EnqueueResult(false, 0);
-        }
-        if (hasUserAlreadyBooked(mno, gno)) {
-            System.out.println(" 🚫 이미 예매 완료된 사용자입니다.");
-            return new EnqueueResult(false, -1);
         }
 
         if (!waitingSet(gno).add(mno)) {

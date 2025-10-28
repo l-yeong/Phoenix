@@ -11,34 +11,45 @@ import { useNavigate } from "react-router-dom";
 import api from "../api/axiosInstance";
 import { useAuth } from "../api/loginstate.jsx";
 
+
+/**
+ * LoginForm.jsx
+ * Phoenix 프로젝트 - 일반 로그인 + 소셜 로그인
+ * 회원가입 페이지와 동일한 중앙 정렬형 디자인
+ */
 const LoginForm = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [mid, setMid] = useState("");
   const [password, setPassword] = useState("");
 
-  /** 로그인 함수 */
+  /** 일반 로그인 처리 */
   const handleLogin = async (e) => {
     e.preventDefault();
+
     try {
       const response = await api.post(
         "/members/login",
         { mid, password_hash: password },
         { withCredentials: true }
       );
+
       const resData = response.data.data;
       if (!resData) {
         alert("서버 응답이 올바르지 않습니다.");
         return;
       }
 
+      // member + role 정보를 함께 loginstate에 저장
       login({
         mid: resData.member.mid,
         mno: resData.member.mno,
+        mname: resData.member.mname,
         role: resData.role,
         status: resData.member.status,
       });
 
+      // ROLE_WITHDRAWN 회원은 자동 이동하지 않음
       if (resData.role === "ROLE_WITHDRAWN") {
         alert("탈퇴한 계정입니다. 복구 페이지로 이동합니다.");
         window.location.href = `http://localhost:5173/changestatus?mid=${resData.member.mid}`;
@@ -63,7 +74,7 @@ const LoginForm = () => {
     }
   };
 
-  /** 소셜 로그인 */
+  /** 소셜 로그인 리디렉션 */
   const handleSocialLogin = (provider) => {
     window.location.href = `http://localhost:8080/oauth2/authorization/${provider}`;
   };
@@ -92,8 +103,10 @@ const LoginForm = () => {
         alignItems: "center",
       }}
     >
+
+
       {/* 로그인 폼 */}
-      <Box
+       <Box
         sx={{
           width: 400,
           margin: "auto",
@@ -223,7 +236,7 @@ const LoginForm = () => {
             <img
               src="/구글로고.jpg"
               alt="Google Login"
-              style={{ width: 36, height: 36 }}
+              style={{ width: 50, height: 40 }}
             />
           </Button>
 

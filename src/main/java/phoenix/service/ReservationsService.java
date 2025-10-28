@@ -2,6 +2,9 @@ package phoenix.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import phoenix.model.dto.GameDto;
 import phoenix.model.dto.ReservationsDto;
 import phoenix.model.mapper.ReservationMapper;
 import org.springframework.stereotype.Service;
@@ -18,6 +21,7 @@ public class ReservationsService {
     private final ReservationMapper reservationMapper;
     private final FileService fileService;
     private final TicketsService ticketsService;
+    private final SeatLockService seatLockService;
 
     /**
      * 예매내역조회
@@ -32,7 +36,7 @@ public class ReservationsService {
             Map<String ,Object> map = new HashMap<>();
             map.put("reservation",dto);
             // csv 파일
-            Map<String,String> gameData = fileService.getGame(dto.getGno());
+            GameDto gameData = fileService.getGame(dto.getGno());
             map.put("game",gameData);
             result.add(map);
         }// for end
@@ -48,7 +52,7 @@ public class ReservationsService {
     public  Map<String ,Object> reserveInfo(int rno){
         Map<String ,Object> map = new HashMap<>();
         ReservationsDto dto = reservationMapper.reserveInfo(rno);
-        Map<String ,String> gameMap = fileService.getGame(dto.getGno());
+        GameDto gameMap = fileService.getGame(dto.getGno());
         map.put("reservation",dto);
         map.put("game",gameMap);
         return map;
@@ -74,14 +78,39 @@ public class ReservationsService {
      * @return boolean
      */
     @Transactional(rollbackFor = Exception.class)
-    public boolean reserveCancle(int rno , int mno){
-        boolean check1 = reservationMapper.reserveCancel(rno,mno);
-        // 티켓 취소 코드
+    public boolean reserveCancle(int rno, int mno) {
+        // 0) 대상 예약 조회
+        ReservationsDto dto = reservationMapper.reserveInfo(rno);
+        if (dto == null || dto.getMno() != mno) return false;
+        if (!"reserved".equalsIgnoreCase(dto.getStatus())) return false; // 이미 취소/기타 상태면 중단
+
+        int gno = dto.getGno();
+        int sno = dto.getSno();
+
+        // 1) DB 상태 전환 (reserved → cancelled)
+        boolean check1 = reservationMapper.reserveCancel(rno, mno);
+        if (!check1) return false; // 조건 불일치(동시성 등) 시 중단
+
+        // 2) 티켓 취소
         boolean cancelTicket = ticketsService.ticketCancel(rno);
-        // 레디스 최신화 코드
-        // 예매내역 dto를 가져와서 키에 해당하는 gno 대입하고 해당하는 sno 락 풀기
+        if (!cancelTicket) {
+            // DB는 롤백되고 Redis도 손대지 않음(정합성 보장)
+            throw new IllegalStateException("티켓 취소 실패");
+        }
+
+        // 3) 커밋 후 Redis 갱신
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            // 커밋완료후 실행되늰 거임. 상속받은 거 TransactionSynchronizationManager 인터페이스에서
+            // TransactionSynchronization 콜백 메소드를 구현한거임.
+            @Override public void afterCommit() {
+                // SOLD 해제 + 유저 카운터 감소
+                System.out.println("트렌젝션 레디스 확인용 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                seatLockService.onReservationCancelled(mno, gno, sno);
+            }
+        });
+
         return true;
-    }// func end
+    }
 
     /**
      * 교환신청 가능한 좌석목록 예매정보
