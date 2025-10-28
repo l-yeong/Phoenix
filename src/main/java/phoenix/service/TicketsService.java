@@ -59,7 +59,7 @@ public class TicketsService {
                 .substring(0, 6);
 
         // QR코드 스캔 URL(도메인생기면 여기만 수정)
-        String baseUrl = "http:/localhost:8080";
+        String baseUrl = "http://localhost:8080";
         String qrUrl = baseUrl + "/tickets/qr?qr=" + qrUuid;
 
         // QR 이미지 파일 생성 및 저장

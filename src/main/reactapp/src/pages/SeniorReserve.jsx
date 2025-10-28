@@ -9,6 +9,7 @@ export default function SeniorReserve() {
   const navigate = useNavigate();
   const [showGuide, setShowGuide] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [games, setGames] = useState([]);
 
   const speak = (text) => {
     window.speechSynthesis.cancel();
@@ -21,12 +22,29 @@ export default function SeniorReserve() {
   };
 
   useEffect(() => {
+
+    /* 경기 목록 불러오기 함수 먼저 정의 */
+    const fetchGames = async () => {
+      try {
+        const res = await axios.get(`http://localhost:8080/senior/games` , {withCredentials : true});
+        if (res.data.success) {
+          setGames(res.data.data);
+        } else {
+          alert("경기 정보를 불러오지 못했습니다.");
+        }
+      } catch (e) {
+        console.log("경기 로드 실패 : ", e);
+      }
+    };
+
+    /* 접근 확인 함수 */
     const checkSeniorAccess = async () => {
       try {
         const res = await axios.get(`http://localhost:8080/senior/reserve`, {
           withCredentials: true,
         });
         if (res.data.success) {
+          await fetchGames(); // ⚡ 이제 정상적으로 호출 가능
           setShowGuide(true);
           speak("이 버튼을 눌러 예매할 경기를 선택해보세요.");
         }
@@ -46,6 +64,7 @@ export default function SeniorReserve() {
         setLoading(false);
       }
     };
+
     checkSeniorAccess();
     return () => window.speechSynthesis.cancel();
   }, []);
@@ -58,12 +77,6 @@ export default function SeniorReserve() {
       </Box>
     );
 
-  const games = [
-    { id: 1, date: "10월 29일 (화)", teams: "PHOENIX vs LIONS", place: "서울구장" },
-    { id: 2, date: "10월 30일 (수)", teams: "PHOENIX vs DRAGONS", place: "부산구장" },
-    { id: 3, date: "11월 1일 (금)", teams: "PHOENIX vs BEARS", place: "대전구장" },
-  ];
-
   return (
     <Box className={styles.container}>
       <Typography variant="h3" className={styles.title}>
@@ -73,28 +86,45 @@ export default function SeniorReserve() {
         예매를 원하는 경기를 선택해주세요.
       </Typography>
 
+
       <Box className={styles.cardContainer}>
-        {games.map((game, idx) => (
-          <Box
-            key={game.id}
-            id={idx === 0 ? "firstGameButton" : undefined}
-            className={styles.card}
-          >
-            <Typography className={styles.cardTitle}>{game.date}</Typography>
-            <Typography className={styles.cardTeams}>{game.teams}</Typography>
-            <Typography className={styles.cardPlace}>({game.place})</Typography>
-            <Button
-              variant="contained"
-              className={styles.cardButton}
-              onClick={() => navigate(`/senior/seats?gameId=${game.id}`)}
+        {games.length === 0 ? (
+          <Typography sx={{ mt: 3 }}> 예매 가능한 경기가 없습니다. </Typography>
+        ) : (
+          games.map((game, idx) => (
+            <Box
+              key={game.gno}
+              id={idx === 0 ? "firstGameButton" : undefined}
+              className={styles.card}
             >
-              바로가기 →
-            </Button>
-          </Box>
-        ))}
+              <Typography className={styles.cardTitle}>
+                {new Date(game.date).toLocaleDateString("ko-KR", {
+                  month: "long",
+                  day: "numeric",
+                  weekday: "short",
+                })}
+              </Typography>
+              <Typography className={styles.cardTeams}>
+                {game.homeTeam} vs {game.awayTeam}
+              </Typography>
+              <Typography className={styles.cardPlace}>
+                {game.place || "인천 피닉스 파크"}
+              </Typography>
+              <Button
+                variant="contained"
+                className={styles.cardButton}
+                onClick={() => navigate(`/senior/seats?gameId=${game.gno}`)}
+              >
+                바로가기 →
+              </Button>
+            </Box>
+          ))
+        )
+        }
+
       </Box>
 
-      {showGuide && (
+      {showGuide && games.length > 0 && (
         <TutorialOverlay
           targetId="firstGameButton"
           message={
