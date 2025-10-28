@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import GameCalendar from "../components/GameCalendar";
 import "../styles/Home.css";
 
-const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+const API = import.meta.env.VITE_API_BASE_URL || "http://192.168.40.190:8080";
 const DEFAULT_STADIUM = "홈구장";
 
 export default function Home() {

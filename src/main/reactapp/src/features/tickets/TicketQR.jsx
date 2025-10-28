@@ -16,7 +16,7 @@ function toImgSrc(code) {
 
   // 3) 서버 정적 경로 처리
   // "/upload/..." 는 8080으로 강제
-  if (code.startsWith("/upload/")) return `http://localhost:8080${code}`;
+  if (code.startsWith("/upload/")) return `http://192.168.40.190:8080${code}`;
 
   // 그 외 절대/상대 경로는 그대로 허용
   if (code.startsWith("/")) return code;
@@ -48,7 +48,7 @@ export default function TicketQR({ rno: rnoProp }) {
 
     const token = localStorage.getItem("accessToken");
     const client = axios.create({
-      baseURL: "http://localhost:8080", // ✅ 백엔드 직접 호출
+      baseURL: "http://192.168.40.190:8080", // ✅ 백엔드 직접 호출
       withCredentials: true,
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       validateStatus: () => true,

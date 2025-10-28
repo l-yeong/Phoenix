@@ -5,7 +5,7 @@ import styles from "../styles/Auth.module.css";
 const SocialLogin = () => {
 
     const handleSocialLogin = (provider) => {
-        window.location.href = `http://localhost:8080/oauth2/authorization/${provider}`;
+        window.location.href = `http://192.168.40.190:8080/oauth2/authorization/${provider}`;
     };
 
     return(

@@ -8,7 +8,7 @@ import styles from "../styles/Header.module.css";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../api/loginstate.jsx";
 
-const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+const API = import.meta.env.VITE_API_BASE_URL || "http://192.168.40.190:8080";
 
 const Header = () => {
   const navigate = useNavigate();
@@ -24,7 +24,7 @@ const Header = () => {
     if (!user) return;
     if (wsRef.current) return;
 
-    const socket = new WebSocket("ws://localhost:8080/socket");
+    const socket = new WebSocket("ws://192.168.40.190:8080/socket");
     wsRef.current = socket;
 
     socket.onopen = () => {

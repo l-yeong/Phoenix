@@ -3,7 +3,7 @@ import axios from "axios";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import "../../styles/zone-seats.css";
 
-const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+const API = import.meta.env.VITE_API_BASE_URL || "http://192.168.40.190:8080";
 const api = axios.create({ baseURL: API, withCredentials: true });
 
 const HOLD_TTL_SECONDS = 120;

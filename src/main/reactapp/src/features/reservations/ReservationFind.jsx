@@ -39,7 +39,7 @@ export default function reservationFind( props ){
     // [1] 예매 상세내역 조회
     const reserveInfo = async () => {
         try{            
-            const response = await axios.get(`http://localhost:8080/reserve/info` , {params : {rno} , withCredentials : true });
+            const response = await axios.get(`http://192.168.40.190:8080/reserve/info` , {params : {rno} , withCredentials : true });
             setReservation(response.data);
             console.log(response.data);
             // 경기날짜+시간
@@ -54,7 +54,7 @@ export default function reservationFind( props ){
     // [2] 예매 취소 
     const reserveCancle = async () => {
         try {
-            const response = await axios.put(`http://localhost:8080/reserve/cancle`, {}, { params : {rno}, withCredentials: true });
+            const response = await axios.put(`http://192.168.40.190:8080/reserve/cancle`, {}, { params : {rno}, withCredentials: true });
             console.log(response.data);
             if (response.data) {
                 alert('예매를 취소 하였습니다');
@@ -71,7 +71,7 @@ export default function reservationFind( props ){
     // [3] 교환 요청 받은 목록
     const getAllRequest = async() => {
         try{
-            const response = await axios.get(`http://localhost:8080/seat/find`, {params : {rno} , withCredentials : true});
+            const response = await axios.get(`http://192.168.40.190:8080/seat/find`, {params : {rno} , withCredentials : true});
             if(response.data == null){
                 return;
             }else{
@@ -86,7 +86,7 @@ export default function reservationFind( props ){
     // [4] 교환요청 수락
     const acceptChange = async (from_rno) => {
         try{
-            const response = await axios.post(`http://localhost:8080/seat/accept`,{} , { params : {rno : from_rno}, withCredentials: true });
+            const response = await axios.post(`http://192.168.40.190:8080/seat/accept`,{} , { params : {rno : from_rno}, withCredentials: true });
             console.log(response.data);
             if(response.data){
                 alert('좌석이 교환되었습니다');
@@ -103,7 +103,7 @@ export default function reservationFind( props ){
     // [5] 교환요청 거절
     const rejectChange = async ( from_rno ) => {
         try{
-            const response = await axios.delete(`http://localhost:8080/seat/reject` , {params : {rno : from_rno} , withCredentials: true });
+            const response = await axios.delete(`http://192.168.40.190:8080/seat/reject` , {params : {rno : from_rno} , withCredentials: true });
             console.log(response.data);
             if(response.data){
                 alert('좌석교환을 거절하였습니다.');
@@ -124,7 +124,7 @@ export default function reservationFind( props ){
             try{
                 const obj = { from_rno : Number(rno) , to_rno : to_rno , toSno : toSno }
                 console.log(obj);
-                const response = await axios.post(`http://localhost:8080/seat/change`,obj , { withCredentials: true });
+                const response = await axios.post(`http://192.168.40.190:8080/seat/change`,obj , { withCredentials: true });
                 console.log(response.data);
                 if(response.data == 1){
                     alert('좌석교환 신청을 완료하였습니다.');
@@ -142,7 +142,7 @@ export default function reservationFind( props ){
     // [7] 모달오픈 클릭이벤트
     const openModalEvent = async () => {
         try{
-            const response = await axios.get(`http://localhost:8080/reserve/possible` , { params : {rno} , withCredentials : true});
+            const response = await axios.get(`http://192.168.40.190:8080/reserve/possible` , { params : {rno} , withCredentials : true});
             setChangeSeat(response.data);
             setOpen(true);
         }catch(e){
@@ -154,7 +154,7 @@ export default function reservationFind( props ){
     // [8] 전체좌석 가져오기
     const seatPrint = async () => {
         try{
-            const response = await axios.get(`http://localhost:8080/seat/print` ,{ params : {rno} , withCredentials : true});
+            const response = await axios.get(`http://192.168.40.190:8080/seat/print` ,{ params : {rno} , withCredentials : true});
             setSeatList(response.data);
         }catch(e){ console.log(e); }
     }// func end

@@ -116,7 +116,7 @@ public class SecurityConfig {
                 // OAuth2 요청까지 포함해 CORS 허용
                 .cors(cors -> cors.configurationSource(request -> {
                     var config = new org.springframework.web.cors.CorsConfiguration();
-                    config.setAllowedOriginPatterns(List.of("http://localhost:5173"));
+                    config.setAllowedOriginPatterns(List.of("http://localhost:5173","http://192.168.40.190:5173"));
                     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                     config.setAllowedHeaders(List.of("Authorization","Content-Type"));
                     config.setAllowCredentials(true);

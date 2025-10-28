@@ -4,7 +4,7 @@ import axios from "axios";
 import { useLocation, useNavigate } from "react-router-dom";
 import "../../styles/gate.css";
 
-const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+const API = import.meta.env.VITE_API_BASE_URL || "http://192.168.40.190:8080";
 
 export default function GatePage() {
   const navigate = useNavigate();

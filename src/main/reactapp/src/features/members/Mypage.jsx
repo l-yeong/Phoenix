@@ -38,7 +38,7 @@ export default function Mypage() {
     =============================== */
     const reservePrint = async () => {
         try {
-            const response = await axios.get("http://localhost:8080/reserve/print", {
+            const response = await axios.get("http://192.168.40.190:8080/reserve/print", {
                 withCredentials: true,
             });
             setReservations(response.data);
@@ -52,7 +52,7 @@ export default function Mypage() {
     =============================== */
     const memberInfo = async () => {
         try {
-            const response = await axios.get("http://localhost:8080/members/info", {
+            const response = await axios.get("http://192.168.40.190:8080/members/info", {
                 withCredentials: true,
             });
             const data = response.data.data;
@@ -77,7 +77,7 @@ export default function Mypage() {
             }
 
             const res = await axios.put(
-                "http://localhost:8080/members/infoupdate",
+                "http://192.168.40.190:8080/members/infoupdate",
                 payload,
                 { withCredentials: true }
             );
@@ -97,7 +97,7 @@ export default function Mypage() {
         e.preventDefault();
         try {
             const res = await axios.put(
-                "http://localhost:8080/members/pwdupdate",
+                "http://192.168.40.190:8080/members/pwdupdate",
                 passwordForm,
                 { withCredentials: true }
             );
@@ -127,7 +127,7 @@ export default function Mypage() {
             const payload = provider ? {} : deleteForm;
 
             const res = await axios.post(
-                "http://localhost:8080/members/delete",
+                "http://192.168.40.190:8080/members/delete",
                 payload,
                 { withCredentials: true }
             );

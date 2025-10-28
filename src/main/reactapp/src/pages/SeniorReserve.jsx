@@ -23,7 +23,7 @@ export default function SeniorReserve() {
   useEffect(() => {
     const checkSeniorAccess = async () => {
       try {
-        const res = await axios.get(`http://localhost:8080/senior/reserve`, {
+        const res = await axios.get(`http://192.168.40.190:8080/senior/reserve`, {
           withCredentials: true,
         });
         if (res.data.success) {
