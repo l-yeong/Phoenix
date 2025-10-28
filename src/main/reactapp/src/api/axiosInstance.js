@@ -8,19 +8,27 @@ const api = axios.create({
 });
 
 api.interceptors.request.use(
-  (config) => config,
-  (error) => Promise.reject(error)
+  (config) => {
+    console.log("[Axios] 요청 전 config:", config);
+    return config;
+  },
+  (error) => {
+    console.error("[Axios] 요청 에러:", error);
+    return Promise.reject(error);
+  }
 );
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log("[Axios] 서버 응답:", response);
+    return response;
+  },
   (error) => {
     const { response } = error;
+    console.error("[Axios] 서버 에러:", error);
 
     if (response?.status === 401) {
-      console.warn("세션 만료 또는 로그인 필요");
-
-      // 직접 새로고침 대신 전역 이벤트 발행
+      console.warn("[Axios] 세션 만료 또는 로그인 필요");
       window.dispatchEvent(new Event("sessionExpired"));
     }
 
