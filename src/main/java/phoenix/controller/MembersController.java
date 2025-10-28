@@ -5,6 +5,7 @@ import jakarta.annotation.security.PermitAll;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.graphql.GraphQlProperties;
 import org.springframework.http.HttpStatus;
@@ -14,6 +15,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import phoenix.model.dto.MembersDto;
 import phoenix.security.JwtUtil;
@@ -25,6 +27,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  *  회원 관련 요청 처리하는 컨트롤러
@@ -61,7 +64,20 @@ public class MembersController {
      * 회원가입 시 받아야하는 값 많아서 실제로 해야함
      */
     @PostMapping("/signup")
-    public ResponseEntity<ApiResponseUtil<?>> signUp(@RequestBody MembersDto membersDto){
+    public ResponseEntity<ApiResponseUtil<?>> signUp(@Valid @RequestBody MembersDto membersDto , BindingResult bindingResult){
+
+        // 1. 유효성 검사 실패 시
+        if (bindingResult.hasErrors()) {
+            String errorMsg = bindingResult.getFieldErrors().stream()
+                    .map(error -> error.getDefaultMessage())
+                    .collect(Collectors.joining(", "));
+
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponseUtil<>(false, errorMsg, null));
+        }
+
+
         boolean result = membersService.signUp(membersDto);
 
         if(result){
