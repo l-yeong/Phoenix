@@ -257,8 +257,8 @@ public class RedisService { // class start
     @Scheduled(cron = "0 0 0 * * ?")
     public void cleanUpMap(){
         LocalDateTime today = LocalDateTime.now();
-        String requestKey = "change:request:";
         String seatKey = "change:seat:";
+        String alarm = "alarm:";
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         Iterator<Map.Entry<String, Object>> iterator = requestMap.entrySet().iterator();
         while (iterator.hasNext()) {
@@ -268,9 +268,14 @@ public class RedisService { // class start
 
             if (saveTime.plusDays(1).isBefore(today)) {
                 // seatMap에서 삭제
-                List<Integer> seatList = seatMap.get("change:seat:" + dto.getTo_rno());
+                List<Integer> seatList = seatMap.get(seatKey + dto.getTo_rno());
                 if (seatList != null) {
                     seatList.remove(Integer.valueOf(dto.getFrom_rno()));
+                }// if end
+                // alarmMap 에서 삭제
+                List<String> strList = alarmMap.get(alarm+dto.getTo_rno());
+                if (strList != null) {
+                    strList.removeIf(str -> str.contains(String.valueOf(dto.getFromSeat())));
                 }// if end
                 // requestMap에서 안전하게 삭제
                 iterator.remove();

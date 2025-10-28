@@ -161,11 +161,7 @@ public class TicketsService {
     public int formerGameCSV() {
         List<Integer> expired = fileService.getExpiredGames(); // game.csv 호출
         if (expired.isEmpty()) return 0; // 만료된 경기가 없으면 종료
-
-        String gnoList = expired.stream()
-                .map(String::valueOf)
-                .collect(Collectors.joining(","));
-        return ticketsMapper.formerGame(gnoList);
+        return ticketsMapper.formerGame(expired);
     }//func end
 
     /**

@@ -4,7 +4,8 @@ import {
   Button,
   TextField,
   Typography,
-  Link
+  Link,
+  styled
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axiosInstance";
@@ -27,8 +28,9 @@ const LoginForm = () => {
     e.preventDefault();
 
     try {
-      const response = await api.post("/members/login",
-        { mid, password_hash: password, },
+      const response = await api.post(
+        "/members/login",
+        { mid, password_hash: password },
         { withCredentials: true }
       );
 
@@ -42,6 +44,7 @@ const LoginForm = () => {
       login({
         mid: resData.member.mid,
         mno: resData.member.mno,
+        mname: resData.member.mname,
         role: resData.role,
         status: resData.member.status,
       });
@@ -57,28 +60,16 @@ const LoginForm = () => {
       navigate("/");
     } catch (error) {
       console.error("로그인 실패:", error);
-
-      // 응답 상태별 처리 (302는 더 이상 안뜰 예정, 대신 401/400)
-      if (error.response) {
-        const { status, data } = error.response;
-
-        // 423 Locked → 탈퇴/휴면 상태 안내
-        if (status === 423 && data?.data) {
-          alert(data.message || "휴면 또는 탈퇴한 계정입니다.");
-          // 백엔드에서 전달한 URL로 이동
-          window.location.href = data.data;
-          return;
-        }
-
-        if (status === 401) {
-          alert("인증되지 않은 요청입니다. 다시 로그인해주세요.");
-        } else if (status === 400) {
-          alert("아이디 또는 비밀번호를 확인해주세요.");
-        } else {
-          alert("서버 오류가 발생했습니다.");
-        }
+      const { status, data } = error.response || {};
+      if (status === 423 && data?.data) {
+        alert(data.message || "휴면 또는 탈퇴한 계정입니다.");
+        window.location.href = data.data;
+      } else if (status === 401) {
+        alert("인증되지 않은 요청입니다. 다시 로그인해주세요.");
+      } else if (status === 400) {
+        alert("아이디 또는 비밀번호를 확인해주세요.");
       } else {
-        alert("서버에 연결할 수 없습니다.");
+        alert("서버 오류가 발생했습니다.");
       }
     }
   };
@@ -87,6 +78,20 @@ const LoginForm = () => {
   const handleSocialLogin = (provider) => {
     window.location.href = `http://localhost:8080/oauth2/authorization/${provider}`;
   };
+
+  const RedButton = styled(Button)({
+    mt: 2,
+    background: "linear-gradient(45deg, #CA2E26 30%, #FF4C4C 90%)",
+    color: "white",
+    fontWeight: "bold",
+    borderRadius: 8,
+    padding: "10px 0",
+    transition: "all 0.3s ease",
+    "&:hover": {
+      background: "linear-gradient(45deg, #b22720 30%, #ff2a2a 90%)",
+      transform: "scale(1.03)",
+    },
+  });
 
   return (
     <div
@@ -98,148 +103,179 @@ const LoginForm = () => {
         alignItems: "center",
       }}
     >
-      {/* 제목 */}
-      <Typography
-        variant="h5"
-        sx={{ mb: 3, color: "#CA2E26", fontWeight: "bold" }}
-      >
-        🔥 Phoenix 로그인
-      </Typography>
+
 
       {/* 로그인 폼 */}
-      <Box
-        component="form"
-        onSubmit={handleLogin}
+       <Box
         sx={{
+          width: 400,
+          margin: "auto",
+          mt: 10,
+          p: 4,
+          mb: 10,
+          borderRadius: 3,
+          boxShadow: 3,
+          bgcolor: "#fafafa",
           display: "flex",
           flexDirection: "column",
-          gap: 2,
-          width: "100%",
-          maxWidth: "400px",
+          alignItems: "center",
         }}
       >
-        <TextField
-          label="아이디"
-          fullWidth
-          value={mid}
-          onChange={(e) => setMid(e.target.value)}
-        />
-
-        <TextField
-          label="비밀번호"
-          type="password"
-          fullWidth
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-
-        <Button
-          variant="contained"
-          type="submit"
+        <Typography
+          variant="h5"
           sx={{
-            mt: 1,
-            bgcolor: "#CA2E26",
-            color: "white",
+            mb: 3,
             fontWeight: "bold",
-            "&:hover": { bgcolor: "#b22720" },
+            color: "#CA2E26",
+            textAlign: "center",
           }}
         >
-          로그인
-        </Button>
-      </Box>
+          🔥 Phoenix 로그인
+        </Typography>
 
-      {/* 아이디 / 비밀번호 찾기 링크 */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          mt: 1,
-          width: "100%",
-          maxWidth: "400px",
-        }}
-      >
-        <Link
-          component="button"
-          underline="hover"
-          sx={{ fontSize: "0.9rem", color: "gray" }}
-          onClick={() => navigate("/find-id")}
-        >
-          아이디 찾기
-        </Link>
-        <Link
-          component="button"
-          underline="hover"
-          sx={{ fontSize: "0.9rem", color: "gray" }}
-          onClick={() => navigate("/find-pwd")}
-        >
-          비밀번호 찾기
-        </Link>
-      </Box>
+        <Box component="form" onSubmit={handleLogin} sx={{ width: "100%" }}>
+          <TextField
+            label="아이디"
+            fullWidth
+            value={mid}
+            onChange={(e) => setMid(e.target.value)}
+            sx={{
+              mb: 2,
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 2,
+                "&.Mui-focused fieldset": { borderColor: "#CA2E26" },
+              },
+            }}
+          />
+          <TextField
+            label="비밀번호"
+            type="password"
+            fullWidth
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            sx={{
+              mb: 2,
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 2,
+                "&.Mui-focused fieldset": { borderColor: "#CA2E26" },
+              },
+            }}
+          />
+          <RedButton fullWidth type="submit">
+            로그인
+          </RedButton>
+        </Box>
 
-      {/* 안내문 */}
-      <Typography
-        variant="body2"
-        sx={{
-          mt: 4,
-          mb: 1,
-          color: "gray",
-          fontSize: "0.9rem",
-        }}
-      >
-        SNS 계정으로 빠르게 로그인하세요
-      </Typography>
-
-      {/* 소셜 로그인 버튼 */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          gap: 3,
-          mt: 1,
-        }}
-      >
-        {/* Google */}
-        <Button
-          onClick={() => handleSocialLogin("google")}
+        {/* 아이디 / 비밀번호 찾기 */}
+        <Box
           sx={{
-            minWidth: "50px",
-            height: "50px",
-            borderRadius: "50%",
-            bgcolor: "white",
-            boxShadow: 1,
-            "&:hover": { boxShadow: 3 },
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: 2,
+            mt: 2,
+            fontSize: "0.9rem",
           }}
         >
-          <img src="/구글로고.jpg" alt="Google Login" width="24" />
-        </Button>
+          <Link
+            component="button"
+            underline="hover"
+            sx={{ color: "gray", "&:hover": { color: "#CA2E26" } }}
+            onClick={() => navigate("/find-id")}
+          >
+            아이디 찾기
+          </Link>
+          <Typography sx={{ color: "#ccc" }}>|</Typography>
+          <Link
+            component="button"
+            underline="hover"
+            sx={{ color: "gray", "&:hover": { color: "#CA2E26" } }}
+            onClick={() => navigate("/find-pwd")}
+          >
+            비밀번호 찾기
+          </Link>
+        </Box>
 
-        {/* GitHub */}
-        <Button
-          onClick={() => handleSocialLogin("github")}
+        {/* 안내문 */}
+        <Typography
+          variant="body2"
           sx={{
-            minWidth: "50px",
-            height: "50px",
-            borderRadius: "50%",
-            bgcolor: "black",
-            "&:hover": { bgcolor: "#333" },
+            mt: 5,
+            mb: 2,
+            color: "#666",
+            fontSize: "0.95rem",
+            fontWeight: 500,
+            letterSpacing: "0.3px",
           }}
         >
-          <img src="/깃로고.jpg" alt="GitHub Login" width="24" />
-        </Button>
+          SNS 계정으로{" "}
+          <span style={{ color: "#CA2E26", fontWeight: "bold" }}>빠르게</span>{" "}
+          로그인하세요
+        </Typography>
 
-        {/* Facebook */}
-        <Button
-          onClick={() => handleSocialLogin("facebook")}
+        {/* 소셜 로그인 버튼 */}
+        <Box
           sx={{
-            minWidth: "50px",
-            height: "50px",
-            borderRadius: "50%",
-            bgcolor: "#1877f2",
-            "&:hover": { bgcolor: "#155dc0" },
+            display: "flex",
+            justifyContent: "center",
+            gap: 4,
+            mt: 2,
           }}
         >
-          <img src="/페북로고.png" alt="Facebook Login" width="24" />
-        </Button>
+          <Button
+            onClick={() => handleSocialLogin("google")}
+            sx={{
+              minWidth: 64,
+              height: 64,
+              borderRadius: "50%",
+              bgcolor: "white",
+              boxShadow: 2,
+              "&:hover": { boxShadow: 4 },
+            }}
+          >
+            <img
+              src="/구글로고.jpg"
+              alt="Google Login"
+              style={{ width: 50, height: 40 }}
+            />
+          </Button>
+
+          <Button
+            onClick={() => handleSocialLogin("github")}
+            sx={{
+              width: 64,
+              height: 64,
+              borderRadius: "50%",
+              boxShadow: 2,
+              bgcolor: "white",
+              "&:hover": { boxShadow: 4 },
+            }}
+          >
+            <img
+              src="/깃로고.png"
+              alt="GitHub Login"
+              style={{ width: 36, height: 36 }}
+            />
+          </Button>
+
+          <Button
+            onClick={() => handleSocialLogin("facebook")}
+            sx={{
+              width: 64,
+              height: 64,
+              borderRadius: "50%",
+              boxShadow: 2,
+              bgcolor: "white",
+              "&:hover": { boxShadow: 4 },
+            }}
+          >
+            <img
+              src="/페북로고.png"
+              alt="Facebook Login"
+              style={{ width: 36, height: 36 }}
+            />
+          </Button>
+        </Box>
       </Box>
     </div>
   );

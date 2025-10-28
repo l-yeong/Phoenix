@@ -20,31 +20,37 @@ export const AuthProvider = ({ children }) => {
   const login = (userData) => {
     console.log("login() 호출됨:", userData);
     setUser(userData);
+    // fetchUser();
   };
 
+  // const fetchUser = async () => {
+  //     console.log("fetchUser 체크");
+  //     try {
+  //       const res = await api.get("/members/info"); // 세션 쿠키 포함됨
+  //       console.log("서버응답",res);
+  //       if (res.data.success) {
+  //         console.log("회원정보",res.data.data);
+  //         setUser(res.data.data.member);
+  //       } else {
+  //         console.log("[fetchUser] 로그인 상태 아님");
+  //         setUser(null);
+  //       }
+  //     } catch (error) {
+  //       console.log("회원정보 불러오기 실패:", error);
+  //       setUser(null);
+  //     } finally {
+  //       console.log("[fetchUser] 완료");
+  //       setLoading(false);
+  //     }
+  //   };
+
+
   /** 세션 기반 회원 정보 자동 요청 */
-  useEffect(() => {
-    if (loggedOut) return; // 로그아웃 중에는 요청하지 않음
-
-    const fetchUser = async () => {
-      try {
-        const res = await api.get("/members/info"); // 세션 쿠키 포함됨
-        if (res.data.success) {
-          setUser(res.data.data);
-        } else {
-          setUser(null);
-        }
-      } catch (error) {
-        console.log("회원정보 불러오기 실패:", error);
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, [loggedOut]);
-
+  // useEffect(() => {
+  //   if (!loggedOut && !user) {
+  //     fetchUser();
+  //   }
+  // }, []);
   /** 로그아웃 처리 */
   const logout = async () => {
     setLoggedOut(true);
