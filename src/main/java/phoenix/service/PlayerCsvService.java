@@ -49,6 +49,14 @@ public class PlayerCsvService {
     public PlayerInfo findByPno(int pno) { return playerByPno.get(pno); }
     public String findTeamName(int teamNo) { return teamNameByNo.get(teamNo); }
 
+    /** 전체 선수 목록(정렬 포함) */
+    public List<PlayerInfo> findAllPlayers() {
+        return playerByPno.values().stream()
+                .sorted(Comparator.comparing(PlayerInfo::getTeamNo)
+                        .thenComparing(PlayerInfo::getName))
+                .toList(); // Java 16+: 불변 리스트
+    }
+
     // ───────────────────────────────────────────────────────────
     // CSV loaders
     // ───────────────────────────────────────────────────────────

@@ -29,8 +29,8 @@ public class SeniorController {
      */
 
     @GetMapping("/reserve")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> seniorReserve(HttpServletRequest req) {
+    public ResponseEntity<?> seniorReserve() {
+
         MembersDto member = membersService.getLoginMember();
         if (member == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)

@@ -37,7 +37,7 @@ create table members (
     
     -- 이메일 인증 여부( 이메일 인증 완료 여부 저장 )
     email_verified boolean default false not null,   -- 이메일 인증 여부
-
+    
     -- 회원 탈퇴 날짜
     last_status_change timestamp default null
     

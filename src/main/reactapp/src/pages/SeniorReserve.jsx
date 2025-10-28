@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { Box, Typography, Button , CircularProgress } from "@mui/material";
+import { Box, Typography, Button, CircularProgress } from "@mui/material";
 import styles from "../styles/SeniorReserve.module.css";
 import { useNavigate } from "react-router-dom";
 import TutorialOverlay from "../components/TutorialOverlay";
+import axios from "axios";
 
 export default function SeniorReserve() {
   const navigate = useNavigate();
   const [showGuide, setShowGuide] = useState(false);
-  const [ loading , setLoading ] = useState(true);
+  const [loading, setLoading] = useState(true);
 
-
-  // SpeechSynthesis 함수 정의
   const speak = (text) => {
-    window.speechSynthesis.cancel(); // 중복 방지
+    window.speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(text);
     utter.lang = "ko-KR";
     utter.rate = 0.9;
@@ -21,15 +20,13 @@ export default function SeniorReserve() {
     window.speechSynthesis.speak(utter);
   };
 
-  // 페이지 진입 시 시니어 접근 검증
   useEffect(() => {
     const checkSeniorAccess = async () => {
       try {
-        const res = await axios.get(`${API}/senior/reserve`, {
+        const res = await axios.get(`http://localhost:8080/senior/reserve`, {
           withCredentials: true,
         });
         if (res.data.success) {
-          // 접근 허용
           setShowGuide(true);
           speak("이 버튼을 눌러 예매할 경기를 선택해보세요.");
         }
@@ -49,13 +46,10 @@ export default function SeniorReserve() {
         setLoading(false);
       }
     };
-
     checkSeniorAccess();
-    // cleanup 시 음성 중단
     return () => window.speechSynthesis.cancel();
   }, []);
 
-  // 로딩 중 화면
   if (loading)
     return (
       <Box sx={{ textAlign: "center", mt: 10 }}>
@@ -72,28 +66,34 @@ export default function SeniorReserve() {
 
   return (
     <Box className={styles.container}>
-      <Typography variant="h4" className={styles.title}>
+      <Typography variant="h3" className={styles.title}>
         ⚾ 시니어 자동 예매
       </Typography>
       <Typography variant="subtitle1" className={styles.subtitle}>
-        3일 내 예매 가능한 경기를 선택해주세요.
+        예매를 원하는 경기를 선택해주세요.
       </Typography>
 
-      <Box className={styles.buttonList}>
+      <Box className={styles.cardContainer}>
         {games.map((game, idx) => (
-          <Button
+          <Box
             key={game.id}
             id={idx === 0 ? "firstGameButton" : undefined}
-            variant="contained"
-            className={styles.gameButton}
-            onClick={() => navigate(`/senior/seats?gameId=${game.id}`)} // 수정된 경로
+            className={styles.card}
           >
-            {game.date} <br /> {game.teams} <br /> ({game.place})
-          </Button>
+            <Typography className={styles.cardTitle}>{game.date}</Typography>
+            <Typography className={styles.cardTeams}>{game.teams}</Typography>
+            <Typography className={styles.cardPlace}>({game.place})</Typography>
+            <Button
+              variant="contained"
+              className={styles.cardButton}
+              onClick={() => navigate(`/senior/seats?gameId=${game.id}`)}
+            >
+              바로가기 →
+            </Button>
+          </Box>
         ))}
       </Box>
 
-      {/* 튜토리얼 오버레이 + 음성 */}
       {showGuide && (
         <TutorialOverlay
           targetId="firstGameButton"
@@ -105,7 +105,7 @@ export default function SeniorReserve() {
             </p>
           }
           onClose={() => {
-            window.speechSynthesis.cancel(); // 음성 종료
+            window.speechSynthesis.cancel();
             setShowGuide(false);
           }}
         />
