@@ -20,11 +20,13 @@ import org.springframework.web.bind.annotation.*;
 import phoenix.model.dto.MembersDto;
 import phoenix.security.JwtUtil;
 import phoenix.service.MembersService;
+import phoenix.service.PlayerCsvService;
 import phoenix.util.ApiResponseUtil;
 import phoenix.util.PasswordUtil;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -40,6 +42,7 @@ public class MembersController {
 
     private final MembersService membersService;
     private final JwtUtil jwtUtil;
+    private final PlayerCsvService playerCsvService;
 
 
     /**
@@ -89,6 +92,24 @@ public class MembersController {
                     .status(HttpStatus.BAD_REQUEST) // 400 Bad Request
                     .body(new ApiResponseUtil<>(false , "회원가입 실패" , null));
         } // if e
+    } // func e
+
+    @GetMapping("/signup/players")
+    public ResponseEntity<ApiResponseUtil<?>> getPlayers(){
+
+        List<Map<String , Object>> list = playerCsvService.findAllPlayers().stream()
+                .map( p -> {
+                    Map<String , Object> map = new HashMap<>();
+                    map.put("pno", p.getPno());
+                    map.put("name", p.getName());
+                    map.put("position", p.getPosition());
+                    map.put("teamName", playerCsvService.findTeamName(p.getTeamNo()));
+                    return map;
+                })
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(new ApiResponseUtil<>(true , "선수 목록 로드 성공" , list));
+
     } // func e
 
     /**

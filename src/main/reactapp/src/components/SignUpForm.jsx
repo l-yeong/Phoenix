@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import api from "../api/axiosInstance";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 const SignUpPage = () => {
   const [form, setForm] = useState({
@@ -27,6 +28,7 @@ const SignUpPage = () => {
   const [emailCode, setEmailCode] = useState("");
   const [emailVerified, setEmailVerified] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [playerList, setPlayerList] = useState([]);
   const navigate = useNavigate();
 
   /** 정규식 패턴 */
@@ -159,14 +161,22 @@ const SignUpPage = () => {
     }
   };
 
-  const playerList = [
-    { id: 1, name: "박찬호" },
-    { id: 2, name: "류현진" },
-    { id: 3, name: "이정후" },
-    { id: 4, name: "오타니 쇼헤이" },
-    { id: 5, name: "추신수" },
-    { id: 6, name: "김하성" },
-  ];
+  /** 서버에서 선수 목록 불러오기 */
+  useEffect(() => {
+    const fetchPlayers = async () => {
+      try {
+        const res = await api.get("/members/signup/players");
+        if (res.data.success) {
+          setPlayerList(res.data.data);
+        } else {
+          alert("선수 목록 불러오기 실패");
+        }
+      } catch (err) {
+        console.error("선수 목록 로드 오류:", err);
+      }
+    };
+    fetchPlayers();
+  }, []);
 
   return (
     <div
@@ -296,11 +306,15 @@ const SignUpPage = () => {
           onChange={handleChange}
           fullWidth
         >
-          {playerList.map((p) => (
-            <MenuItem key={p.id} value={p.id}>
-              {p.name}
-            </MenuItem>
-          ))}
+          {playerList.length > 0 ? (
+            playerList.map((p) => (
+              <MenuItem key={p.pno} value={p.pno}>
+                {p.name} ({p.position} · {p.teamName})
+              </MenuItem>
+            ))
+          ) : (
+            <MenuItem disabled>불러오는 중...</MenuItem>
+          )}
         </TextField>
 
         <FormControlLabel
