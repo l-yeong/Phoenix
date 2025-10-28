@@ -22,8 +22,8 @@
   text-align: center;
   font-size: 1.3rem !important;
   color: #555;
-  margin-bottom: 150px !important; /* 기존 100px → 120px, 카드와의 간격을 조금 더 확보 */
-  margin-top: 100px;
+  margin-bottom: 30px !important; /* 기존 100px → 120px, 카드와의 간격을 조금 더 확보 */
+  margin-top: 30px !important;
 }
 
 /* 카드 컨테이너 */
@@ -63,23 +63,23 @@
 }
 
 .cardTitle {
-  font-size:2.8rem;
+  font-size:2.1rem !important;
   font-weight: 600;
 }
 
 .cardTeams {
-  font-size: 2.8rem;
+  font-size: 1.5rem!important;
   font-weight: 700;
   margin: 10px 0;
 }
 
 .cardPlace {
-  font-size: 2.8rem;
+  font-size: 1.8rem!important;
   opacity: 0.95;
 }
 
 .cardButton {
-  margin-top: 50px !important; /* 기존 40px → 50px: 버튼을 살짝 더 아래로 */
+  margin-top: 20px !important; /* 기존 40px → 50px: 버튼을 살짝 더 아래로 */
   background-color: #fff !important;
   color: #ca2e26 !important;
   font-weight: 700 !important;
@@ -93,6 +93,7 @@
 .cardButton:hover {
   background-color: #f8e3e2 !important;
 }
+
 
 /* 반응형 */
 @media (max-width: 1200px) {

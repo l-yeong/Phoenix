@@ -55,7 +55,10 @@ public class PlayerCsvService {
                 .sorted(Comparator.comparing(PlayerInfo::getTeamNo)
                         .thenComparing(PlayerInfo::getName))
                 .toList(); // Java 16+: 불변 리스트
-    }
+    } // func e
+
+
+
 
     // ───────────────────────────────────────────────────────────
     // CSV loaders

@@ -23,7 +23,10 @@ public class MembersDto {
     private String mname;
 
     @NotBlank(message = "아이디는 필수 입력 항목입니다.")
-    @Pattern(regexp = "^[a-zA-Z0-9]{4,12}$", message = "아이디는 영문과 숫자로 4~12자 이내여야 합니다.")
+    @Pattern(
+            regexp = "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{4,12}$",
+            message = "아이디는 영문과 숫자를 포함한 4~12자여야 합니다."
+    )
     private String mid;
 
     @NotBlank(message = "전화번호는 필수 입력 항목입니다.")
