@@ -295,14 +295,18 @@ public class SeatLockService {
             // 1) 무결성
             if (!seatCsvService.existsSeatBySno(sno)) { res.put(sno, "INVALID"); continue; }
 
-            // 2) 시니어석 블록 표시
+            // 1️⃣ SOLD 먼저 검사 (시니어 예매로 이미 매진된 경우)
+            if (sold.contains(sno)) {
+                res.put(sno, "SOLD");
+                continue;
+            }
+
+            // 2️⃣ 그 다음에 시니어 예매 D-2 체크
             if (seatCsvService.isSeniorSeat(sno) && !seniorOpen) {
                 res.put(sno, "BLOCKED");
                 continue;
             }
 
-            // 3) SOLD/HELD/AVAILABLE
-            if (sold.contains(sno)) { res.put(sno, "SOLD"); continue; }
             String holder = holds.get(seatKey(gno, sno));
             if (holder != null) {
                 res.put(sno, holder.equals(String.valueOf(mno)) ? "HELD_BY_ME" : "HELD");
