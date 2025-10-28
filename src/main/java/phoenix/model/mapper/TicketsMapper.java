@@ -61,7 +61,7 @@ public interface TicketsMapper {
     @Update(" UPDATE tickets t JOIN reservations r ON r.rno = t.rno " +
             " SET t.valid = 0 WHERE r.gno IN (${gnoList}) " +
             " AND (t.valid = 1)")
-    int formerGame(@Param("gnoList") String gnoList);
+    int formerGame(@Param("gnoList") List<Integer> gnoList);
 
 
     /**

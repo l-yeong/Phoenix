@@ -25,7 +25,7 @@ import java.util.*;
 @RequiredArgsConstructor
 public class FileService {
     private final TicketsQR ticketsQR;
-    private Map<String , Map<String ,String >> gameMap;
+    //private Map<String , Map<String ,String >> gameMap;
 
 
 
@@ -78,36 +78,36 @@ public class FileService {
     }//func end
 
 
-    /**
-     * 서비스 생성시 csv파일 읽어오는 기능
-     *
-     */
-    @PostConstruct
-    private void init(){
-        gameMap = new HashMap<>();
-        System.out.println("CSV");
-        loadCsv();
-    }// func end
-
-    /**
-     * CSV 파일 읽어서 gameMap에 저장
-     */
-    private void loadCsv(){
-        try{
-            CSVReader reader = new CSVReader(new FileReader("src/main/resources/static/games.csv"));
-            String[] headers = reader.readNext(); // 첫 줄 : 컬럼명
-            String[] line;
-            while ((line = reader.readNext()) != null ){
-                Map<String,String> row = new HashMap<>();
-                for (int i = 0; i < headers.length; i++){ // 0번째는 번호(gno)
-                    row.put(headers[i],line[i]);
-                }// for end
-                gameMap.put(line[0] , row);
-            }
-        } catch (Exception e){
-            e.printStackTrace();;
-        }// try end
-    }// func end
+    ///**
+    // * 서비스 생성시 csv파일 읽어오는 기능
+    // *
+    // */
+    //@PostConstruct
+    //private void init(){
+    //    gameMap = new HashMap<>();
+    //    System.out.println("CSV");
+    //    loadCsv();
+    //}// func end
+    //
+    ///**
+    // * CSV 파일 읽어서 gameMap에 저장
+    // */
+    //private void loadCsv(){
+    //    try{
+    //        CSVReader reader = new CSVReader(new FileReader("src/main/resources/static/games.csv"));
+    //        String[] headers = reader.readNext(); // 첫 줄 : 컬럼명
+    //        String[] line;
+    //        while ((line = reader.readNext()) != null ){
+    //            Map<String,String> row = new HashMap<>();
+    //            for (int i = 0; i < headers.length; i++){ // 0번째는 번호(gno)
+    //                row.put(headers[i],line[i]);
+    //            }// for end
+    //            gameMap.put(line[0] , row);
+    //        }
+    //    } catch (Exception e){
+    //        e.printStackTrace();;
+    //    }// try end
+    //}// func end
 
     /**
      * 특정 경기번호의 경기내용 조회
@@ -115,9 +115,14 @@ public class FileService {
      * @param gno 경기번호
      * @return Map 경기정보
      */
-    public Map<String,String> getGame(int gno){
-        Map<String,String> result = gameMap.get("" +gno);
-        return result;
+    public GameDto getGame(int gno){
+        List<GameDto> list = loadGames();
+        for (GameDto dto : list){
+            if (dto.getGno() == gno){
+                return dto;
+            }// if end
+        }// for end
+        return null;
     }// func end
 
 
@@ -170,27 +175,16 @@ public class FileService {
         List<Integer> expired = new ArrayList<>();
         // KST 현재 시각
         LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
-
+        List<GameDto> list = loadGames();
         //gameMap(CSV 에서 읽은 전체 경기 데이터)
-        for (Map.Entry<String, Map<String, String>> entry : gameMap.entrySet()) {
-            String gnoStr = entry.getKey();
-            Map<String, String> row = entry.getValue();
-
-            // CSV 컬럼 데이터 추출
-            String dateStr = trimOrNull(row.get("date"));
-            String timeStr = trimOrNull(row.get("time"));
-
+        for (GameDto dto : list) {
             try {
-                    LocalDate d = parseDate(dateStr);
-                    LocalTime t = (timeStr == null || timeStr.isEmpty())
-                            ? LocalTime.of(23, 59, 59) //CSV 경기날짜 공백일 경우 23:59:59에 티켓 만료
-                            : parseTime(timeStr);
-                    LocalDateTime gameDT = LocalDateTime.of(d,t);
-                    if(gameDT.isBefore(now)){
-                        expired.add(Integer.parseInt(gnoStr));
-                    }//if end
+                LocalDateTime gameDT = LocalDateTime.of(dto.getDate(),dto.getTime());
+                if(gameDT.isBefore(now)){
+                    expired.add(dto.getGno());
+                }//if end
             } catch (Exception e) {
-                System.out.println("[getExpiredGames] 날짜/시간 파싱 실패 gno=" + gnoStr + dateStr + timeStr);
+                System.out.println("[getExpiredGames] 날짜/시간 파싱 실패 gno=" + dto.getGno() + dto.getDate() + dto.getTime());
             }//catch end
         }//for end
         return expired;
