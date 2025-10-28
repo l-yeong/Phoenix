@@ -8,13 +8,16 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import phoenix.model.dto.GameDto;
 import phoenix.model.dto.MembersDto;
+import phoenix.service.GameService;
 import phoenix.service.MembersService;
 import phoenix.util.ApiResponseUtil;
 
 import java.time.LocalDate;
 import java.time.Period;
 import java.time.format.DateTimeParseException;
+import java.util.List;
 
 @RestController
 @RequestMapping("/senior")
@@ -22,6 +25,7 @@ import java.time.format.DateTimeParseException;
 public class SeniorController {
 
     private final MembersService membersService;
+    private final GameService gameService;
 
 
     /**
@@ -59,6 +63,16 @@ public class SeniorController {
         }
 
         return ResponseEntity.ok(new ApiResponseUtil<>(true, "접근 허용", null));
+
+    } // func e
+
+    /**
+     * 오늘 경기 포함 , 아직 시작하지 않은 경기 3개 반환
+     */
+    @GetMapping("/games")
+    public ResponseEntity<ApiResponseUtil<?>> getUpcomingGames(){
+        List<GameDto> games = gameService.findUpcomingGames();
+        return ResponseEntity.ok(new ApiResponseUtil<>(true , "예매 가능한 경기" , games));
 
     } // func e
 
