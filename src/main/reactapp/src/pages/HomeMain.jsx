@@ -6,8 +6,10 @@ const HomeMain = () => {
   const navigate = useNavigate();
 
   return (
-    <Box className={styles.container}>
+
+    <Box className={styles.container} sx={{mt: -10,}}> {/*sx 전체 화면을 위로 약간 당김 (기존보다 위로 이동)*/}
       {/* 로고 + 타이틀 */}
+
       <Box className={styles.logoSection}>
         <img
           src="피닉스로고.png"

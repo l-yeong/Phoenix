@@ -136,6 +136,7 @@ public class SecurityConfig {
                 // =============================
                 .authorizeHttpRequests(auth -> auth // URL별 인가 규칙 시작
                         .requestMatchers(HttpMethod.OPTIONS , "/**").permitAll() // 프리플라이트 요청 허용
+                        .requestMatchers("/senior/**").authenticated()
                         .requestMatchers("/members/email/**").permitAll()
                         //.requestMatchers("/tickets/ticketLog/**").hasRole("ADMIN")
                         //.requestMatchers("/tickets/qr/**").hasRole("ADMIN")
@@ -150,7 +151,6 @@ public class SecurityConfig {
                                 "/tickets/**",
                                 "/upload/**",
                                 "/reserve/**",
-                                "/senior/**",
                                 "/seat/**"
                         ).permitAll() // 나중에 싹다 authenticated() 로 바꿔서 인증없이 못들어가게 만들거임
                         .anyRequest().authenticated() // 나머지는 전부 인증필요(JWT 또는 OAuth2 로그인 성공 상태)

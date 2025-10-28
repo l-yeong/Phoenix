@@ -2,8 +2,11 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../api/loginstate";
-import { Button } from "@mui/joy";
-import Table from '@mui/joy/Table';
+import {
+    Button, Box, Card, CardContent, CardActions, Checkbox, Divider,
+    FormControl, FormLabel, Input, Sheet, Stack, Table as JoyTable,
+    Typography, Chip, Alert
+} from "@mui/joy";
 
 export default function Mypage() {
     const [mode, setMode] = useState("reservation"); // reservation | edit | password | delete
@@ -78,8 +81,9 @@ export default function Mypage() {
                 payload,
                 { withCredentials: true }
             );
-            if (res.data.success) alert("회원정보가 성공적으로 수정되었습니다!");
-            else alert(res.data.message);
+            if (res.data.success){ alert("회원정보가 성공적으로 수정되었습니다!");
+            navigate("/");
+            }else{ alert(res.data.message);}
         } catch (e) {
             console.error("회원정보 수정 실패:", e);
             alert("서버 오류가 발생했습니다.");
@@ -100,6 +104,7 @@ export default function Mypage() {
             if (res.data.success) {
                 alert("비밀번호가 성공적으로 변경되었습니다!");
                 setPasswordForm({ current_password: "", new_password: "" });
+                navigate("/");
             } else {
                 alert(res.data.message);
             }
@@ -161,180 +166,272 @@ export default function Mypage() {
        렌더링
     =============================== */
     return (
-        <div style={{ padding: "30px" }}>
-            <h2>마이페이지</h2>
+        <div style={{ textAlign: "center", marginBottom: 20 }}>
+            <h2
+                style={{
+                    textAlign: "center",
+                    marginBottom: 30,
+                    fontSize: "50px",       // ✅ 페이지 타이틀 크게
+                    fontWeight: "bold",
+                    color: "#111827",
+                }}
+            >
+                마이페이지
+            </h2>
 
             {/* 탭 메뉴 */}
-            <div style={{ marginBottom: "20px" }}>
-                <Button variant="soft" color="success" onClick={() => setMode("reservation")} style={{marginRight: "10px"}}>예매 내역</Button>
-                <Button variant="soft" onClick={() => setMode("edit")} style={{marginRight: "10px"}}>회원정보 수정</Button>
+            <div
+                style={{
+                    marginBottom: "20px",
+                    display: "flex",
+                    justifyContent: "center",
+                    gap: "10px",
+                    flexWrap: "wrap",
+                }}
+            >
+                <Button variant="soft" color="success" onClick={() => setMode("reservation")}>
+                    예매 내역
+                </Button>
+                <Button variant="soft" onClick={() => setMode("edit")}>
+                    회원정보 수정
+                </Button>
                 {/* 소셜회원이면 비밀번호 변경 탭 숨김 */}
                 {!provider && (
-                    <Button onClick={() => setMode("password")} style={{marginRight: "10px"}}>비밀번호 변경</Button>
+                    <Button onClick={() => setMode("password")}>
+                        비밀번호 변경
+                    </Button>
                 )}
-                <Button variant="soft" color="danger" onClick={() => setMode("delete")} style={{marginRight: "10px"}}>회원 탈퇴</Button>
+                <Button variant="soft" color="danger" onClick={() => setMode("delete")}>
+                    회원 탈퇴
+                </Button>
             </div>
 
             {/* 예매내역 */}
             {mode === "reservation" && (
-                <>
-                    <h3>예매 내역</h3>
-                    {reservations.length === 0 ? (
-                        <p>예매 내역이 없습니다.</p>
-                    ) : (
-                        <Table aria-label="striped table" stripe="odd" border="1" cellPadding="8" style={{ borderCollapse: "collapse" }}>
-                            <thead>
-                                <tr>
-                                    <th>예매번호</th>
-                                    <th>좌석번호</th>
-                                    <th>홈팀</th>
-                                    <th>어웨이팀</th>
-                                    <th>경기날짜</th>
-                                    <th>예매현황</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {reservations.map((r, idx) => (
-                                    <tr
-                                        key={idx}
-                                        onClick={() => navigate(`/reservation/${r.reservation.rno}`)}
-                                        style={{ cursor: "pointer" }}
-                                    >
-                                        <td>{r.reservation.rno}</td>
-                                        <td>{r.reservation?.sno}</td>
-                                        <td>{r.game.homeTeam}</td>
-                                        <td>{r.game.awayTeam}</td>
-                                        <td>
-                                            {r.game.date} {r.game.time}
-                                        </td>
-                                        <td>
-                                            {r.reservation.status === "reserved"
-                                                ? "예매완료"
-                                                : r.reservation.status === "cancelled"
-                                                    ? "예매취소"
-                                                    : r.reservation.status}
-                                        </td>
+                <Card variant="outlined" sx={{ maxWidth: 720, mx: "auto" }}>
+                    <CardContent>
+                        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
+                            <Typography level="h4" component="h3">예매 내역</Typography>
+                            <Chip variant="soft">총 {reservations?.length || 0}건</Chip>
+                        </Stack>
+                        <Divider sx={{ mb: 2 }} />
+
+                        {reservations.length === 0 ? (
+                            <Alert variant="soft" color="neutral">예매 내역이 없습니다.</Alert>
+                        ) : (
+                            <JoyTable aria-label="예약 테이블" stripe="odd" border="1" cellPadding="8" style={{ width: "100%", borderCollapse: "collapse", textAlign: "center" }}>
+                                <thead>
+                                    <tr>
+                                        <th>예매번호</th>
+                                        <th>좌석번호</th>
+                                        <th>홈팀</th>
+                                        <th>어웨이팀</th>
+                                        <th>경기날짜</th>
+                                        <th>예매현황</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </Table>
-                    )}
-                </>
+                                </thead>
+                                <tbody>
+                                    {reservations.map((r, idx) => (
+                                        <tr
+                                            key={idx}
+                                            onClick={() => navigate(`/reservation/${r.reservation.rno}`)}
+                                            style={{ cursor: "pointer" }}
+                                        >
+                                            <td>{r.reservation.rno}</td>
+                                            <td>{r.reservation?.sno}</td>
+                                            <td>{r.game.homeTeam}</td>
+                                            <td>{r.game.awayTeam}</td>
+                                            <td>{r.game.date} {r.game.time}</td>
+                                            <td>
+                                                {r.reservation.status === "reserved"
+                                                    ? "예매완료"
+                                                    : r.reservation.status === "cancelled"
+                                                        ? "예매취소"
+                                                        : r.reservation.status}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </JoyTable>
+                        )}
+                    </CardContent>
+                </Card>
             )}
 
             {/* 회원정보 수정 */}
             {mode === "edit" && (
-                <>
-                    <h3>회원정보 수정</h3>
-                    <form onSubmit={handleInfoUpdate}>
-                        <label>이름</label>
-                        <input
-                            name="mname"
-                            value={form.mname || ""}
-                            onChange={(e) => setForm({ ...form, mname: e.target.value })}
-                        />
-                        <label>전화번호</label>
-                        <input
-                            name="mphone"
-                            value={form.mphone || ""}
-                            onChange={(e) => setForm({ ...form, mphone: e.target.value })}
-                        />
+                <Card variant="outlined" sx={{ maxWidth: 720, mx: "auto" }}>
+                    <CardContent>
+                        <Typography level="h4" component="h3" sx={{ mb: 0.5 }}>회원정보 수정</Typography>
+                        <Typography level="body-sm" sx={{ color: "neutral.500", mb: 2 }}>
+                            연락처와 이메일 등 기본 정보를 최신 상태로 유지해 주세요.
+                        </Typography>
+                        <Divider sx={{ mb: 2 }} />
 
-                        <label>이메일</label>
-                        <input
-                            name="email"
-                            value={form.email || ""}
-                            onChange={(e) => setForm({ ...form, email: e.target.value })}
-                            disabled={provider} // 소셜회원은 이메일 변경 불가
-                        />
-                        {provider && (
-                            <small style={{ color: "#999", display: "block", marginBottom: "10px" }}>
-                                ※ 소셜 회원은 이메일을 변경할 수 없습니다.
-                            </small>
-                        )}
+                        <form onSubmit={handleInfoUpdate}>
+                            <Stack spacing={2}>
+                                <FormControl>
+                                    <FormLabel>이름</FormLabel>
+                                    <Input
+                                        name="mname"
+                                        value={form.mname || ""}
+                                        onChange={(e) => setForm({ ...form, mname: e.target.value })}
+                                        placeholder="이름을 입력하세요"
+                                    />
+                                </FormControl>
 
-                        <label>선호 선수 번호(pno)</label>
-                        <input
-                            name="pno"
-                            value={form.pno || ""}
-                            onChange={(e) => setForm({ ...form, pno: e.target.value })}
-                        />
+                                <FormControl>
+                                    <FormLabel>전화번호</FormLabel>
+                                    <Input
+                                        name="mphone"
+                                        value={form.mphone || ""}
+                                        onChange={(e) => setForm({ ...form, mphone: e.target.value })}
+                                        placeholder="010-0000-0000"
+                                    />
+                                </FormControl>
 
-                        <label>교환 여부</label>
-                        <input
-                            type="checkbox"
-                            checked={form.exchange}
-                            onChange={(e) => setForm({ ...form, exchange: e.target.checked })}
-                        />
+                                <FormControl>
+                                    <FormLabel>이메일</FormLabel>
+                                    <Input
+                                        name="email"
+                                        value={form.email || ""}
+                                        onChange={(e) => setForm({ ...form, email: e.target.value })}
+                                        placeholder="example@mail.com"
+                                        disabled={provider} // 소셜회원은 이메일 변경 불가
+                                    />
+                                    {provider ? (
+                                        <Typography level="body-sm" sx={{ mt: 0.5, color: "neutral.500" }}>
+                                            ※ 소셜 회원은 이메일 변경이 제한됩니다.
+                                        </Typography>
+                                    ) : (
+                                        <Typography level="body-sm" sx={{ mt: 0.5, color: "neutral.500" }}>
+                                            연락 가능한 이메일을 입력하세요.
+                                        </Typography>
+                                    )}
+                                </FormControl>
 
-                        <button type="submit">수정하기</button>
-                    </form>
-                </>
+                                <FormControl>
+                                    <FormLabel>선호 선수 번호(pno)</FormLabel>
+                                    <Input
+                                        name="pno"
+                                        value={form.pno || ""}
+                                        onChange={(e) => setForm({ ...form, pno: e.target.value })}
+                                        placeholder="예: 7"
+                                    />
+                                </FormControl>
+
+                                <FormControl orientation="horizontal" sx={{ alignItems: "center" }}>
+                                    <Checkbox
+                                        checked={!!form.exchange}
+                                        onChange={(e) => setForm({ ...form, exchange: e.target.checked })}
+                                    />
+                                    <FormLabel sx={{ ml: 1 }}>교환 여부</FormLabel>
+                                </FormControl>
+                            </Stack>
+
+                            <CardActions sx={{ mt: 2, justifyContent: "flex-end" }}>
+                                <Button variant="outlined" onClick={() => memberInfo()}>다시 불러오기</Button>
+                                <Button type="submit" variant="soft">수정하기</Button>
+                            </CardActions>
+                        </form>
+                    </CardContent>
+                </Card>
             )}
+
             {/* 일반회원만 비밀번호 변경 가능 */}
             {!provider && mode === "password" && (
-                <>
-                    <h3>비밀번호 변경</h3>
-                    <form onSubmit={handlePasswordUpdate}>
-                        <label>현재 비밀번호</label>
-                        <input
-                            type="password"
-                            name="current_password"
-                            value={passwordForm.current_password}
-                            onChange={(e) =>
-                                setPasswordForm({
-                                    ...passwordForm,
-                                    current_password: e.target.value,
-                                })
-                            }
-                        />
+                <Card variant="outlined" sx={{ maxWidth: 720, mx: "auto" }}>
+                    <CardContent>
+                        <Typography level="h4" component="h3" sx={{ mb: 0.5 }}>비밀번호 변경</Typography>
+                        <Typography level="body-sm" sx={{ color: "neutral.500", mb: 2 }}>
+                            현재 비밀번호 확인 후 새 비밀번호로 변경합니다.
+                        </Typography>
+                        <Divider sx={{ mb: 2 }} />
 
-                        <label>새 비밀번호</label>
-                        <input
-                            type="password"
-                            name="new_password"
-                            value={passwordForm.new_password}
-                            onChange={(e) =>
-                                setPasswordForm({
-                                    ...passwordForm,
-                                    new_password: e.target.value,
-                                })
-                            }
-                        />
+                        <form onSubmit={handlePasswordUpdate}>
+                            <Stack spacing={2}>
+                                <FormControl>
+                                    <FormLabel>현재 비밀번호</FormLabel>
+                                    <Input
+                                        type="password"
+                                        name="current_password"
+                                        value={passwordForm.current_password}
+                                        onChange={(e) =>
+                                            setPasswordForm({ ...passwordForm, current_password: e.target.value })
+                                        }
+                                        placeholder="현재 비밀번호를 입력하세요"
+                                    />
+                                </FormControl>
 
-                        <button type="submit">변경하기</button>
-                    </form>
-                </>
+                                <FormControl>
+                                    <FormLabel>새 비밀번호</FormLabel>
+                                    <Input
+                                        type="password"
+                                        name="new_password"
+                                        value={passwordForm.new_password}
+                                        onChange={(e) =>
+                                            setPasswordForm({ ...passwordForm, new_password: e.target.value })
+                                        }
+                                        placeholder="영문/숫자/특수문자 조합 권장"
+                                    />
+                                    <Typography level="body-sm" sx={{ mt: 0.5, color: "primary.500" }}>
+                                        보안 강화를 위해 주기적으로 비밀번호를 변경해 주세요.
+                                    </Typography>
+                                </FormControl>
+                            </Stack>
+
+                            <CardActions sx={{ mt: 2, justifyContent: "space-between" }}>
+                                <Button variant="outlined" onClick={() => setPasswordForm({ current_password: "", new_password: "" })}>
+                                    초기화
+                                </Button>
+                                <Button type="submit" color="primary">변경하기</Button>
+                            </CardActions>
+                        </form>
+                    </CardContent>
+                </Card>
             )}
 
             {/* 회원 탈퇴 */}
             {mode === "delete" && (
-                <>
-                    <h3>회원 탈퇴</h3>
-                    <form onSubmit={handleDelete}>
-                        {/* 소셜회원이면 비밀번호 입력칸 제거 */}
-                        {!provider && (
-                            <>
-                                <label>비밀번호 확인</label>
-                                <input
-                                    type="password"
-                                    name="password_hash"
-                                    value={deleteForm.password_hash}
-                                    onChange={(e) =>
-                                        setDeleteForm({
-                                            ...deleteForm,
-                                            password_hash: e.target.value,
-                                        })
-                                    }
-                                />
-                            </>
-                        )}
-                        <button type="submit" style={{ backgroundColor: "red", color: "white" }}>
-                            탈퇴하기
-                        </button>
-                    </form>
-                </>
+                <Card variant="outlined" color="danger" sx={{ maxWidth: 720, mx: "auto" }}>
+                    <CardContent>
+                        <Typography level="h4" component="h3" sx={{ mb: 1, color: "danger.600" }}>
+                            회원 탈퇴
+                        </Typography>
+
+                        <Alert variant="soft" color="warning" sx={{ mb: 2 }}>
+                            탈퇴 시 계정 정보 및 일부 데이터는 복구가 불가합니다. 진행 전 꼭 확인해 주세요.
+                        </Alert>
+                        <Divider sx={{ mb: 2 }} />
+
+                        <form onSubmit={handleDelete}>
+                            {/* 소셜회원이면 비밀번호 입력칸 제거 */}
+                            {!provider && (
+                                <FormControl sx={{ mb: 2 }}>
+                                    <FormLabel>비밀번호 확인</FormLabel>
+                                    <Input
+                                        type="password"
+                                        name="password_hash"
+                                        value={deleteForm.password_hash}
+                                        onChange={(e) =>
+                                            setDeleteForm({ ...deleteForm, password_hash: e.target.value })
+                                        }
+                                        placeholder="비밀번호를 입력하세요"
+                                    />
+                                </FormControl>
+                            )}
+
+                            <CardActions sx={{ justifyContent: "space-between" }}>
+                                <Button variant="outlined" color="neutral" onClick={() => setMode("reservation")}>
+                                    돌아가기
+                                </Button>
+                                <Button type="submit" color="danger">탈퇴하기</Button>
+                            </CardActions>
+                        </form>
+                    </CardContent>
+                </Card>
             )}
         </div>
     );
+
 }
