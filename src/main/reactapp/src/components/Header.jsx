@@ -137,7 +137,7 @@ const Header = () => {
                 }}
               >
 
-                {user.mid}님
+                {user.mname}님
               </Typography>
 
               <Button
