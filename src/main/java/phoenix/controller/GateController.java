@@ -2,6 +2,7 @@
 package phoenix.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -42,6 +43,15 @@ public class GateController {
     // === [5] 세션 alive + TTL + 메타 ===
     @GetMapping("/check/{gno}")
     public ResponseEntity<Map<String, Object>> check(@PathVariable int gno) {
+        if (membersService.getLoginMember() == null) {
+            // ★ 로그인 없음 → 401 로 튕김 (프론트 인터셉터가 /login 으로 보냄)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                    "ok", false,
+                    "code", "UNAUTH",
+                    "message", "로그인이 필요합니다."
+            ));
+        }
+        // if end
         int mno = membersService.getLoginMember().getMno();
         boolean ready = gateService.isEntered(mno, gno);
         long ttlMs = ready ? gateService.remainTtlMillis(mno, gno) : 0L;

@@ -50,6 +50,26 @@ public class AutoSeatsService {
     public AutoSelectRes autoAssignAndHold(int mno, AutoSelectReq req) {
         // 0) 입력 검증 & 환경 조회
         if (req.getQty() < 1 || req.getQty() > 4) return fail("QTY_OUT_OF_RANGE(1~4)");
+
+        // 추가: 남은 구매 가능 수(확정+내 임시홀드 반영)
+        int remainCap = seatLocks.remainingSelectableSeats(mno, req.getGno()); // = max(0, 4 - (confirmed+holds))
+        if (remainCap <= 0) {
+            return AutoSelectRes.builder()
+                    .ok(false)
+                    .reason("QTY_OVER_LIMIT(0)")   // 프론트가 숫자 파싱 가능하도록 괄호에 남은 수 넣음
+                    .qty(req.getQty())
+                    .qtyHeld(0)
+                    .build();
+        }
+        if (req.getQty() > remainCap) {
+            return AutoSelectRes.builder()
+                    .ok(false)
+                    .reason("QTY_OVER_LIMIT(" + remainCap + ")")
+                    .qty(req.getQty())
+                    .qtyHeld(0)
+                    .build();
+        }
+
         GameDto game = gameService.findByGno(req.getGno());
         if (game == null) return fail("GAME_NOT_FOUND");
 

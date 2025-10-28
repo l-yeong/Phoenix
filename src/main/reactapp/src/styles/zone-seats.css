@@ -163,4 +163,12 @@
 .seat-chip--ghost .ttl-badge {
   visibility: hidden;                  /* 배지/텍스트 모두 숨김 */
 }
-.seat-chip { width: 64px; height: 36px; justify-content:center; align-items:center; }
+.seat-chip { width: 64px; height: 36px; display:flex; justify-content:center; align-items:center; }
+
+/* ghost 버튼 (Zone 페이지용) */
+.btn--ghost {
+  background:#fff;
+  color:#111827;
+  border:1px solid #e5e7eb;
+}
+.btn--ghost:hover { background:#f9fafb; }
