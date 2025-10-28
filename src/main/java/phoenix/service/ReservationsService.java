@@ -2,6 +2,7 @@ package phoenix.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
+import phoenix.model.dto.GameDto;
 import phoenix.model.dto.ReservationsDto;
 import phoenix.model.mapper.ReservationMapper;
 import org.springframework.stereotype.Service;
@@ -32,7 +33,7 @@ public class ReservationsService {
             Map<String ,Object> map = new HashMap<>();
             map.put("reservation",dto);
             // csv 파일
-            Map<String,String> gameData = fileService.getGame(dto.getGno());
+            GameDto gameData = fileService.getGame(dto.getGno());
             map.put("game",gameData);
             result.add(map);
         }// for end
@@ -48,7 +49,7 @@ public class ReservationsService {
     public  Map<String ,Object> reserveInfo(int rno){
         Map<String ,Object> map = new HashMap<>();
         ReservationsDto dto = reservationMapper.reserveInfo(rno);
-        Map<String ,String> gameMap = fileService.getGame(dto.getGno());
+        GameDto gameMap = fileService.getGame(dto.getGno());
         map.put("reservation",dto);
         map.put("game",gameMap);
         return map;
