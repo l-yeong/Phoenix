@@ -104,7 +104,7 @@ export default function SeniorReserve() {
                   weekday: "short",
                 })}
               </Typography>
-              <Typography className={styles.cardTeam}>
+              <Typography className={styles.cardTeams}>
                 {game.homeTeam} vs {game.awayTeam}
               </Typography>
               <Typography className={styles.cardPlace}>

@@ -61,7 +61,7 @@ export default function SeniorSeatAuto() {
             <Typography variant="subtitle1" className={styles.subtitle}>
                 경기 ID: {gameId}
                 <br />
-                매수를 선택하고 자동예매를 진행하세요.
+                매수를 선택하고 자동예매를 진행해보세요!
             </Typography>
 
             <Box className={styles.formWrapper}>
