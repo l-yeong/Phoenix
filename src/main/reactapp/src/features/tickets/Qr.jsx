@@ -22,11 +22,11 @@ export default function Qr() {
 
         // 1) Vite 프록시를 쓸 경우: baseURL 없이 '/api/...' 로 호출
         // 2) 프록시 없이 직접 호출할 경우: baseURL을 명시
-        const baseURL =
-          import.meta.env.VITE_API_BASE ?? "http://localhost:8080";
+//         const baseURL =
+//           import.meta.env.VITE_API_BASE ?? "http://localhost:8080";
 
         // GET 방식(쿼리스트링) 예시:  GET /api/tickets/qr?qr=c745b7
-        const res = await axios.get(`${baseURL}/tickets/qr`, {
+        const res = await axios.get(`http://localhost:8080/tickets/qr`, {
           params: { qr },
           signal: controller.signal,
           headers: { Accept: "application/json" },
