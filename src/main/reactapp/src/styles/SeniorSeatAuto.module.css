@@ -40,7 +40,7 @@
 .selectBox {
   width: 340px !important;
   margin-bottom: 50px !important;
-  font-size: 1.2rem !important;
+  font-size: 2.8rem !important;
 
   /* 추가된 부분 */
   padding: 12px 16px; /* 폼 전체의 상하 여백 */
@@ -72,13 +72,13 @@
 }
 /* ⚾ 자동 예매 버튼 (대형 스타일) */
 .reserveButton {
-  width: 400px !important;          /* 훨씬 넓게 */
-  height: 200px !important;          /* 훨씬 높게 */
+  width: 450px !important;          /* 훨씬 넓게 */
+  height: 250px !important;          /* 훨씬 높게 */
   border-radius: 20px !important;   /* 둥근 모서리 */
   background-color: #ca2e26 !important;
   color: #fff !important;
   font-weight: 800 !important;
-  font-size: 1.8rem !important;     /* 폰트 크게 */
+  font-size: 2.8rem !important;     /* 폰트 크게 */
   letter-spacing: -0.5px;
   box-shadow: 0 10px 22px rgba(0, 0, 0, 0.25); /* 더 깊은 그림자 */
   transition: all 0.25s ease;
