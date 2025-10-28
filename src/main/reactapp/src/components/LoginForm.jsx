@@ -223,7 +223,7 @@ const LoginForm = () => {
             <img
               src="/구글로고.jpg"
               alt="Google Login"
-              style={{ width: 36, height: 36 }}
+              style={{ width: 50, height: 40 }}
             />
           </Button>
 
