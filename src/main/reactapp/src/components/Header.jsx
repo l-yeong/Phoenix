@@ -183,7 +183,7 @@ const Header = () => {
       </Toolbar>
 
       <ToastContainer
-        position="bottom-right"
+        position="bottom-right" 
         icon={false} // 아이콘 제거
         autoClose={4000}
         hideProgressBar={false}

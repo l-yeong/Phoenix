@@ -18,7 +18,7 @@ public interface ReservationMapper {
      * @param mno
      * @return List<ReservationsDto>
      */
-    @Select("select * from reservations where mno = #{mno}" )
+    @Select("select * from reservations where mno = #{mno} order by rno desc" )
     public List<ReservationsDto> reservePrint(int mno);
 
     /**
