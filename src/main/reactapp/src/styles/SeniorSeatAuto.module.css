@@ -1,0 +1,107 @@
+/* SeniorSeatAuto.module.css */
+
+.container {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #fffaf9;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 100px 0;
+}
+
+/* 제목 */
+.title {
+  color: #ca2e26;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 25px;
+  font-size: 2.6rem !important;
+  letter-spacing: -0.5px;
+}
+
+/* 부제 */
+.subtitle {
+  text-align: center;
+  font-size: 1.4rem !important;
+  color: #444;
+  margin-bottom: 70px;
+  line-height: 1.7;
+}
+
+.formWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+/* 🎟 매수 선택 Select */
+.selectBox {
+  width: 340px !important;
+  margin-bottom: 50px !important;
+  font-size: 1.2rem !important;
+
+  /* 추가된 부분 */
+  padding: 12px 16px; /* 폼 전체의 상하 여백 */
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Select 내부 여백 보정 */
+.selectBox .MuiInputBase-root {
+  border-radius: 10px !important;
+  font-size: 1.2rem !important;
+  padding: 10px 12px !important; /* Select 내부 패딩 */
+}
+
+/* 라벨은 따로 */
+.MuiInputLabel-root {
+  font-size: 1.1rem !important;
+  font-weight: 600 !important;
+  /* top 강제 조정 제거 */
+  top: auto !important;
+}
+
+/* selectBox 내부 label은 제외 */
+.selectBox label {
+  font-size: inherit;
+  font-weight: inherit;
+  
+}
+/* ⚾ 자동 예매 버튼 (대형 스타일) */
+.reserveButton {
+  width: 400px !important;          /* 훨씬 넓게 */
+  height: 200px !important;          /* 훨씬 높게 */
+  border-radius: 20px !important;   /* 둥근 모서리 */
+  background-color: #ca2e26 !important;
+  color: #fff !important;
+  font-weight: 800 !important;
+  font-size: 1.8rem !important;     /* 폰트 크게 */
+  letter-spacing: -0.5px;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.25); /* 더 깊은 그림자 */
+  transition: all 0.25s ease;
+  margin-top: 60px !important;
+}
+
+/* hover 효과 */
+.reserveButton:hover {
+  background-color: #b3261f !important;
+  transform: scale(1.05); /* 살짝 확대 */
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .title {
+    font-size: 2rem !important;
+  }
+  .subtitle {
+    font-size: 1.1rem !important;
+  }
+  .selectBox,
+  .reserveButton {
+    width: 80% !important;
+  }
+}

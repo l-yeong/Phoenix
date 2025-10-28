@@ -9,7 +9,7 @@ import {
     Button,
 } from "@mui/material";
 import { useSearchParams } from "react-router-dom";
-import styles from "../styles/SeniorReserve.module.css";
+import styles from "../styles/SeniorSeatAuto.module.css";
 import TutorialOverlay from "../components/TutorialOverlay";
 
 export default function SeniorSeatAuto() {
@@ -59,34 +59,33 @@ export default function SeniorSeatAuto() {
             </Typography>
 
             <Typography variant="subtitle1" className={styles.subtitle}>
-                경기 ID: {gameId} <br />
+                경기 ID: {gameId}
+                <br />
                 매수를 선택하고 자동예매를 진행하세요.
             </Typography>
 
-            {/* 매수 선택 Select Box */}
-            <FormControl fullWidth style={{ marginTop: "30px" }}>
-                <InputLabel id="ticket-count-label">매수 선택</InputLabel>
-                <Select
-                    id="ticketSelectBox" // 튜토리얼 타겟 ID
-                    labelId="ticket-count-label"
-                    value={ticketCount}
-                    onChange={(e) => setTicketCount(e.target.value)}
-                >
-                    <MenuItem value={1}>1매</MenuItem>
-                    <MenuItem value={2}>2매</MenuItem>
-                </Select>
-            </FormControl>
+            <Box className={styles.formWrapper}>
+                <FormControl className={styles.selectBox}>
+                    <Select
+                        id="ticketSelectBox"
+                        labelId="ticket-count-label"
+                        value={ticketCount}
+                        onChange={(e) => setTicketCount(e.target.value)}
+                    >
+                        <MenuItem value={1}>1매</MenuItem>
+                        <MenuItem value={2}>2매</MenuItem>
+                    </Select>
+                </FormControl>
 
-            {/* 자동 예매 버튼 */}
-            <Button
-                id="autoReserveButton" // 튜토리얼 타겟 ID
-                variant="contained"
-                color="error"
-                className={styles.reserveButton}
-                onClick={handleAutoReserve}
-            >
-                ⚾ 자동 예매하기
-            </Button>
+                <Button
+                    id="autoReserveButton"
+                    variant="contained"
+                    className={styles.reserveButton}
+                    onClick={handleAutoReserve}
+                >
+                    ⚾ 자동 예매하기
+                </Button>
+            </Box>
 
             {/* 튜토리얼 단계별 표시 */}
             {guideStep === 1 && (
