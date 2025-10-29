@@ -1,5 +1,8 @@
 package phoenix.service;
 
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.Message;
+import com.google.firebase.messaging.Notification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -47,16 +50,17 @@ public class MembersService {
 
 
     /**
-     *  회원가입 메소드
+     * 회원가입 메소드
+     *
      * @param membersDto 회원정보 DTO (mid, password_hash , mname , email)
      * @return boolean ( true : 성공 , false : 실패 )
      */
     @Transactional
-    public boolean signUp(MembersDto membersDto){
+    public boolean signUp(MembersDto membersDto) {
 
         // 소셜회원이면 비밀번호 검사 스킵
-        if( membersDto.getProvider() == null || membersDto.getProvider().isBlank()){
-            if( membersDto.getPassword_hash() == null || membersDto.getPassword_hash().isEmpty()){
+        if (membersDto.getProvider() == null || membersDto.getProvider().isBlank()) {
+            if (membersDto.getPassword_hash() == null || membersDto.getPassword_hash().isEmpty()) {
                 throw new IllegalArgumentException("비밀번호가 비어있습니다.");
             }
             membersDto.setPassword_hash(passwordEncoder.encode(membersDto.getPassword_hash()));
@@ -75,13 +79,14 @@ public class MembersService {
 
 
     /**
-     *  로그인 + Access/Refresh Token 발급 메소드
-     * @param mid  아이디
+     * 로그인 + Access/Refresh Token 발급 메소드
+     *
+     * @param mid         아이디
      * @param rawPassword 입력 비밀번호 (암호화 전)
      * @return Access Token (JWT 토큰 / 실패시 null )
-     * */
+     */
     @Transactional
-    public String login( String mid , String rawPassword ){
+    public String login(String mid, String rawPassword) {
         MembersDto member = membersMapper.findByMid(mid);
         System.out.println("[LOGIN-DEBUG] member = " + member);
 
@@ -90,7 +95,7 @@ public class MembersService {
             System.out.println("[LOGIN-DEBUG] password matches = " + PasswordUtil.matches(rawPassword, member.getPassword_hash()));
         }
 
-        if("withdrawn".equalsIgnoreCase(member.getStatus())){
+        if ("withdrawn".equalsIgnoreCase(member.getStatus())) {
             throw new IllegalStateException("withdrawn"); // 로그인 차단 + 안내페이지로 이동용
         }
 
@@ -102,9 +107,9 @@ public class MembersService {
             member.setMphone("000-0000-0000"); // 임시 전화번호
         }
 
-        if( member != null
-                && PasswordUtil.matches(rawPassword , member.getPassword_hash())
-                && Boolean.TRUE.equals(member.getEmail_verified())){ // 인증된 회원만 로그인 가능
+        if (member != null
+                && PasswordUtil.matches(rawPassword, member.getPassword_hash())
+                && Boolean.TRUE.equals(member.getEmail_verified())) { // 인증된 회원만 로그인 가능
 
             // JWT 생성
             String accessToken = jwtUtil.generateToken(member);
@@ -128,8 +133,8 @@ public class MembersService {
 
 
     /**
-     *  이메일 인증 코드 요청 메소드
-     * */
+     * 이메일 인증 코드 요청 메소드
+     */
     public boolean emailSendByEmail(String email) {
         MembersDto member = membersMapper.findByEmail(email);
         if (member != null) return false;
@@ -139,13 +144,13 @@ public class MembersService {
     } // func e
 
     /**
-     *  이메일 인증 완료 처리 메소드
-     * */
-    public boolean verityEmail( String email , String code ){
+     * 이메일 인증 완료 처리 메소드
+     */
+    public boolean verityEmail(String email, String code) {
 
-        boolean verified = emailService.verifyCode(email , code );
+        boolean verified = emailService.verifyCode(email, code);
 
-        if(verified){
+        if (verified) {
             membersMapper.verifyEmail(email);
         }
 
@@ -166,10 +171,10 @@ public class MembersService {
         if (existing == null) return false;
 
         // 소셜회원일 경우 이메일 변경 금지
-        if(existing.getProvider() != null && !existing.getProvider().isBlank()){
+        if (existing.getProvider() != null && !existing.getProvider().isBlank()) {
             dto.setEmail(existing.getEmail()); // 원래 이메일 유지
             dto.setEmail_verified(existing.getEmail_verified()); // 이메일 인증상태도 유지
-        }else{
+        } else {
 
             // 이메일 변경 여부 확인
             if (dto.getEmail() == null || dto.getEmail().isEmpty()) {
@@ -196,9 +201,9 @@ public class MembersService {
     /**
      * 로그인 상태에서 비밀번호 변경
      *
-     * @param mid 회원 아이디
+     * @param mid        회원 아이디
      * @param currentPwd 현재 비밀번호
-     * @param newPwd 새 비밀번호
+     * @param newPwd     새 비밀번호
      * @return 변경 성공 여부
      */
     public boolean pwdUpdate(String mid, String currentPwd, String newPwd) {
@@ -214,7 +219,7 @@ public class MembersService {
     /**
      * 회원 탈퇴 (상태만 변경)
      *
-     * @param mid 회원 아이디
+     * @param mid      회원 아이디
      * @param password 입력한 비밀번호
      * @return 탈퇴 성공 여부
      */
@@ -224,8 +229,8 @@ public class MembersService {
 
 
         // 소셜 회원은 비밀번호 검증 스킵
-        if(member.getProvider() != null && !member.getProvider().isBlank()){
-            return membersMapper.updateStatus(mid , "withdrawn") > 0;
+        if (member.getProvider() != null && !member.getProvider().isBlank()) {
+            return membersMapper.updateStatus(mid, "withdrawn") > 0;
         }
 
         // 일반 회원은 비밀번호 검증 필수
@@ -233,26 +238,27 @@ public class MembersService {
             return false;
         }
 
-        return membersMapper.updateStatus(mid , "withdrawn") > 0;
+        return membersMapper.updateStatus(mid, "withdrawn") > 0;
 
     } // func e
 
     /**
      * 휴면 계정 복구 (테스트는 패널티 1분 / 나중에 1일 or 7일로 설정 )
-     @param mid
-     @return
+     *
+     * @param mid
+     * @return
      */
-    public boolean changeStatus(String mid){
+    public boolean changeStatus(String mid) {
         MembersDto member = membersMapper.findByMid(mid);
-        if(member == null) return false;
+        if (member == null) return false;
 
         // 1분 패널티 적용
-        if(member.getLast_status_change() != null){
+        if (member.getLast_status_change() != null) {
             long minute = ChronoUnit.MINUTES.between(
                     member.getLast_status_change(),
                     LocalDateTime.now()
             );
-            if(minute < 1){
+            if (minute < 1) {
                 throw new IllegalStateException("1분 이내에는 상태를 변경할 수 없습니다.");
             }
         }
@@ -264,6 +270,7 @@ public class MembersService {
 
     /**
      * 아이디(mid)로 회원 정보 조회
+     *
      * @param mid 회원 아이디
      * @return MembersDto (없으면 null)
      */
@@ -276,7 +283,9 @@ public class MembersService {
             아이디 찾기
     ============================== */
 
-    /** [1] 이름+전화번호+이메일 확인 후 인증메일 발송 */
+    /**
+     * [1] 이름+전화번호+이메일 확인 후 인증메일 발송
+     */
     public boolean requestFindId(String mname, String mphone, String email) {
         MembersDto member = membersMapper.findByNamePhoneEmail(mname, mphone, email);
         if (member == null) return false;
@@ -286,7 +295,9 @@ public class MembersService {
         return true;
     } // func e
 
-    /** [2] 인증코드 검증 */
+    /**
+     * [2] 인증코드 검증
+     */
     public boolean verifyFindIdCode(String email, String code) {
         String savedCode = redisTemplate.opsForValue().get("findid:pending:" + email);
         if (savedCode != null && savedCode.equals(code)) {
@@ -297,7 +308,9 @@ public class MembersService {
         return false;
     } // func e
 
-    /** [3] 인증 완료 후 아이디 반환 */
+    /**
+     * [3] 인증 완료 후 아이디 반환
+     */
     public String getIdAfterVerification(String email) {
         Boolean verified = redisTemplate.hasKey("findid:verified:" + email);
         if (verified == null || !verified) return null;
@@ -310,7 +323,9 @@ public class MembersService {
             비밀번호 재설정
     ============================== */
 
-    /** [1] mid + 이름 + 이메일 확인 후 인증메일 발송 */
+    /**
+     * [1] mid + 이름 + 이메일 확인 후 인증메일 발송
+     */
     public boolean requestFindPwd(String mid, String mname, String email) {
         MembersDto member = membersMapper.findByMidNameEmail(mid, mname, email);
         if (member == null) return false;
@@ -320,7 +335,9 @@ public class MembersService {
         return true;
     } // func e
 
-    /** [2] 이메일 인증 코드 검증 */
+    /**
+     * [2] 이메일 인증 코드 검증
+     */
     public boolean verifyFindPwdCode(String email, String code) {
         String savedCode = redisTemplate.opsForValue().get("findpwd:pending:" + email);
         if (savedCode != null && savedCode.equals(code)) {
@@ -331,9 +348,12 @@ public class MembersService {
         return false;
     } // func e
 
-    /** [3] 인증 완료 후 임시 비밀번호 발급
+    /**
+     * [3] 인증 완료 후 임시 비밀번호 발급
+     *
      * @param email
-     * @return*/
+     * @return
+     */
     public boolean resetPassword(String email) {
         Boolean verified = redisTemplate.hasKey("findpwd:verified:" + email);
         if (verified == null || !verified) return false;
@@ -410,7 +430,77 @@ public class MembersService {
 
     } // func e
 
+    /*===================FireBase Ticket_Token=============================*/
 
+    /**
+     * 회원의 FCM 토큰을 DB에 저장 또는 갱신합니다.
+     *
+     * @param mid   로그인 ID (회원 식별용)
+     * @param token Firebase에서 발급받은 FCM registration token
+     *              <p>
+     *              - 클라이언트(웹/앱)가 로그인 성공 후, FCM 토큰을 발급받으면
+     *              해당 토큰과 로그인 ID(mid)를 서버에 전달하여 DB에 저장
+     *              <p>
+     *              - members 테이블의 ticket_Token 컬럼을 UPDATE 함
+     */
+    public boolean ticketTokenWrite(String mid, String token) {
+        int result = membersMapper.ticketTokenWrite(mid, token);
+        return result > 0;
+    }//func end
 
+    /**
+     * 회원의 FCM 토큰을 조회합니다.
+     *
+     * @param mid 로그인 ID
+     * @return 해당 회원의 FCM registration token (없을 경우 null)
+     * <p>
+     * 사용 시점:
+     * - 푸시 알림을 발송할 때, 특정 회원의 토큰을 조회하여 사용
+     */
+    public String ticketTokenPrint(String mid) {
+        String result = membersMapper.ticketTokenPrint(mid);
+        return result;
+    }//func end
 
-}//func end
+    /**
+     * 특정 회원(mid)의 FCM 토큰으로 푸시 메시지를 발송합니다.
+     *
+     * @param mid   로그인 ID
+     * @param title 알림 제목
+     * @param body  알림 내용
+     * @return Firebase가 반환한 messageId (성공 시 고유 ID)
+     * <p>
+     * 회원의 ticket_Token을 DB에서 조회
+     * FirebaseMessaging 인스턴스를 통해 알림 전송
+     * 실패 시 예외(FirebaseMessagingException) 발생
+     */
+    public String ticketMessaging(String mid, String title, String body) {
+        //회원 토큰 조회
+        //members 테이블의 ticket_token 컬럼에서 해당 mid의 FCM TOKEN을 호춣
+        String token = membersMapper.ticketTokenPrint(mid);
+
+        //토큰 유효성 검사
+        // 토큰이 없거나 빈값이면 예외 발생
+        if (token == null || token.isEmpty()) {
+            System.out.println("등록된 FCM 토큰이 없습니다. mid =" + mid);
+        }//if end
+        try {
+            // 메시지 알림 객체 생성
+            Message msg = Message.builder()
+                    .setToken(token)
+                    .setNotification(Notification.builder() //푸시 알림의 제목과 본문을 포함하며 사용자의 화면 상단에 알림 표시
+                            .setTitle(title)
+                            .setBody(body)
+                            .build())
+                    .build();
+            // FCM 서버로 푸시 전송
+            String messageId = FirebaseMessaging.getInstance().send(msg);
+            System.out.println("FCM 푸시 전송성공 : mid +" + mid + "Message : " + messageId);
+            return messageId;
+        } catch (Exception e) {
+            System.out.println("FCM 푸시 전송실패 : mid +" + mid + "원인:" + e.getMessage());
+        }//catch end
+        return null;
+    }//func end
+
+}//class end

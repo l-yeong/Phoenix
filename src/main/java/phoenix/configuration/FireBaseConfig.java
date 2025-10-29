@@ -10,6 +10,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 
 @Configuration
+
+// Firebase Cloud Messaging 서버와 통신
 public class FireBaseConfig {
     @PostConstruct // 스프링이 이클래스를 로딩한 직후 자동으로 실행
     public void init() throws IOException {
