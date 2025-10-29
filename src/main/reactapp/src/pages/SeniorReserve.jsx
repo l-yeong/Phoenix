@@ -117,7 +117,7 @@ export default function SeniorReserve() {
     }, 1500);
   };
 
-  // 초기 실행
+  // 초기 실행 - 데이터만 불러오기
   useEffect(() => {
     const fetchGames = async () => {
       try {
@@ -126,11 +126,12 @@ export default function SeniorReserve() {
         });
         if (res.data.success) {
           setGames(res.data.data);
+          console.log("경기 목록 불러오기 성공:", res.data.data);
         } else {
           alert("경기 정보를 불러오지 못했습니다.");
         }
       } catch (e) {
-        console.log("경기 로드 실패:", e);
+        console.error("⚠️ 경기 로드 실패:", e);
       }
     };
 
@@ -140,21 +141,7 @@ export default function SeniorReserve() {
           withCredentials: true,
         });
         if (res.data.success) {
-          await fetchGames();                 // 경기 목록 불러오기
-          setShowGuide(true);                 // 화면에 오버레이 표시
-
-          speak("시니어 전용 자동 예매 페이지입니다. 곧 음성 안내가 시작됩니다."); // 첫 음성 안내
-
-          // 약간의 텀을 두고 두 번째 안내 + 음성인식 시작
-          setTimeout(() => {
-            // 먼저 STT 준비
-            initSTT();
-
-            // 그다음 TTS 안내
-            setTimeout(() => {
-              speak("음성으로도 경기 선택이 가능합니다. 첫 번째 경기 선택이라고 말씀해보세요.");
-            }, 800); // 살짝 텀 주기
-          }, 3000);
+          await fetchGames(); // 여기서는 단순히 데이터만 불러오기
         }
       } catch (err) {
         const status = err.response?.status;
@@ -180,6 +167,23 @@ export default function SeniorReserve() {
       if (recognition) recognition.stop();
     };
   }, []);
+
+  // games 상태가 실제로 세팅된 뒤 실행
+  useEffect(() => {
+    if (games.length > 0) {
+      console.log("🎯 games 세팅 완료 → TTS/STT 시작");
+      setShowGuide(true);
+      speak("시니어 전용 자동 예매 페이지입니다. 곧 음성 안내가 시작됩니다.");
+
+      setTimeout(() => {
+        initSTT();
+        setTimeout(() => {
+          speak("음성으로 경기 선택이 가능합니다. 첫 번째 경기 선택이라고 말씀해보세요.");
+        }, 800);
+      }, 3000);
+    }
+  }, [games]);
+
 
   // 음성 인식 시작 버튼 (테스트용)
   const startListening = () => {
@@ -251,11 +255,11 @@ export default function SeniorReserve() {
         <TutorialOverlay
           targetId="firstGameButton"
           message={
-            <p style={{ textAlign: "center", lineHeight: "1.6" }}>
+            <div style={{ textAlign: "center", lineHeight: "1.6" }}>
               ⚾ <strong style={{ color: "#CA2E26" }}>음성으로도 </strong> 경기 선택이 가능합니다.
               <br />
               “첫 번째 경기 선택”이라고 말해보세요.
-            </p>
+            </div>
           }
           onClose={() => {
             window.speechSynthesis.cancel();
