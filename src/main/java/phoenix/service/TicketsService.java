@@ -137,7 +137,7 @@ public class TicketsService {
      * - 내부적으로 formerGameCSV()를 호출하여 처리
      */
 
-//    @Scheduled(cron = "0 */5 9-23 * * *", zone = "Asia/Seoul")
+    @Scheduled(cron = "0 */5 9-23 * * *", zone = "Asia/Seoul")
     public void formerGame() {
         try {
             int updated = formerGameCSV();

@@ -148,10 +148,17 @@ public class FileService {
         //gameMap(CSV 에서 읽은 전체 경기 데이터)
         for (GameDto dto : list) {
             try {
+
+                if(dto.getDate()==null || dto.getTime()==null){ //date,time 값 null 일경우 NullPointer 예외처리발생 방지
+                    System.out.println("[getExpiredGames] date/time 누락 gno ="+dto.getGno());
+                    continue;
+                }//if end
+
                 LocalDateTime gameDT = LocalDateTime.of(dto.getDate(),dto.getTime());
                 if(gameDT.isBefore(now)){
                     expired.add(dto.getGno());
                 }//if end
+
             } catch (Exception e) {
                 System.out.println("[getExpiredGames] 날짜/시간 파싱 실패 gno=" + dto.getGno() + dto.getDate() + dto.getTime());
             }//catch end
