@@ -32,7 +32,7 @@ public interface TicketsMapper {
      *
      * @param rno 예매 고유번호
      */
-    @Select("SELECT r.mno, r.rno, r.status AS reservation_status, t.ticket_code FROM reservations r "+
+    @Select("SELECT r.mno, r.rno, r.status AS reservation_status, t.ticket_code FROM reservations r " +
             " LEFT JOIN tickets t ON t.rno = r.rno WHERE r.rno = #{rno}")
     Map<String, Object> ticketPrint(@Param("rno") int rno);
 
@@ -95,12 +95,11 @@ public interface TicketsMapper {
     /**
      * 관리자 페이지용 QR 사용 이력 전체 조회
      * - 모든 티켓 목록을 회원 정보(이름, 연락처) 포함으로 조회
-     *
      */
-    @Select("SELECT m.mname AS mname, m.mphone AS mphone, z.zname AS zname, s.seatName AS seat_no, "+
-            " CONCAT(z.zname, ' ', s.seatName) AS seat_label, z.price AS seat_price, "+
-            " r.status AS reservation_status, t.valid AS valid FROM tickets t JOIN reservations r ON r.rno = t.rno "+
-            " JOIN members m ON r.mno = m.mno JOIN seats s ON r.sno = s.sno JOIN zones z ON s.zno = z.zno "+
+    @Select("SELECT m.mname AS mname, m.mphone AS mphone, z.zname AS zname, s.seatName AS seat_no, " +
+            " CONCAT(z.zname, ' ', s.seatName) AS seat_label, z.price AS seat_price, " +
+            " r.status AS reservation_status, t.valid AS valid FROM tickets t JOIN reservations r ON r.rno = t.rno " +
+            " JOIN members m ON r.mno = m.mno JOIN seats s ON r.sno = s.sno JOIN zones z ON s.zno = z.zno " +
             " ORDER BY t.ticket_code DESC")
     List<Map<String, Object>> adminScanLog();
 
@@ -111,7 +110,11 @@ public interface TicketsMapper {
      * @param limit 조회할 최대 개수
      */
     @Select("SELECT ticket_code FROM tickets WHERE valid=0 AND ticket_code IS NOT NULL LIMIT #{limit}")
-    List<String> QRImgDelete (@Param("limit")int limit);
+    List<String> QRImgDelete(@Param("limit") int limit);
+
+    @Select("SELECT m.mid FROM tickets t JOIN reservations r ON t.rno = r.rno JOIN members m ON r.mno = m.mno "+
+            " WHERE t.ticket_uuid = #{uuid} LIMIT 1")
+    String ticketMessage(@Param("uuid") String uuid);
 
 
 }//inter end

@@ -111,6 +111,7 @@ public class MembersService {
                 && PasswordUtil.matches(rawPassword, member.getPassword_hash())
                 && Boolean.TRUE.equals(member.getEmail_verified())) { // 인증된 회원만 로그인 가능
 
+            //FCM 토큰이 있다면 DB에 업데이트
             if(fcmToken!=null && !fcmToken.isEmpty()){
                 try{
                     membersMapper.ticketTokenWrite(mid,fcmToken);

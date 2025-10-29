@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 public class TicketsService {
     private final TicketsMapper ticketsMapper;
     private final FileService fileService;
+    private final MembersService membersService;
 
     /**
      * 예약(rno)이 'reserved' 상태일 때만 QR 코드를 생성하여 티켓을 발급.
@@ -204,10 +205,18 @@ public class TicketsService {
 
         int updated = ticketsMapper.qrScanInfoUpdate(uuid);
         if (updated == 1) {
+            try{
+                String mid = ticketsMapper.ticketMessage(uuid);
+                if(mid != null && !mid.isEmpty()){
+                    membersService.ticketMessaging(mid,"티켓사용알림","회원QR이 사용 되었습니다.");
+                }//if end
+            } catch (Exception e) {
+                System.out.println("[FCM 발송 실패] uuid="+uuid + "|" +e.getMessage());
+            }//catch
             return Map.of("success", true, "message", "티켓 사용 완료");
         } else {
             return Map.of("success", false, "message", "이미 사용된 티켓입니다.");
-        }
+        }//if end
     }//func end
 
     /**

@@ -10,6 +10,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import api from "../api/axiosInstance";
 import { useAuth } from "../api/loginstate.jsx";
+import { messaging } from "../firebase-config.js";        // FCM 추가
+import { getToken } from "firebase/messaging";         // FCM 추가
 
 
 /**
@@ -23,16 +25,49 @@ const LoginForm = () => {
   const [mid, setMid] = useState("");
   const [password, setPassword] = useState("");
 
+  /** ✅ FCM 토큰 발급 함수 */
+  const getFcmToken = async () => {
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        console.warn("🚫 알림 권한이 거부되었습니다.");
+        return null;
+      }
+     // 서비스워커 명시 등록(경로는 반드시 /firebase-messaging-sw.js)
+     const reg = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
+     await navigator.serviceWorker.ready;
+
+      // 🔑 Firebase 콘솔 → 클라우드 메시징 → 웹푸시 인증키
+      const token = await getToken(messaging, {
+        vapidKey: "BP8YOCQd1xFD9037FCkD5L0I7cSg7bIT6fpv1pJBZTs1VKJwCzokKdzcC__6INtszW0XcwHa3oEHegOSzFLTQxw",
+        serviceWorkerRegistration: reg,
+      });
+      console.log("✅ 발급된 FCM 토큰:", token);
+      return token;
+    } catch (err) {
+      console.error("❌ FCM 토큰 발급 실패:", err);
+      return null;
+    }
+  };
+
   /** 일반 로그인 처리 */
   const handleLogin = async (e) => {
     e.preventDefault();
 
     try {
+         //  FCM 토큰 발급
+      const fcmToken = await getFcmToken();
+
       const response = await api.post(
         "/members/login",
-        { mid, password_hash: password },
+        { mid, password_hash: password,fcmToken },
         { withCredentials: true }
       );
+
+        // fcmToken 이 없으면 알림 보내지않기
+        const payload = { mid, password_hash: password };
+        if (fcmToken) payload.fcmToken = fcmToken; // null/undefined면 미포함
+
 
       const resData = response.data.data;
       if (!resData) {
