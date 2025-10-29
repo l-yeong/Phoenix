@@ -3,6 +3,7 @@ package phoenix.service;
 import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
@@ -33,6 +34,7 @@ public class SeatCsvService {
         private final boolean senior;
     }
 
+    @Getter
     private final Set<Integer> allSeatSnos = new HashSet<>();
     private final Map<Integer, Set<Integer>> zoneToSnos = new HashMap<>();
     private final Map<Integer, String> zoneNameByZno = new HashMap<>();

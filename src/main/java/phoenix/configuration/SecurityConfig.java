@@ -138,14 +138,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS , "/**").permitAll() // 프리플라이트 요청 허용
                         .requestMatchers("/senior/**").authenticated()
                         .requestMatchers("/members/email/**").permitAll()
-                        //.requestMatchers("/tickets/ticketLog/**").hasRole("ADMIN")
-                        //.requestMatchers("/tickets/qr/**").hasRole("ADMIN")
                         .requestMatchers(
                                 "/members/**", // 회원 하위 모두
                                 "/oauth2/**",           // 소셜 회원
                                 "/socket/**",
                                 "/seats/**",
                                 "/gate/**",
+                                "/chatbot/**",
                                 "/captcha/**",
                                 "/game/**",
                                 "/tickets/**",
