@@ -21,6 +21,20 @@ export default function SeniorReserve() {
     utter.rate = 0.9;
     utter.pitch = 1.0;
     utter.volume = 1.0;
+
+    // 음성 안내가 끝난 후 자동으로 STT 시작
+    utter.onend = () => {
+      console.log("🎤 안내 종료됨, 음성 인식 시작");
+      if(recognition && !listening) {
+        try{
+          recognition.start();
+          console.log("🎤 음성 인식 시작됨");
+        }catch(err){
+          console.error("음성 인식 시작 오류:", err);
+        }
+      }
+    };
+    
     window.speechSynthesis.speak(utter);
   };
 
@@ -84,6 +98,7 @@ export default function SeniorReserve() {
   };
 
   const navigateToGame = (index) => {
+    speak("경기 선택을 처리 중입니다." + index  );
     if (games[index]) {
       speak(`${games[index].homeTeam} 대 ${games[index].awayTeam} 경기를 선택하셨습니다.`);
       setTimeout(() => {
