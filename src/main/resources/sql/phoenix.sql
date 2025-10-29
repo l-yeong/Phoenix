@@ -1,129 +1,131 @@
-drop database if exists phoenix;
-create database phoenix;
-use phoenix;
+-- =========================================================
+-- Phoenix DB (with reservation channel + samples)
+-- =========================================================
+DROP DATABASE IF EXISTS phoenix;
+CREATE DATABASE phoenix
+  DEFAULT CHARACTER SET utf8mb4
+  DEFAULT COLLATE utf8mb4_0900_ai_ci;
+USE phoenix;
 
 -- ---------------------- 구역 테이블 ----------------------
-create table zones(
-    zno int auto_increment primary key,        -- 구역 고유번호(PK)
-    zname varchar(50) not null,                -- 구역 이름
-    price int not null                         -- 해당 구역 가격    
+CREATE TABLE zones (
+  zno   INT AUTO_INCREMENT PRIMARY KEY,
+  zname VARCHAR(50) NOT NULL,
+  price INT NOT NULL
 );
 
--- ---------------------- 회원 테이블 ---------------------- 
-create table members (
-    mno int auto_increment primary key,            -- 회원 고유번호(PK)
-    mid varchar(50) unique null,               -- 회원 아이디
-    password_hash varchar(255) null,           -- 비밀번호 해시값
-    mname varchar(50) not null,                    -- 회원 이름
-    mphone varchar(13) unique null,            -- 회원 번호
-    birthdate date not null,                       -- 생년월일
-    email varchar(100) unique not null,            -- 이메일
-    create_at timestamp default current_timestamp, -- 가입일(로그 추적용)
+-- ---------------------- 회원 테이블 ----------------------
+CREATE TABLE members (
+  mno               INT AUTO_INCREMENT PRIMARY KEY,
+  mid               VARCHAR(50)  NULL UNIQUE,
+  password_hash     VARCHAR(255) NULL,
+  mname             VARCHAR(50)  NOT NULL,
+  mphone            VARCHAR(13)  NULL UNIQUE,  -- NULL 허용 + UNIQUE
+  birthdate         DATE         NOT NULL,
+  email             VARCHAR(100) NOT NULL UNIQUE,
+  create_at         TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
 
-    -- 소셜 로그인 연동용
-    provider varchar(50),        -- 소셜 제공자 (google, github, facebook 등)
-    provider_id varchar(100),    -- 소셜 제공자 내부 고유 ID
+  provider          VARCHAR(50),
+  provider_id       VARCHAR(100),
 
-    -- 선호 선수 (FK 제거, CSV/크롤링 데이터와 매칭)
-    pno int null,
+  pno               INT NULL,  -- 선호 선수
 
-    -- 회원 상태 관리
-    status enum('active','dormant','withdrawn') default 'active' not null ,
-    -- active: 정상회원 / dormant: 휴면회원 / withdrawn: 탈퇴회원
-
-    -- 교환 신청 가능 여부
-    exchange boolean default true not null,
-    -- true: 교환 신청 가능 / false: 교환 신청 불가
-    
-    -- 이메일 인증 여부( 이메일 인증 완료 여부 저장 )
-    email_verified boolean default false not null,   -- 이메일 인증 여부
-    
-    -- 회원 탈퇴 날짜
-    last_status_change timestamp default null
-    
+  status            ENUM('active','dormant','withdrawn') NOT NULL DEFAULT 'active',
+  exchange          BOOLEAN NOT NULL DEFAULT TRUE,
+  email_verified    BOOLEAN NOT NULL DEFAULT FALSE,
+  last_status_change TIMESTAMP NULL
 );
 
--- 소셜 회원 unique 유지하면서 null 허용
+-- (명시적 ALTER가 필요 없다면 아래 줄은 생략 가능)
 ALTER TABLE members MODIFY COLUMN mphone VARCHAR(13) NULL UNIQUE;
 
--- ---------------------- 시니어 회원 뷰 ---------------------- 
-create or replace view member_view as
-select m.*, 
-       (timestampdiff(year, m.birthdate, curdate()) >= 65) as is_senior
-from members m;
+-- ---------------------- 시니어 회원 뷰 ----------------------
+CREATE OR REPLACE VIEW member_view AS
+SELECT m.*,
+       (TIMESTAMPDIFF(YEAR, m.birthdate, CURDATE()) >= 65) AS is_senior
+FROM members m;
 
 -- ---------------------- 좌석 테이블 ----------------------
-create table seats(
-    sno int auto_increment primary key,       -- 좌석 고유번호(PK)
-    zno int not null,                         -- 구역 번호
-    seatName varchar(30) not null,            -- 좌석 이름
-    senior boolean default false,             -- 시니어 전용 여부
-    foreign key(zno) references zones(zno)
+CREATE TABLE seats (
+  sno      INT AUTO_INCREMENT PRIMARY KEY,
+  zno      INT NOT NULL,
+  seatName VARCHAR(30) NOT NULL,
+  senior   BOOLEAN DEFAULT FALSE,
+  CONSTRAINT fk_seats_zone FOREIGN KEY (zno) REFERENCES zones(zno)
 );
+CREATE INDEX idx_seats_zone ON seats(zno);
+CREATE INDEX idx_seats_zone_senior ON seats(zno, senior);
+CREATE UNIQUE INDEX ux_seats_zno_seatname ON seats(zno, seatName);
 
 -- ---------------------- 예매 테이블 ----------------------
 -- FK 유지: 회원, 좌석은 반드시 존재해야 함
--- gno는 CSV/크롤링 기반으로만 관리 → FK 제거
-create table reservations(
-    rno int auto_increment primary key,       -- 예매 고유번호(PK)
-    mno int not null,                         -- 회원 번호
-    sno int not null,                         -- 좌석 번호
-    gno int not null,                         -- 경기 번호 (외부 CSV/크롤링 데이터와 매칭)
-    reserved_at timestamp default current_timestamp,
-    status enum('reserved','cancelled') default 'reserved',
-    foreign key(mno) references members(mno),
-    foreign key(sno) references seats(sno)
+-- gno는 외부(CSV/크롤링)와 매칭하므로 FK 제거
+CREATE TABLE reservations (
+  rno         INT AUTO_INCREMENT PRIMARY KEY,
+  mno         INT NOT NULL,
+  sno         INT NOT NULL,
+  gno         INT NOT NULL,
+  reserved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  status      ENUM('reserved','cancelled') NOT NULL DEFAULT 'reserved',
+  channel     ENUM('general','senior') NOT NULL DEFAULT 'general',
+  CONSTRAINT fk_res_mno FOREIGN KEY (mno) REFERENCES members(mno),
+  CONSTRAINT fk_res_sno FOREIGN KEY (sno) REFERENCES seats(sno)
 );
+-- 조회 최적화 인덱스
+CREATE INDEX idx_res_gno_status_channel ON reservations(gno, status, channel);
+CREATE INDEX idx_res_mno_gno ON reservations(mno, gno);
+CREATE INDEX idx_res_sno_gno ON reservations(sno, gno);
 
 -- ---------------------- 티켓 테이블 ----------------------
--- FK 유지: 예매와 반드시 연결
-create table tickets (
-    tno int auto_increment primary key,       -- 티켓 고유번호(PK)
-    rno int not null,                         -- 관련된 예매(FK)
-    ticket_code varchar(100) unique not null, -- 티켓 코드(UUID/QR 등)
-    issued_at timestamp default current_timestamp,
-    valid boolean default true,               -- 유효 여부
-    price int not null,                       -- 티켓 발급 시 가격
-    ticket_uuid varchar(20),
-    foreign key(rno) references reservations(rno)
+CREATE TABLE tickets (
+  tno         INT AUTO_INCREMENT PRIMARY KEY,
+  rno         INT NOT NULL,
+  ticket_code VARCHAR(100) NOT NULL UNIQUE,
+  issued_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  valid       BOOLEAN   NOT NULL DEFAULT TRUE,
+  price       INT       NOT NULL,
+  ticket_uuid VARCHAR(20),
+  CONSTRAINT fk_tickets_rno FOREIGN KEY (rno) REFERENCES reservations(rno)
 );
+CREATE INDEX idx_tickets_rno ON tickets(rno);
 
 -- ---------------------- 예매 교환 테이블 ----------------------
--- FK 유지: 교환 대상은 반드시 실제 존재하는 예매여야 함
-create table reservation_exchanges(
-    exno int auto_increment primary key,
-    from_rno int not null,                    -- 요청 예매 번호
-    to_rno int not null,                      -- 대상 예매 번호
-    status enum('pending','approved','rejected') default 'pending',
-    requested_at timestamp default current_timestamp,
-    responded_at timestamp null,
-    foreign key(from_rno) references reservations(rno),
-    foreign key(to_rno) references reservations(rno)
+CREATE TABLE reservation_exchanges (
+  exno        INT AUTO_INCREMENT PRIMARY KEY,
+  from_rno    INT NOT NULL,
+  to_rno      INT NOT NULL,
+  status      ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+  requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  responded_at TIMESTAMP NULL,
+  CONSTRAINT fk_ex_from FOREIGN KEY (from_rno) REFERENCES reservations(rno),
+  CONSTRAINT fk_ex_to   FOREIGN KEY (to_rno)   REFERENCES reservations(rno)
 );
 
 -- ---------------------- 자동배정 로그 테이블 ----------------------
--- FK 제거: 로그성 데이터 (존재하지 않는 값도 기록 가능해야 함)
-create table auto_assign_log(
-    lno int auto_increment primary key,
-    mno int not null,                         -- 회원 번호 (존재 검증은 서비스단에서)
-    gno int not null,                         -- 경기 번호 (CSV/크롤링 기반)
-    assigned_zno int,                         -- 배정 구역 번호
-    reason varchar(255),
-    create_at timestamp default current_timestamp
+CREATE TABLE auto_assign_log (
+  lno          INT AUTO_INCREMENT PRIMARY KEY,
+  mno          INT NOT NULL,
+  gno          INT NOT NULL,
+  assigned_zno INT,
+  reason       VARCHAR(255),
+  create_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- ---------------------- 고유 번호 제약 ----------------------
-alter table zones auto_increment=10001;
-alter table members auto_increment = 20001;
-alter table seats auto_increment = 30001;
-alter table reservations auto_increment = 40001;
-alter table tickets auto_increment = 50001;
-alter table reservation_exchanges auto_increment = 60001;
-alter table auto_assign_log auto_increment = 70001;
+-- ---------------------- Auto-increment bases ----------------------
+ALTER TABLE zones                AUTO_INCREMENT = 10001;
+ALTER TABLE members              AUTO_INCREMENT = 20001;
+ALTER TABLE seats                AUTO_INCREMENT = 30001;
+ALTER TABLE reservations         AUTO_INCREMENT = 40001;
+ALTER TABLE tickets              AUTO_INCREMENT = 50001;
+ALTER TABLE reservation_exchanges AUTO_INCREMENT = 60001;
+ALTER TABLE auto_assign_log      AUTO_INCREMENT = 70001;
 
--- ---------------------- 샘플 ----------------------
+-- =========================================================
+-- 샘플 데이터
+-- =========================================================
+
 -- 구역
-insert into zones(zname, price) values
+INSERT INTO zones(zname, price) VALUES
 ('1루 일반석', 30000),
 ('3루 일반석', 30000),
 ('외야석', 20000),
@@ -136,117 +138,117 @@ insert into zones(zname, price) values
 ('커플석', 55000);
 
 -- 회원
-insert into members (
-    mid, password_hash, mname, mphone, birthdate, email,
-    provider, provider_id, pno,
-    email_verified
-) values
-('admin','$2a$12$BmTCnFtvOFKtV0DlJDGeYuy4k.WKQtbFENI/uqvwMAFh7paIbI2u2','관리자','010-0000-0000','2025-10-01','admin@test.com',null,null,0,true),
-('user1','$2a$12$BmTCnFtvOFKtV0DlJDGeYuy4k.WKQtbFENI/uqvwMAFh7paIbI2u2','홍길동','010-1111-1111','1960-05-10','user1@test.com',null,null,10,true),
-('user2','$2a$12$BmTCnFtvOFKtV0DlJDGeYuy4k.WKQtbFENI/uqvwMAFh7paIbI2u2','이순신','010-1111-1112','1990-02-20','user2@test.com',null,null,11,true),
-('user3','$2a$12$BmTCnFtvOFKtV0DlJDGeYuy4k.WKQtbFENI/uqvwMAFh7paIbI2u2','강감찬','010-1111-1113','1985-07-15','user3@test.com',null,null,12,true),
-('user4','$2a$12$BmTCnFtvOFKtV0DlJDGeYuy4k.WKQtbFENI/uqvwMAFh7paIbI2u2','유관순','010-1111-1114','1970-11-05','user4@test.com',null,null,13,true),
-('user5','$2a$12$BmTCnFtvOFKtV0DlJDGeYuy4k.WKQtbFENI/uqvwMAFh7paIbI2u2','안중근','010-1111-1115','2000-03-22','user5@test.com',null,null,14,true),
-('user6','$2a$12$BmTCnFtvOFKtV0DlJDGeYuy4k.WKQtbFENI/uqvwMAFh7paIbI2u2','윤봉길','010-1111-1116','1962-09-18','user6@test.com',null,null,15,true),
-('user7','$2a$12$BmTCnFtvOFKtV0DlJDGeYuy4k.WKQtbFENI/uqvwMAFh7paIbI2u2','정몽주','010-1111-1117','1995-12-01','user7@test.com',null,null,16,true),
-('user8','$2a$12$BmTCnFtvOFKtV0DlJDGeYuy4k.WKQtbFENI/uqvwMAFh7paIbI2u2','신사임당','010-1111-1118','1988-06-25','user8@test.com',null,null,17,true),
-('user9','$2a$12$BmTCnFtvOFKtV0DlJDGeYuy4k.WKQtbFENI/uqvwMAFh7paIbI2u2','세종대왕','010-1111-1119','1955-08-30','user9@test.com',null,null,18,true),
-('user10','$2a$12$BmTCnFtvOFKtV0DlJDGeYuy4k.WKQtbFENI/uqvwMAFh7paIbI2u2','장영실','010-1111-1120','1999-01-10','user10@test.com',null,null,19,true);
+INSERT INTO members (
+  mid, password_hash, mname, mphone, birthdate, email,
+  provider, provider_id, pno, email_verified
+) VALUES
+('admin','$2a$12$BmTCnFtvOFKtV0DlJDGeYuy4k.WKQtbFENI/uqvwMAFh7paIbI2u2','관리자','010-0000-0000','2025-10-01','admin@test.com',NULL,NULL,0 ,TRUE),
+('user1','$2a$12$BmTCnFtvOFKtV0DlJDGeYuy4k.WKQtbFENI/uqvwMAFh7paIbI2u2','홍길동','010-1111-1111','1960-05-10','user1@test.com',NULL,NULL,10,TRUE),
+('user2','$2a$12$BmTCnFtvOFKtV0DlJDGeYuy4k.WKQtbFENI/uqvwMAFh7paIbI2u2','이순신','010-1111-1112','1990-02-20','user2@test.com',NULL,NULL,11,TRUE),
+('user3','$2a$12$BmTCnFtvOFKtV0DlJDGeYuy4k.WKQtbFENI/uqvwMAFh7paIbI2u2','강감찬','010-1111-1113','1985-07-15','user3@test.com',NULL,NULL,12,TRUE),
+('user4','$2a$12$BmTCnFtvOFKtV0DlJDGeYuy4k.WKQtbFENI/uqvwMAFh7paIbI2u2','유관순','010-1111-1114','1970-11-05','user4@test.com',NULL,NULL,13,TRUE),
+('user5','$2a$12$BmTCnFtvOFKtV0DlJDGeYuy4k.WKQtbFENI/uqvwMAFh7paIbI2u2','안중근','010-1111-1115','2000-03-22','user5@test.com',NULL,NULL,14,TRUE),
+('user6','$2a$12$BmTCnFtvOFKtV0DlJDGeYuy4k.WKQtbFENI/uqvwMAFh7paIbI2u2','윤봉길','010-1111-1116','1962-09-18','user6@test.com',NULL,NULL,15,TRUE),
+('user7','$2a$12$BmTCnFtvOFKtV0DlJDGeYuy4k.WKQtbFENI/uqvwMAFh7paIbI2u2','정몽주','010-1111-1117','1995-12-01','user7@test.com',NULL,NULL,16,TRUE),
+('user8','$2a$12$BmTCnFtvOFKtV0DlJDGeYuy4k.WKQtbFENI/uqvwMAFh7paIbI2u2','신사임당','010-1111-1118','1988-06-25','user8@test.com',NULL,NULL,17,TRUE),
+('user9','$2a$12$BmTCnFtvOFKtV0DlJDGeYuy4k.WKQtbFENI/uqvwMAFh7paIbI2u2','세종대왕','010-1111-1119','1955-08-30','user9@test.com',NULL,NULL,18,TRUE),
+('user10','$2a$12$BmTCnFtvOFKtV0DlJDGeYuy4k.WKQtbFENI/uqvwMAFh7paIbI2u2','장영실','010-1111-1120','1999-01-10','user10@test.com',NULL,NULL,19,TRUE);
 
+-- 좌석 (각 존 A1~A10 시니어, B/C 일반)
+-- 겨레석 (zno = 10001) → sno 30001~30030
+INSERT INTO seats(zno, seatName, senior) VALUES
+(10001,'A1',TRUE),(10001,'A2',TRUE),(10001,'A3',TRUE),(10001,'A4',TRUE),(10001,'A5',TRUE),
+(10001,'A6',TRUE),(10001,'A7',TRUE),(10001,'A8',TRUE),(10001,'A9',TRUE),(10001,'A10',TRUE),
+(10001,'B1',FALSE),(10001,'B2',FALSE),(10001,'B3',FALSE),(10001,'B4',FALSE),(10001,'B5',FALSE),
+(10001,'B6',FALSE),(10001,'B7',FALSE),(10001,'B8',FALSE),(10001,'B9',FALSE),(10001,'B10',FALSE),
+(10001,'C1',FALSE),(10001,'C2',FALSE),(10001,'C3',FALSE),(10001,'C4',FALSE),(10001,'C5',FALSE),
+(10001,'C6',FALSE),(10001,'C7',FALSE),(10001,'C8',FALSE),(10001,'C9',FALSE),(10001,'C10',FALSE);
 
+-- 연우석 (zno = 10002) → sno 30031~30060
+INSERT INTO seats(zno, seatName, senior) VALUES
+(10002,'A1',TRUE),(10002,'A2',TRUE),(10002,'A3',TRUE),(10002,'A4',TRUE),(10002,'A5',TRUE),
+(10002,'A6',TRUE),(10002,'A7',TRUE),(10002,'A8',TRUE),(10002,'A9',TRUE),(10002,'A10',TRUE),
+(10002,'B1',FALSE),(10002,'B2',FALSE),(10002,'B3',FALSE),(10002,'B4',FALSE),(10002,'B5',FALSE),
+(10002,'B6',FALSE),(10002,'B7',FALSE),(10002,'B8',FALSE),(10002,'B9',FALSE),(10002,'B10',FALSE),
+(10002,'C1',FALSE),(10002,'C2',FALSE),(10002,'C3',FALSE),(10002,'C4',FALSE),(10002,'C5',FALSE),
+(10002,'C6',FALSE),(10002,'C7',FALSE),(10002,'C8',FALSE),(10002,'C9',FALSE),(10002,'C10',FALSE);
 
--- 좌석
--- 겨레석 (zno = 10001)
-insert into seats(zno, seatName, senior) values
-(10001,'A1',true),(10001,'A2',true),(10001,'A3',true),(10001,'A4',true),(10001,'A5',true),
-(10001,'A6',true),(10001,'A7',true),(10001,'A8',true),(10001,'A9',true),(10001,'A10',true),
-(10001,'B1',false),(10001,'B2',false),(10001,'B3',false),(10001,'B4',false),(10001,'B5',false),
-(10001,'B6',false),(10001,'B7',false),(10001,'B8',false),(10001,'B9',false),(10001,'B10',false),
-(10001,'C1',false),(10001,'C2',false),(10001,'C3',false),(10001,'C4',false),(10001,'C5',false),
-(10001,'C6',false),(10001,'C7',false),(10001,'C8',false),(10001,'C9',false),(10001,'C10',false);
+-- 성호석 (zno = 10003) → sno 30061~30090
+INSERT INTO seats(zno, seatName, senior) VALUES
+(10003,'A1',TRUE),(10003,'A2',TRUE),(10003,'A3',TRUE),(10003,'A4',TRUE),(10003,'A5',TRUE),
+(10003,'A6',TRUE),(10003,'A7',TRUE),(10003,'A8',TRUE),(10003,'A9',TRUE),(10003,'A10',TRUE),
+(10003,'B1',FALSE),(10003,'B2',FALSE),(10003,'B3',FALSE),(10003,'B4',FALSE),(10003,'B5',FALSE),
+(10003,'B6',FALSE),(10003,'B7',FALSE),(10003,'B8',FALSE),(10003,'B9',FALSE),(10003,'B10',FALSE),
+(10003,'C1',FALSE),(10003,'C2',FALSE),(10003,'C3',FALSE),(10003,'C4',FALSE),(10003,'C5',FALSE),
+(10003,'C6',FALSE),(10003,'C7',FALSE),(10003,'C8',FALSE),(10003,'C9',FALSE),(10003,'C10',FALSE);
 
--- 연우석 (zno = 10002)
-insert into seats(zno, seatName, senior) values
-(10002,'A1',true),(10002,'A2',true),(10002,'A3',true),(10002,'A4',true),(10002,'A5',true),
-(10002,'A6',true),(10002,'A7',true),(10002,'A8',true),(10002,'A9',true),(10002,'A10',true),
-(10002,'B1',false),(10002,'B2',false),(10002,'B3',false),(10002,'B4',false),(10002,'B5',false),
-(10002,'B6',false),(10002,'B7',false),(10002,'B8',false),(10002,'B9',false),(10002,'B10',false),
-(10002,'C1',false),(10002,'C2',false),(10002,'C3',false),(10002,'C4',false),(10002,'C5',false),
-(10002,'C6',false),(10002,'C7',false),(10002,'C8',false),(10002,'C9',false),(10002,'C10',false);
+-- 찬영석 (zno = 10004) → sno 30091~30120
+INSERT INTO seats(zno, seatName, senior) VALUES
+(10004,'A1',TRUE),(10004,'A2',TRUE),(10004,'A3',TRUE),(10004,'A4',TRUE),(10004,'A5',TRUE),
+(10004,'A6',TRUE),(10004,'A7',TRUE),(10004,'A8',TRUE),(10004,'A9',TRUE),(10004,'A10',TRUE),
+(10004,'B1',FALSE),(10004,'B2',FALSE),(10004,'B3',FALSE),(10004,'B4',FALSE),(10004,'B5',FALSE),
+(10004,'B6',FALSE),(10004,'B7',FALSE),(10004,'B8',FALSE),(10004,'B9',FALSE),(10004,'B10',FALSE),
+(10004,'C1',FALSE),(10004,'C2',FALSE),(10004,'C3',FALSE),(10004,'C4',FALSE),(10004,'C5',FALSE),
+(10004,'C6',FALSE),(10004,'C7',FALSE),(10004,'C8',FALSE),(10004,'C9',FALSE),(10004,'C10',FALSE);
 
--- 성호석 (zno = 10003)
-insert into seats(zno, seatName, senior) values
-(10003,'A1',true),(10003,'A2',true),(10003,'A3',true),(10003,'A4',true),(10003,'A5',true),
-(10003,'A6',true),(10003,'A7',true),(10003,'A8',true),(10003,'A9',true),(10003,'A10',true),
-(10003,'B1',false),(10003,'B2',false),(10003,'B3',false),(10003,'B4',false),(10003,'B5',false),
-(10003,'B6',false),(10003,'B7',false),(10003,'B8',false),(10003,'B9',false),(10003,'B10',false),
-(10003,'C1',false),(10003,'C2',false),(10003,'C3',false),(10003,'C4',false),(10003,'C5',false),
-(10003,'C6',false),(10003,'C7',false),(10003,'C8',false),(10003,'C9',false),(10003,'C10',false);
+-- 중앙테이블석 (zno = 10005) → sno 30121~30150
+INSERT INTO seats(zno, seatName, senior) VALUES
+(10005,'A1',TRUE),(10005,'A2',TRUE),(10005,'A3',TRUE),(10005,'A4',TRUE),(10005,'A5',TRUE),
+(10005,'A6',TRUE),(10005,'A7',TRUE),(10005,'A8',TRUE),(10005,'A9',TRUE),(10005,'A10',TRUE),
+(10005,'B1',FALSE),(10005,'B2',FALSE),(10005,'B3',FALSE),(10005,'B4',FALSE),(10005,'B5',FALSE),
+(10005,'B6',FALSE),(10005,'B7',FALSE),(10005,'B8',FALSE),(10005,'B9',FALSE),(10005,'B10',FALSE),
+(10005,'C1',FALSE),(10005,'C2',FALSE),(10005,'C3',FALSE),(10005,'C4',FALSE),(10005,'C5',FALSE),
+(10005,'C6',FALSE),(10005,'C7',FALSE),(10005,'C8',FALSE),(10005,'C9',FALSE),(10005,'C10',FALSE);
 
--- 찬영석 (zno = 10004)
-insert into seats(zno, seatName, senior) values
-(10004,'A1',true),(10004,'A2',true),(10004,'A3',true),(10004,'A4',true),(10004,'A5',true),
-(10004,'A6',true),(10004,'A7',true),(10004,'A8',true),(10004,'A9',true),(10004,'A10',true),
-(10004,'B1',false),(10004,'B2',false),(10004,'B3',false),(10004,'B4',false),(10004,'B5',false),
-(10004,'B6',false),(10004,'B7',false),(10004,'B8',false),(10004,'B9',false),(10004,'B10',false),
-(10004,'C1',false),(10004,'C2',false),(10004,'C3',false),(10004,'C4',false),(10004,'C5',false),
-(10004,'C6',false),(10004,'C7',false),(10004,'C8',false),(10004,'C9',false),(10004,'C10',false);
+-- 외야자유석 (zno = 10006) → sno 30151~30180
+INSERT INTO seats(zno, seatName, senior) VALUES
+(10006,'A1',TRUE),(10006,'A2',TRUE),(10006,'A3',TRUE),(10006,'A4',TRUE),(10006,'A5',TRUE),
+(10006,'A6',TRUE),(10006,'A7',TRUE),(10006,'A8',TRUE),(10006,'A9',TRUE),(10006,'A10',TRUE),
+(10006,'B1',FALSE),(10006,'B2',FALSE),(10006,'B3',FALSE),(10006,'B4',FALSE),(10006,'B5',FALSE),
+(10006,'B6',FALSE),(10006,'B7',FALSE),(10006,'B8',FALSE),(10006,'B9',FALSE),(10006,'B10',FALSE),
+(10006,'C1',FALSE),(10006,'C2',FALSE),(10006,'C3',FALSE),(10006,'C4',FALSE),(10006,'C5',FALSE),
+(10006,'C6',FALSE),(10006,'C7',FALSE),(10006,'C8',FALSE),(10006,'C9',FALSE),(10006,'C10',FALSE);
 
--- 중앙테이블석 (zno = 10005)
-insert into seats(zno, seatName, senior) values
-(10005,'A1',true),(10005,'A2',true),(10005,'A3',true),(10005,'A4',true),(10005,'A5',true),
-(10005,'A6',true),(10005,'A7',true),(10005,'A8',true),(10005,'A9',true),(10005,'A10',true),
-(10005,'B1',false),(10005,'B2',false),(10005,'B3',false),(10005,'B4',false),(10005,'B5',false),
-(10005,'B6',false),(10005,'B7',false),(10005,'B8',false),(10005,'B9',false),(10005,'B10',false),
-(10005,'C1',false),(10005,'C2',false),(10005,'C3',false),(10005,'C4',false),(10005,'C5',false),
-(10005,'C6',false),(10005,'C7',false),(10005,'C8',false),(10005,'C9',false),(10005,'C10',false);
-
--- 외야자유석 (zno = 10006)
-insert into seats(zno, seatName, senior) values
-(10006,'A1',true),(10006,'A2',true),(10006,'A3',true),(10006,'A4',true),(10006,'A5',true),
-(10006,'A6',true),(10006,'A7',true),(10006,'A8',true),(10006,'A9',true),(10006,'A10',true),
-(10006,'B1',false),(10006,'B2',false),(10006,'B3',false),(10006,'B4',false),(10006,'B5',false),
-(10006,'B6',false),(10006,'B7',false),(10006,'B8',false),(10006,'B9',false),(10006,'B10',false),
-(10006,'C1',false),(10006,'C2',false),(10006,'C3',false),(10006,'C4',false),(10006,'C5',false),
-(10006,'C6',false),(10006,'C7',false),(10006,'C8',false),(10006,'C9',false),(10006,'C10',false);
-
--- 예매
-insert into reservations (mno, sno, gno, status) values
+-- ====================== 예약 (channel 포함) ======================
+-- ⚠️ rno 40001..40010 매핑이 유지되도록 "순서"는 원본과 동일
+INSERT INTO reservations (mno, sno, gno, status, channel) VALUES
 -- 회원 20001 (3건, 1건 취소)
-(20001, 30001, 1, 'reserved'),     -- 겨레석 A1
-(20001, 30002, 1, 'cancelled'),    -- 겨레석 A2 (취소됨)
-(20001, 30003, 1, 'reserved'),     -- 겨레석 A3
+(20001, 30001,   1, 'reserved',  'general'),   -- rno 40001
+(20001, 30002,   1, 'cancelled', 'general'),   -- rno 40002
+(20001, 30003,   1, 'reserved',  'general'),   -- rno 40003
 
--- 회원 20002 (3건, 1건 취소)
-(20002, 30031, 2, 'reserved'),     -- 연우석 A1
-(20002, 30032, 2, 'reserved'),     -- 연우석 A2
-(20002, 30033, 2, 'cancelled'),    -- 연우석 A3 (취소됨)
-(20002, 30003,146,'reserved'),
-(20002, 30004,146,'reserved'),
--- 회원 20003 (3건, 1건 취소)
-(20003, 30061, 3, 'reserved'),     -- 성호석 A1
-(20003, 30062, 3, 'cancelled'),    -- 성호석 A2 (취소됨)
-(20003, 30063, 3, 'reserved'),     -- 성호석 A3
-(20003, 30005,146,'reserved'),
-(20003, 30006,146,'reserved'),
+-- 회원 20002 (5건, 이 중 2건은 gno=146 → 시니어 표본)
+(20002, 30031,   2, 'reserved',  'general'),   -- rno 40004
+(20002, 30032,   2, 'reserved',  'general'),   -- rno 40005
+(20002, 30033,   2, 'cancelled', 'general'),   -- rno 40006
+(20002, 30003, 146, 'reserved',  'senior'),    -- rno 40007 ★ 시니어 예매
+(20002, 30004, 146, 'reserved',  'senior'),    -- rno 40008 ★ 시니어 예매
+
+-- 회원 20003 (5건, 일부 시니어 예매 표본)
+(20003, 30061,   3, 'reserved',  'general'),   -- rno 40009
+(20003, 30062,   3, 'cancelled', 'general'),   -- rno 40010
+(20003, 30063,   3, 'reserved',  'general'),
+(20003, 30005, 146, 'reserved',  'senior'),    -- 시니어 예매
+(20003, 30006, 146, 'reserved',  'senior'),
 
 -- 회원 20004 (1건)
-(20004, 30091, 4, 'reserved');     -- 찬영석 A1
+(20004, 30091,   4, 'reserved',  'general');
 
--- 티켓
-insert into tickets(rno, ticket_code, valid, price,ticket_uuid) values
-(40001,'/upload/20251028_3d6003_qr.png',true,30000,'a5bc97'),
-(40002,'/upload/20251028_4e0eb3_qr.png',true,30000,'cbb5ae'),
-(40003,'/upload/20251028_5dc27c_qr.png',true,20000,'d81a3e'),
-(40004,'/upload/20251028_7f4a7e_qr.png',true,20000,'3150a1'),
-(40005,'/upload/20251028_4489a0_qr.png',true,50000,'c27143'),
-(40006,'/upload/20251028_769745_qr.png',true,50000,'ce2978'),
-(40007,'/upload/20251028_a450b9_qr.png',true,80000,'8c47ea'),
-(40008,'/upload/20251028_b10462_qr.png',true,15000,'ca73c6'),
-(40009,'/upload/20251028_ba3a3d_qr.png',true,120000,'650139'),
-(40010,'/upload/20251028_f88e45_qr.png',false,35000,'1d552a');
--- 예매 교환
-insert into reservation_exchanges(from_rno, to_rno, status) values
+-- ====================== 티켓 (rno 40001..40010) ======================
+INSERT INTO tickets (rno, ticket_code, valid, price, ticket_uuid) VALUES
+(40001,'/upload/20251028_3d6003_qr.png',TRUE ,30000,'a5bc97'),
+(40002,'/upload/20251028_4e0eb3_qr.png',TRUE ,30000,'cbb5ae'),
+(40003,'/upload/20251028_5dc27c_qr.png',TRUE ,20000,'d81a3e'),
+(40004,'/upload/20251028_7f4a7e_qr.png',TRUE ,20000,'3150a1'),
+(40005,'/upload/20251028_4489a0_qr.png',TRUE ,50000,'c27143'),
+(40006,'/upload/20251028_769745_qr.png',TRUE ,50000,'ce2978'),
+(40007,'/upload/20251028_a450b9_qr.png',TRUE ,80000,'8c47ea'),
+(40008,'/upload/20251028_b10462_qr.png',TRUE ,15000,'ca73c6'),
+(40009,'/upload/20251028_ba3a3d_qr.png',TRUE ,120000,'650139'),
+(40010,'/upload/20251028_f88e45_qr.png',FALSE,35000,'1d552a');
+
+-- ====================== 예매 교환 (예시) ======================
+INSERT INTO reservation_exchanges (from_rno, to_rno, status) VALUES
 (40001,40002,'pending'),
 (40003,40004,'pending'),
 (40005,40006,'approved'),
@@ -258,8 +260,8 @@ insert into reservation_exchanges(from_rno, to_rno, status) values
 (40008,40009,'rejected'),
 (40001,40010,'pending');
 
--- 자동배정 로그
-insert into auto_assign_log(mno, gno, assigned_zno, reason) values
+-- ====================== 자동배정 로그 (샘플) ======================
+INSERT INTO auto_assign_log(mno, gno, assigned_zno, reason) VALUES
 (20001,1001,10001,'시니어 회원 우선 배정'),
 (20002,1001,10002,'선호 구역 자동 배정'),
 (20003,1002,10003,'남은 좌석 랜덤 배정'),
@@ -271,20 +273,41 @@ insert into auto_assign_log(mno, gno, assigned_zno, reason) values
 (20009,1005,10009,'스카이박스 매진 → 가족석 배정'),
 (20010,1005,10010,'랜덤 배정');
 
-
--- ---------------------- 샘플 조회 ----------------------
-select * from zones;
-select * from members;
-select * from seats;
-select * from reservations;
-select * from tickets;
-select * from reservation_exchanges;
-select * from auto_assign_log;
+-- ====================== 확인용 쿼리 ======================
+SELECT * FROM zones;
+SELECT * FROM members;
+SELECT * FROM seats;
+SELECT * FROM reservations;
+SELECT * FROM tickets;
+SELECT * FROM reservation_exchanges;
+SELECT * FROM auto_assign_log;
 DESC members;
 
-# 교환가능한 좌석정보
-select r.* from reservations r inner join seats s on r.sno = s.sno where
-  r.gno = (select gno from reservations where rno = 40001) and s.zno = (select s2.zno from reservations r2 inner join seats s2 on r2.sno = s2.sno where r2.rno = 40001)
-  and r.status = 'reserved' and r.rno != 40001;
-  select s.* from seats s inner join reservations r on s.zno = (select zno from reservations r inner join seats s on s.sno = r.sno where rno = 40004);
-  SELECT * FROM seats WHERE zno = (SELECT s.zno FROM reservations r INNER JOIN seats s ON s.sno = r.sno WHERE r.rno = 40004);
+-- 같은 존/같은 gno에서 교환가능한 좌석 예시
+-- (원본 참고 쿼리 유지)
+SELECT r.* FROM reservations r
+INNER JOIN seats s ON r.sno = s.sno
+WHERE r.gno = (SELECT gno FROM reservations WHERE rno = 40001)
+  AND s.zno = (
+      SELECT s2.zno FROM reservations r2
+      INNER JOIN seats s2 ON r2.sno = s2.sno
+      WHERE r2.rno = 40001
+  )
+  AND r.status = 'reserved'
+  AND r.rno != 40001;
+
+-- rno=40004의 구역 전체 좌석
+SELECT s.*
+FROM seats s
+INNER JOIN reservations r
+  ON s.zno = (SELECT zno FROM reservations r
+              INNER JOIN seats s ON s.sno = r.sno
+              WHERE rno = 40004);
+
+-- 동일 쿼리 (좀 더 단순화)
+SELECT * FROM seats
+WHERE zno = (
+  SELECT s.zno FROM reservations r
+  INNER JOIN seats s ON s.sno = r.sno
+  WHERE r.rno = 40004
+);
