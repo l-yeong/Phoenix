@@ -1,6 +1,7 @@
 package phoenix.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.redisson.api.RedissonClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,6 +12,7 @@ import phoenix.service.AutoSeatsService;
 import phoenix.service.MembersService;
 import phoenix.service.SeatLockService;
 import phoenix.service.SeatsService;
+import phoenix.util.RedisKeys;
 
 import java.util.*;
 
@@ -36,6 +38,7 @@ public class SeatsController {
     private final MembersService membersService;
     private final SeatsService sService;
     private final AutoSeatsService autoSeatsService;
+    private final RedissonClient redisson;
 
     /** 좌석 선택(락 시도 → 임시 보유) */
     @PostMapping("/select")
@@ -148,5 +151,11 @@ public class SeatsController {
     public ResponseEntity<?> seatPrint(@RequestParam int rno){
         List<SeatDto> result = sService.seatPrint(rno);
         return ResponseEntity.ok(result);
+    }
+    @GetMapping("/check/senior")
+    public Map<String, Boolean> checkSenior(@RequestParam int gno) {
+        int mno = membersService.getLoginMember().getMno();
+        boolean hasSenior = redisson.getAtomicLong(RedisKeys.keySeniorBooked(mno, gno)).get() > 0;
+        return Map.of("senior", hasSenior);
     }
 }

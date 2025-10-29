@@ -94,6 +94,9 @@ public class SeatLockService {
      * @return 1:OK, -1:no session, -3:sold/lock fail, -4:limit(4), -5:invalid seat, -6:senior not open
      */
     public int tryLockSeat(int mno, int gno, int zno, int sno) throws InterruptedException {
+        RAtomicLong seniorBooked = redisson.getAtomicLong(RedisKeys.keySeniorBooked(mno, gno));
+        if (seniorBooked.get() > 0) return -9; // 시니어 예매 보유 중 → 일반예매 불가
+
         if (!hasActiveSession(mno, gno)) return -1;
         if (!seatCsvService.existsSeatInZone(zno, sno)) return -5;
         if (seatCsvService.isSeniorSeat(sno) && !isSeniorOpenForGeneral(gno)) return -6;
