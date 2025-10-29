@@ -474,7 +474,12 @@ public class MembersController {
     } // func e
 
     /*===================FireBase Ticket_Token=============================*/
-    //@PostMapping("/fcm/messaging")
-    //public ResponseEntity<?
+    @PostMapping("/fcm/messaging")
+    public ResponseEntity<?>ticketMessaging(@RequestParam String mid,
+                                            @RequestParam String title,
+                                            @RequestParam String body){
+        String result = membersService.ticketMessaging(mid,title,body);
+        return ResponseEntity.ok(result);
+    }//func end
 
 } // class e

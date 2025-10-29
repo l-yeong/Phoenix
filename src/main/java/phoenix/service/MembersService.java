@@ -86,7 +86,7 @@ public class MembersService {
      * @return Access Token (JWT 토큰 / 실패시 null )
      */
     @Transactional
-    public String login(String mid, String rawPassword) {
+    public String login(String mid, String rawPassword,String fcmToken) { //String fcmToken 추가(firebase)알림
         MembersDto member = membersMapper.findByMid(mid);
         System.out.println("[LOGIN-DEBUG] member = " + member);
 
@@ -110,6 +110,15 @@ public class MembersService {
         if (member != null
                 && PasswordUtil.matches(rawPassword, member.getPassword_hash())
                 && Boolean.TRUE.equals(member.getEmail_verified())) { // 인증된 회원만 로그인 가능
+
+            if(fcmToken!=null && !fcmToken.isEmpty()){
+                try{
+                    membersMapper.ticketTokenWrite(mid,fcmToken);
+                    System.out.println("[LOGIN] FCM 토큰 저장 완료 mid= "+mid);
+                } catch (Exception e) {
+                    System.out.println("[LOGIN] FCM 토큰 저장 실패 mid= "+mid +"오류: "+e.getMessage());
+                }//catch end
+            }//fcmToken if end
 
             // JWT 생성
             String accessToken = jwtUtil.generateToken(member);
@@ -483,6 +492,7 @@ public class MembersService {
         // 토큰이 없거나 빈값이면 예외 발생
         if (token == null || token.isEmpty()) {
             System.out.println("등록된 FCM 토큰이 없습니다. mid =" + mid);
+            return null;
         }//if end
         try {
             // 메시지 알림 객체 생성

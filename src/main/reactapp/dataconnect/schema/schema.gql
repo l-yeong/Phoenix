@@ -1,9 +1,0 @@
-type PageContent @table {
-  path: String!
-  contentHtml: String!
-  lastUpdated: Timestamp!
-  pageTitle: String
-  metaDescription: String
-  stylesCss: String
-  scriptsJs: String
-}
