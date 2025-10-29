@@ -59,9 +59,9 @@ public interface TicketsMapper {
      * @param gnoList 경기번호 목록
      */
     @Update(" UPDATE tickets t JOIN reservations r ON r.rno = t.rno " +
-            " SET t.valid = 0 WHERE r.gno IN (${gnoList}) " +
+            " SET t.valid = 0 WHERE r.gno IN (#{gnoList}) " +
             " AND (t.valid = 1)")
-    int formerGame(@Param("gnoList") List<Integer> gnoList);
+    int formerGame(@Param("gnoList") String gnoList);
 
 
     /**
