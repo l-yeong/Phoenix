@@ -136,7 +136,7 @@ public class SecurityConfig {
                 // =============================
                 .authorizeHttpRequests(auth -> auth // URL별 인가 규칙 시작
                         .requestMatchers(HttpMethod.OPTIONS , "/**").permitAll() // 프리플라이트 요청 허용
-                        .requestMatchers("/senior/**").authenticated()
+                        .requestMatchers("/senior/**" , "/api/chat/**" ).authenticated()
                         .requestMatchers("/members/email/**").permitAll()
                         .requestMatchers(
                                 "/members/**", // 회원 하위 모두
@@ -144,7 +144,6 @@ public class SecurityConfig {
                                 "/socket/**",
                                 "/seats/**",
                                 "/gate/**",
-                                "/chatbot/**",
                                 "/captcha/**",
                                 "/game/**",
                                 "/tickets/**",
