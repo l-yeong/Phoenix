@@ -128,7 +128,7 @@ export default function SeniorReserve() {
   useEffect(() => {
     const fetchGames = async () => {
       try {
-        const res = await axios.get(`http://localhost:8080/senior/games`, {
+        const res = await axios.get(`http://192.168.40.190:8080/senior/games`, {
           withCredentials: true,
         });
         if (res.data.success) {
@@ -143,7 +143,7 @@ export default function SeniorReserve() {
 
     const checkSeniorAccess = async () => {
       try {
-        const res = await axios.get(`http://localhost:8080/senior/reserve`, {
+        const res = await axios.get(`http://192.168.40.190:8080/senior/reserve`, {
           withCredentials: true,
         });
         if (res.data.success) {
