@@ -56,7 +56,7 @@ const LoginForm = () => {
         return;
       }
 
-      alert(`${resData.member.mid}님 환영합니다!`);
+      alert(`${resData.member.mname}님 환영합니다!`);
       navigate("/");
     } catch (error) {
       console.error("로그인 실패:", error);

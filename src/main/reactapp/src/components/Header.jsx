@@ -13,6 +13,8 @@ const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 const Header = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  // 여기서 AuthContext에서 제공하는 전역 상태(user)와 함수(logout) 를
+  // Header 컴포넌트 안에서 꺼내 쓰는 부분
 
   const wsRef = useRef(null);
   const [message, setMessage] = useState([]);
