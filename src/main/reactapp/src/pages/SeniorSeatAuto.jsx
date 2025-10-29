@@ -35,13 +35,18 @@ export default function SeniorSeatAuto() {
 
         // 음성 안내가 끝나면 자동으로 STT 시작
         utter.onend = () => {
-            console.log("🎤 안내 종료됨, 음성 인식 시작");
+            console.log("🎤 안내 종료됨, 음성 인식 시작 준비");
             if (autoListen && recognition && !listening) {
-                try {
-                    recognition.start();
-                } catch (err) {
-                    console.error("음성 인식 시작 오류:", err);
-                }
+                
+                // 약간의 딜레이 추가 (Chrome 전환 타이밍 안정화)
+                setTimeout(() => {
+                    try {
+                        recognition.start();
+                        console.log("🎤 음성 인식 재시작됨");
+                    } catch (err) {
+                        console.error("음성 인식 재시작 오류:", err);
+                    }
+                }, 400); // 400~500ms가 가장 안정적
             }
         };
         window.speechSynthesis.speak(utter);

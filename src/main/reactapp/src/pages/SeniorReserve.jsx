@@ -75,6 +75,7 @@ export default function SeniorReserve() {
     };
 
     setRecognition(recog);
+    recog.start();
   };
 
   // 음성 명령 처리 함수
@@ -82,26 +83,11 @@ export default function SeniorReserve() {
     // "첫 번째 경기", "두번째 경기", "1번 경기", 등 인식 가능하도록
     const normalized = text.replace(/\s/g, "");
 
-    if (
-      normalized.includes("첫") ||
-      normalized.includes("첫번") ||
-      normalized.includes("1") ||
-      normalized.includes("일번")
-    ) {
+    if (/(첫|첫번|첫번째|1번|1|일번)/.test(normalized)) {
       navigateToGame(0);
-    }
-    else if (
-      normalized.includes("두") ||
-      normalized.includes("2") ||
-      normalized.includes("이번")
-    ) {
+    } else if (/(두|두번|두번째|2번|2|이번)/.test(normalized)) {
       navigateToGame(1);
-    }
-    else if (
-      normalized.includes("세") ||
-      normalized.includes("삼") ||
-      normalized.includes("3")
-    ) {
+    } else if (/(세|세번|세번째|3번|3|삼번)/.test(normalized)) {
       navigateToGame(2);
     } else if (normalized.includes("종료") || normalized.includes("나가기")) {
       speak("시니어 예매를 종료합니다.");
@@ -154,8 +140,13 @@ export default function SeniorReserve() {
 
           // 약간의 텀을 두고 두 번째 안내 + 음성인식 시작
           setTimeout(() => {
-            initSTT(); // 음성 인식 기능 시작
-            speak("음성으로도 경기 선택이 가능합니다. 첫 번째 경기 선택이라고 말씀해보세요.");
+            // 먼저 STT 준비
+            initSTT();
+
+            // 그다음 TTS 안내
+            setTimeout(() => {
+              speak("음성으로도 경기 선택이 가능합니다. 첫 번째 경기 선택이라고 말씀해보세요.");
+            }, 800); // 살짝 텀 주기
           }, 3000);
         }
       } catch (err) {
