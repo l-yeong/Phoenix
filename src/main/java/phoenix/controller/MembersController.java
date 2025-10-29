@@ -473,5 +473,8 @@ public class MembersController {
                 .body(new ApiResponseUtil<>(false, "비밀번호 재설정 실패 (인증 필요 또는 회원 없음).", null));
     } // func e
 
+    /*===================FireBase Ticket_Token=============================*/
+    //@PostMapping("/fcm/messaging")
+    //public ResponseEntity<?
 
 } // class e
