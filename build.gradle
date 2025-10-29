@@ -77,6 +77,9 @@ dependencies {
     // 테스트 기본 세트(JUnit5/Mockito/AssertJ)
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
+    // 파이어베이스(QR사용여부 메시지)
+
+
 }
 
 tasks.named('test') {
