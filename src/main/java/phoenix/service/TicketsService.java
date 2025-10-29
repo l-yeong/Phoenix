@@ -59,7 +59,7 @@ public class TicketsService {
                 .substring(0, 6);
 
         // QR코드 스캔 URL(도메인생기면 여기만 수정)
-        String baseUrl = "http://192.168.40.190:5173";
+        String baseUrl = "http://localhost:8080";
         String qrUrl = baseUrl + "/tickets/qr?qr=" + qrUuid;
 
         // QR 이미지 파일 생성 및 저장
@@ -88,7 +88,7 @@ public class TicketsService {
      * - DB의 ticket_code 컬럼 값은 통계/로그 분석을 위해 유지.
      * - 하루 최대 1,000개의 파일을 삭제하며, 예외 발생 시 개별 로그 출력.
      */
-    @Scheduled(cron = "0 * * * * *", zone = "Asia/Seoul")
+//    @Scheduled(cron = "0 * * * * *", zone = "Asia/Seoul")
     public void QRImgDelete() {
         final int DeleteCount = 1000; // 하루에 최대 1000개까지 QR이미지 삭제
         while (true) {
@@ -137,7 +137,7 @@ public class TicketsService {
      * - 내부적으로 formerGameCSV()를 호출하여 처리
      */
 
-    //@Scheduled(cron = "0 */5 9-23 * * *", zone = "Asia/Seoul")
+//    @Scheduled(cron = "0 */5 9-23 * * *", zone = "Asia/Seoul")
     public void formerGame() {
         try {
             int updated = formerGameCSV();
@@ -160,8 +160,12 @@ public class TicketsService {
     @Transactional
     public int formerGameCSV() {
         List<Integer> expired = fileService.getExpiredGames(); // game.csv 호출
-        if (expired.isEmpty()) return 0; // 만료된 경기가 없으면 종료
-        return ticketsMapper.formerGame(expired);
+        if (expired ==null || expired.isEmpty()) return 0 ;
+
+        String gnoListStr = expired.stream() //파이프형 라인(ex:[1,2,3,4,5]
+                .map(String::valueOf)   // 문자열변환
+                .collect(Collectors.joining(","));
+        return ticketsMapper.formerGame(gnoListStr);
     }//func end
 
     /**

@@ -75,6 +75,7 @@ export default function SeniorReserve() {
     };
 
     setRecognition(recog);
+    recog.start();
   };
 
   // 음성 명령 처리 함수
@@ -82,26 +83,11 @@ export default function SeniorReserve() {
     // "첫 번째 경기", "두번째 경기", "1번 경기", 등 인식 가능하도록
     const normalized = text.replace(/\s/g, "");
 
-    if (
-      normalized.includes("첫") ||
-      normalized.includes("첫번") ||
-      normalized.includes("1") ||
-      normalized.includes("일번")
-    ) {
+    if (/(첫|첫번|첫번째|1번|1|일번)/.test(normalized)) {
       navigateToGame(0);
-    }
-    else if (
-      normalized.includes("두") ||
-      normalized.includes("2") ||
-      normalized.includes("이번")
-    ) {
+    } else if (/(두|두번|두번째|2번|2|이번)/.test(normalized)) {
       navigateToGame(1);
-    }
-    else if (
-      normalized.includes("세") ||
-      normalized.includes("삼") ||
-      normalized.includes("3")
-    ) {
+    } else if (/(세|세번|세번째|3번|3|삼번)/.test(normalized)) {
       navigateToGame(2);
     } else if (normalized.includes("종료") || normalized.includes("나가기")) {
       speak("시니어 예매를 종료합니다.");
@@ -113,15 +99,22 @@ export default function SeniorReserve() {
   };
 
   const navigateToGame = (index) => {
-    speak("경기 선택을 처리 중입니다." + index);
-    if (games[index]) {
-      speak(`${games[index].homeTeam} 대 ${games[index].awayTeam} 경기를 선택하셨습니다.`);
-      setTimeout(() => {
-        navigate(`/senior/seats?gameId=${games[index].gno}`);
-      }, 1500);
-    } else {
-      speak("해당 순서의 경기를 찾을 수 없습니다.");
+    if (!games || games.length === 0) {
+      speak("아직 경기 목록이 준비되지 않았습니다. 잠시 후 다시 말씀해주세요.");
+      return;
     }
+
+    if (index < 0 || index >= games.length) {
+      speak("해당 순서의 경기를 찾을 수 없습니다.");
+      return;
+    }
+
+    const game = games[index];
+    speak(`${game.homeTeam} 대 ${game.awayTeam} 경기를 선택하셨습니다.`);
+
+    setTimeout(() => {
+      navigate(`/senior/seats?gameId=${game.gno}`);
+    }, 1500);
   };
 
   // 초기 실행
@@ -154,8 +147,13 @@ export default function SeniorReserve() {
 
           // 약간의 텀을 두고 두 번째 안내 + 음성인식 시작
           setTimeout(() => {
-            initSTT(); // 음성 인식 기능 시작
-            speak("음성으로도 경기 선택이 가능합니다. 첫 번째 경기 선택이라고 말씀해보세요.");
+            // 먼저 STT 준비
+            initSTT();
+
+            // 그다음 TTS 안내
+            setTimeout(() => {
+              speak("음성으로도 경기 선택이 가능합니다. 첫 번째 경기 선택이라고 말씀해보세요.");
+            }, 800); // 살짝 텀 주기
           }, 3000);
         }
       } catch (err) {
