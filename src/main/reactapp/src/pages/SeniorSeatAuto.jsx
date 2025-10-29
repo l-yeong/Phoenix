@@ -22,41 +22,52 @@ export default function SeniorSeatAuto() {
     const [listening, setListening] = useState(false);
     const firstStart = useRef(true);
     const sttRestarting = useRef(false); // STT 중복 재시작 방지용 플래그
+    const ttsActive = useRef(false); // 현재 TTS가 동작 중인지 추적
 
     const gameId = searchParams.get("gameId");
 
-    // 음성 안내 (TTS)
+    // TTS 함수
     const speak = (text, autoListen = true) => {
+        // 현재 재생 중인 음성 중단
         window.speechSynthesis.cancel();
+
         const utter = new SpeechSynthesisUtterance(text);
         utter.lang = "ko-KR";
         utter.rate = 0.9;
         utter.pitch = 1.0;
         utter.volume = 1.0;
 
+        ttsActive.current = true; // 🎙️ TTS 활성화 시작
+        window.speechSynthesis.speak(utter);
+
         utter.onend = () => {
-            console.log("🎤 안내 종료됨, 음성 인식 시작 준비");
+            ttsActive.current = false; // 🎙️ TTS 종료 표시
+            console.log("🎤 안내 종료됨 (TTS 완전 종료)");
 
+            // 자동으로 STT 재시작
             if (autoListen && recognition && !listening && !sttRestarting.current) {
-                sttRestarting.current = true; // 재시작 중 플래그 ON
+                sttRestarting.current = true;
 
-                // Chrome/Android에서 TTS→STT 전환은 최소 2초 권장
+                // 완전 종료 후 2.5초 이상 대기 (충돌 방지)
                 setTimeout(() => {
+                    // 혹시 그 사이에 TTS가 다시 시작됐으면 취소
+                    if (ttsActive.current) {
+                        sttRestarting.current = false;
+                        return;
+                    }
+
                     try {
                         recognition.start();
-                        console.log("🎤 음성 인식 재시작됨");
+                        console.log("🎤 STT 완전 재시작됨 ");
                     } catch (err) {
-                        console.error("음성 인식 재시작 오류:", err);
+                        console.error("🎤 STT 재시작 오류:", err);
                     } finally {
-                        sttRestarting.current = false; // 재시작 끝나면 플래그 해제
+                        sttRestarting.current = false;
                     }
-                }, 2200);
+                }, 2500);
             }
         };
-
-        window.speechSynthesis.speak(utter);
     };
-
     // 음성 인식 (STT) 초기화
     const initSTT = async () => {
         const SpeechRecognition =
