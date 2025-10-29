@@ -130,7 +130,7 @@ export default function GatePage() {
           setToast({
             open: true,
             type: "warn",
-            msg: "시니어 예매 회원은 일반 예매 대기열에 입장할 수 없습니다. 5초 후 홈으로 이동합니다. (5)",
+            msg: "시니어 예매 후 일반 예매는 이용할 수 없습니다.\n 5초 후 홈으로 이동합니다. (5초 남음)",
           });
 
           // 이미 큐에 들어갔을 가능성 대비 → leave는 1회만
@@ -162,7 +162,7 @@ export default function GatePage() {
               setToast({
                 open: true,
                 type: "warn",
-                msg:  `시니어 예매 후 일반 예매는 이용할 수 없습니다.\n5초 후 홈으로 이동합니다. (${next}초 남음)`,
+                msg:  `시니어 예매 후 일반 예매는 이용할 수 없습니다.\n 5초 후 홈으로 이동합니다. (${next}초 남음)`,
               });
               if (next <= 0) {
                 clearInterval(countdownTimerRef.current);
