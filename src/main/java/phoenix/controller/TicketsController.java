@@ -116,14 +116,14 @@ public class TicketsController {
      */
     @GetMapping("/qr")
     public ResponseEntity<?> qrScan(@RequestParam("qr")String uuid){
-        //MembersDto loginMember = membersService.getLoginMember();
-        //if(loginMember == null ){
-        //    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인이 필요합니다.");
-        //}
-        //
-        //if(!"admin".equalsIgnoreCase(loginMember.getMid())){ // equalsIgnoreCase = 대소문자 구분없음,ex)Admin,admin
-        //    return ResponseEntity.status(HttpStatus.FORBIDDEN).body("관리자만 접근 가능합니다.");
-        //}//func end
+        MembersDto loginMember = membersService.getLoginMember();
+        if(loginMember == null ){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인이 필요합니다.");
+        }
+
+        if(!"admin".equalsIgnoreCase(loginMember.getMid())){ // equalsIgnoreCase = 대소문자 구분없음,ex)Admin,admin
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("관리자만 접근 가능합니다.");
+        }//func end
 
         Map<String, Object> result = ticketsService.qrScan(uuid);
         return ResponseEntity.ok(result);
