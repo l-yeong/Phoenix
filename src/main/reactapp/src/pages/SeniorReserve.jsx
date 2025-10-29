@@ -28,7 +28,7 @@ export default function SeniorReserve() {
       if (autoListen && recognition && !listening) {
         try {
           recognition.start();
-          console.log("🎤 음성 인식 시작됨");
+          console.log("음성 인식 시작됨");
         } catch (err) {
           console.error("음성 인식 시작 오류:", err);
         }
@@ -60,7 +60,7 @@ export default function SeniorReserve() {
 
     recog.onresult = (event) => {
       const transcript = event.results[event.results.length - 1][0].transcript.trim();
-      console.log("🎙 인식된 문장:", transcript);
+      console.log("인식된 문장:", transcript);
       handleVoiceCommand(transcript);
     };
 
@@ -70,7 +70,7 @@ export default function SeniorReserve() {
     };
 
     recog.onend = () => {
-      console.log("🎤 인식 종료됨");
+      console.log("인식 종료됨");
       setListening(false);
     };
 
@@ -131,7 +131,7 @@ export default function SeniorReserve() {
           alert("경기 정보를 불러오지 못했습니다.");
         }
       } catch (e) {
-        console.error("⚠️ 경기 로드 실패:", e);
+        console.error("경기 로드 실패:", e);
       }
     };
 
@@ -171,7 +171,7 @@ export default function SeniorReserve() {
   // games 상태가 실제로 세팅된 뒤 실행
   useEffect(() => {
     if (games.length > 0) {
-      console.log("🎯 games 세팅 완료 → TTS/STT 시작");
+      console.log("games 세팅 완료 → TTS/STT 시작");
       setShowGuide(true);
       speak("시니어 전용 자동 예매 페이지입니다. 곧 음성 안내가 시작됩니다.");
 

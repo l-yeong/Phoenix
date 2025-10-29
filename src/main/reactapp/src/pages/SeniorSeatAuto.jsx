@@ -37,7 +37,7 @@ export default function SeniorSeatAuto() {
         utter.onend = () => {
             console.log("🎤 안내 종료됨, 음성 인식 시작 준비");
             if (autoListen && recognition && !listening) {
-                
+
                 // 약간의 딜레이 추가 (Chrome 전환 타이밍 안정화)
                 setTimeout(() => {
                     try {
@@ -248,11 +248,11 @@ export default function SeniorSeatAuto() {
                 <TutorialOverlay
                     targetId="ticketSelectBox"
                     message={
-                        <p style={{ textAlign: "center", lineHeight: "1.6" }}>
+                        <div style={{ textAlign: "center", lineHeight: "1.6" }}>
                             👥 <strong style={{ color: "#CA2E26" }}>매수를 선택해주세요.</strong>
                             <br />
                             몇 명이 예매할지 먼저 정해야 합니다.
-                        </p>
+                        </div>
                     }
                     onClose={() => {
                         window.speechSynthesis.cancel();
@@ -270,11 +270,11 @@ export default function SeniorSeatAuto() {
                 <TutorialOverlay
                     targetId="autoReserveButton"
                     message={
-                        <p style={{ textAlign: "center", lineHeight: "1.6" }}>
+                        <div style={{ textAlign: "center", lineHeight: "1.6" }}>
                             🎟️ <strong style={{ color: "#CA2E26" }}>이 버튼을 눌러</strong>
                             <br />
                             자동 예매를 진행해보세요!
-                        </p>
+                        </div>
                     }
                     onClose={() => {
                         window.speechSynthesis.cancel();
