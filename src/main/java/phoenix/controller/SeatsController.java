@@ -1,7 +1,6 @@
 package phoenix.controller;
 
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,23 +16,22 @@ import java.util.*;
 
 /**
  * [SeatController]
- * - "좌석 선택/해제/확정(결제)" HTTP API
- * - SeatLockService와 1:1 매핑, 프론트 연동에 최적화
- * - 모든 엔드포인트는 JSON 요청/응답을 기준으로 설계
-
- *  1) POST /seat/select   : 단일 좌석 선택 (락 + hold 등록)
- *  2) POST /seat/release  : 단일 좌석 해제 (hold 제거)
- *  3) POST /seat/confirm  : 여러 좌석 결제 확정 (SOLD 등록)
- *  4) POST /seat/map       : 좌석 상태 맵 조회
+ * - 일반 예매(수동/자동) 좌석 선택/해제/확정 + 상태 맵 + 스냅샷
+ *
+ *  1) POST /seat/select       : 단일 좌석 선택 (락 + hold 등록)
+ *  2) POST /seat/release      : 단일 좌석 해제 (hold 제거)
+ *  3) POST /seat/confirm      : 여러 좌석 결제 확정 (SOLD 등록)
+ *  4) POST /seat/status       : 좌석 상태 맵 조회(부분)
+ *  5) GET  /seat/held         : [🆕] 내 임시보유 좌석 스냅샷
+ *  6) POST /seat/confirm/all  : [🆕] 내 임시보유 전체 확정
+ *  7) POST /seat/auto         : 자동예매(임시홀드까지 수행, 일반 예매용)
+ *  8) GET  /seat/print        : 예매 rno 기준 동일 존 좌석 리스트
  */
-
 @RestController
 @RequestMapping("/seat")
 @RequiredArgsConstructor
-public class SeatsController {  // class start
+public class SeatsController {
 
-
-    // 의존성 주입
     private final SeatLockService seatService;
     private final MembersService membersService;
     private final SeatsService sService;
@@ -44,31 +42,25 @@ public class SeatsController {  // class start
     public ResponseEntity<Map<String, Object>> select(@RequestBody SeatsDto.SingleSeatReq req) throws InterruptedException {
         int mno = membersService.getLoginMember().getMno();
         int code = seatService.tryLockSeat(mno, req.getGno(), req.getZno(), req.getSno());
-        int remain = seatService.remainingSelectableSeats(mno, req.getGno()); // ⬅️ 추가
+        int remain = seatService.remainingSelectableSeats(mno, req.getGno()); // 🆕 잔여 매수
         return ResponseEntity.ok(Map.of(
                 "ok", code == 1,
                 "code", code,
-                "remain", remain            // ⬅️ 추가
+                "remain", remain
         ));
     }
 
-    /** (부분) 상태 조회 — 화면에 보이는 좌석만 물어본다(네트워크/서버 비용 최소화) */
+    /** (부분) 상태 조회 — 화면에 보이는 좌석만 요청 */
     @PostMapping("/status")
     public ResponseEntity<Map<String, Object>> status(@RequestBody SeatsDto.StatusReq req) {
         int mno = membersService.getLoginMember().getMno();
 
+        // seats null-safe + sno 추출
+        List<Integer> snos = (req.getSeats() == null ? List.<SeatsDto.SeatRef>of() : req.getSeats())
+                .stream().map(SeatsDto.SeatRef::getSno).toList();
 
-        // seats null 안전 처리 + sno만 추출
-        var snos = (req.getSeats() == null ? List.<SeatsDto.SeatRef>of() : req.getSeats())
-                .stream()
-                .map(SeatsDto.SeatRef::getSno)
-                .toList();
-
-        // 기존 좌석 상태 맵
-        var statusMap = seatService.getSeatStatusFor(req.getGno(), mno, snos);
-
-        // 추가: 남은 선택 가능 수(확정 + 임시홀드 포함해서 4매 제한 계산)
-        int remain = seatService.remainingSelectableSeats(mno, req.getGno());
+        Map<Integer, String> statusMap = seatService.getSeatStatusFor(req.getGno(), mno, snos);
+        int remain = seatService.remainingSelectableSeats(mno, req.getGno()); // 🆕 잔여 매수
 
         return ResponseEntity.ok(Map.of(
                 "statusBySno", statusMap,
@@ -81,14 +73,14 @@ public class SeatsController {  // class start
     public ResponseEntity<Map<String, Object>> release(@RequestBody SeatsDto.SingleSeatReq req) {
         int mno = membersService.getLoginMember().getMno();
         boolean ok = seatService.releaseSeat(mno, req.getGno(), req.getZno(), req.getSno());
-        int remain = seatService.remainingSelectableSeats(mno, req.getGno()); // ⬅️ 추가
+        int remain = seatService.remainingSelectableSeats(mno, req.getGno()); // 🆕 잔여 매수
         return ResponseEntity.ok(Map.of(
                 "ok", ok,
-                "remain", remain            // ⬅️ 추가
+                "remain", remain
         ));
     }
 
-    // ---------- 결제(초기: Redis만 반영) ----------
+    /** 결제 확정(선택 좌석 목록) */
     @PostMapping("/confirm")
     public ResponseEntity<Map<String, Object>> confirm(@RequestBody SeatsDto.ConfirmReq req) {
         int mno = membersService.getLoginMember().getMno();
@@ -101,26 +93,41 @@ public class SeatsController {  // class start
     }
 
     // ==============================
-    // 유저 전체 hold 조회 API
+    // 🆕 내 임시보유 좌석 스냅샷
     // ==============================
     @GetMapping("/held")
     public ResponseEntity<Map<String, Object>> held(@RequestParam int gno) {
         int mno = membersService.getLoginMember().getMno();
-        Set<Integer> heldSnos = seatService.getUserHoldSnapshot(mno, gno);
-        return ResponseEntity.ok(Map.of("heldSnos", heldSnos));
+        Set<Integer> heldSnos = seatService.getUserHoldSnapshot(mno, gno); // ← 스냅샷 사용
+        int remain = seatService.remainingSelectableSeats(mno, gno);       // 함께 내려주면 프론트 편함
+        return ResponseEntity.ok(Map.of(
+                "heldSnos", heldSnos,
+                "count", heldSnos.size(),
+                "remain", remain
+        ));
     }
 
     // ==============================
-    // 유저 전체 hold 결제 API
+    // 🆕 내 임시보유 전체 확정
     // ==============================
     @PostMapping("/confirm/all")
     public ResponseEntity<Map<String, Object>> confirmAll(@RequestBody Map<String, Integer> req) {
         int mno = membersService.getLoginMember().getMno();
         int gno = req.get("gno");
+
         Set<Integer> held = seatService.getUserHoldSnapshot(mno, gno);
+        if (held.isEmpty()) {
+            return ResponseEntity.ok(Map.of(
+                    "ok", false,
+                    "count", 0,
+                    "reason", "NO_HELD_SEATS"
+            ));
+        }
+
         List<Integer> snos = new ArrayList<>(held);
         StringBuilder reason = new StringBuilder();
         boolean ok = seatService.confirmSeats(mno, gno, snos, reason);
+
         return ResponseEntity.ok(Map.of(
                 "ok", ok,
                 "count", snos.size(),
@@ -128,13 +135,7 @@ public class SeatsController {  // class start
         ));
     }
 
-    /**
-     * 자동예매(임시홀드까지 수행)
-     * - 시니어석은 일반예매 D-2 전까지 제외
-     * - HOME이면 홈/중립만, AWAY면 어웨이/중립만 탐색
-     * - 연석 우선, 실패 시 동일존 비연석 → 다른 우선존(동일 팬사이드) 순 회귀
-     * - 선호선수(회원 pno)가 해당 경기팀에 없으면 선수 우선순위 스킵
-     */
+    /** 자동예매(임시홀드까지 수행, 일반 예매용) */
     @PostMapping("/auto")
     public ResponseEntity<AutoSelectDto.AutoSelectRes> auto(@RequestBody AutoSelectDto.AutoSelectReq req) {
         int mno = membersService.getLoginMember().getMno();
@@ -142,12 +143,10 @@ public class SeatsController {  // class start
         return ResponseEntity.ok(res);
     }
 
-
-
+    /** rno 기준 동일 존 좌석 프린트(기존 유지) */
     @GetMapping("/print")
     public ResponseEntity<?> seatPrint(@RequestParam int rno){
         List<SeatDto> result = sService.seatPrint(rno);
         return ResponseEntity.ok(result);
-    }// func end
-
-}   // class end
+    }
+}
