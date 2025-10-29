@@ -99,15 +99,22 @@ export default function SeniorReserve() {
   };
 
   const navigateToGame = (index) => {
-    speak("경기 선택을 처리 중입니다." + index);
-    if (games[index]) {
-      speak(`${games[index].homeTeam} 대 ${games[index].awayTeam} 경기를 선택하셨습니다.`);
-      setTimeout(() => {
-        navigate(`/senior/seats?gameId=${games[index].gno}`);
-      }, 1500);
-    } else {
-      speak("해당 순서의 경기를 찾을 수 없습니다.");
+    if (!games || games.length === 0) {
+      speak("아직 경기 목록이 준비되지 않았습니다. 잠시 후 다시 말씀해주세요.");
+      return;
     }
+
+    if (index < 0 || index >= games.length) {
+      speak("해당 순서의 경기를 찾을 수 없습니다.");
+      return;
+    }
+
+    const game = games[index];
+    speak(`${game.homeTeam} 대 ${game.awayTeam} 경기를 선택하셨습니다.`);
+
+    setTimeout(() => {
+      navigate(`/senior/seats?gameId=${game.gno}`);
+    }, 1500);
   };
 
   // 초기 실행
