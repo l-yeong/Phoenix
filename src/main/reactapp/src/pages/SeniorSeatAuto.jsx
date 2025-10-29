@@ -7,7 +7,7 @@ import {
     MenuItem,
     Button,
 } from "@mui/material";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import styles from "../styles/SeniorSeatAuto.module.css";
 import TutorialOverlay from "../components/TutorialOverlay";
 import axios from "axios";
@@ -23,6 +23,7 @@ export default function SeniorSeatAuto() {
     const firstStart = useRef(true);
     const sttRestarting = useRef(false); // STT 중복 재시작 방지용 플래그
     const ttsActive = useRef(false); // 현재 TTS가 동작 중인지 추적
+    const navigate = useNavigate();
 
     const gameId = searchParams.get("gameId");
 
@@ -241,11 +242,9 @@ export default function SeniorSeatAuto() {
         };
     }, [gameId]);
 
-    const handleAutoReserve = () => {
-        // 현재 재생 중인 음성 종료
+    const handleAutoReserve = async () => {
         window.speechSynthesis.cancel();
 
-        // 음성 인식 중단 (인식 중이면)
         if (recognition) {
             try {
                 recognition.stop();
@@ -255,21 +254,53 @@ export default function SeniorSeatAuto() {
             }
         }
 
-        // stop() 완료될 시간을 조금 기다렸다가 다음 안내 실행
-        setTimeout(() => {
-            // 안내 (이때는 autoListen = false 로 지정)
+        // stop() 후 약간 기다렸다가 예매 진행
+        setTimeout(async () => {
             speak(`🎟️ ${ticketCount}매 자동 예매를 진행합니다.`, false);
 
-            // 안내가 끝난 뒤 약간 쉬었다가 STT 재시작
+            try {
+                // ✅ 백엔드 DTO에 맞는 요청 데이터
+                const reqData = {
+                    gno: Number(gameId),
+                    qty: ticketCount,
+                };
+
+                const res = await axios.post(
+                    "http://localhost:8080/senior/auto",
+                    reqData,
+                    { withCredentials: true }
+                );
+
+                const result = res.data;
+                console.log("📦 시니어 자동예매 결과:", result);
+
+                if (result.ok) {
+                    const zone = result.bundles?.[0]?.zoneLabel || "좌석 정보 없음";
+                    const seats = result.bundles?.[0]?.seatNames?.join(", ") || "좌석 정보 없음";
+
+                    // 🎙 음성 안내 + 마이페이지 이동
+                    speak(`자동 예매가 완료되었습니다. ${zone}의 ${seats} 좌석이 배정되었습니다. 마이페이지로 이동합니다.`, false);
+
+                    setTimeout(() => navigate("/mypage"), 5000);
+                } else {
+                    const reason = result.reason || "좌석 배정에 실패했습니다.";
+                    speak(`자동 예매에 실패했습니다. 이유: ${reason}`, false);
+                }
+            } catch (err) {
+                console.error("❌ 자동예매 오류:", err);
+                speak("자동 예매 중 오류가 발생했습니다. 네트워크를 확인해주세요.", false);
+            }
+
+            // 🎤 자동예매 후 STT 재시작 (선택)
             setTimeout(() => {
                 try {
                     recognition.start();
-                    console.log("🎤 자동예매 안내 후 STT 재시작됨");
+                    console.log("🎤 자동예매 후 STT 재시작됨");
                 } catch (err) {
-                    console.error("자동예매 단계 재시작 오류:", err);
+                    console.warn("🎤 STT 재시작 실패:", err);
                 }
-            }, 1200);
-        }, 500); // stop() 후 안정적으로 종료될 시간 확보
+            }, 4000);
+        }, 700);
     };
 
     return (
