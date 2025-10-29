@@ -116,6 +116,7 @@ const Header = () => {
               className={styles.navButton}
               onClick={() => {
                 if (menu === "TICKET") navigate("/tickets/ticketLog");
+                if (menu === "MEMBERSHIP") navigate("/chatbot");
                 else toast.info(`${menu} 페이지는 준비 중입니다.`);
               }}
             >

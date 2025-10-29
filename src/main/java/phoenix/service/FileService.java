@@ -1,11 +1,7 @@
 package phoenix.service;
 
-import com.opencsv.CSVReader;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 import phoenix.model.dto.GameDto;
 import phoenix.util.TicketsQR;
 

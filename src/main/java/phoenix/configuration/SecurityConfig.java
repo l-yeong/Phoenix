@@ -146,6 +146,7 @@ public class SecurityConfig {
                                 "/socket/**",
                                 "/seats/**",
                                 "/gate/**",
+                                "/chatbot/**",
                                 "/captcha/**",
                                 "/game/**",
                                 "/tickets/**",

@@ -19,6 +19,7 @@ import TicketQR from "./features/tickets/TicketQR.jsx";
 import TicketQRInfo from "./features/tickets/TicketQRInfo.jsx";
 import TicketLog from "./features/tickets/TicketLog";
 import QRScanner from "./features/tickets/QRScanner";
+import Gemini from "./api/gemini.jsx";
 
 import { AuthProvider } from "./api/loginstate.jsx";
 import Mypage from "./features/members/Mypage.jsx";
@@ -64,6 +65,8 @@ function App() {
           <Route path="/tickets/QRScanner" element={<QRScanner />} />
 
           <Route path="/tickets/qr" element={<Qr />} />
+
+          <Route path="/chatbot" element={<Gemini />} />
 
 
         </Routes>
