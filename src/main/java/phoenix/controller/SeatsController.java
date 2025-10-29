@@ -13,9 +13,7 @@ import phoenix.service.MembersService;
 import phoenix.service.SeatLockService;
 import phoenix.service.SeatsService;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * [SeatController]
@@ -100,6 +98,34 @@ public class SeatsController {  // class start
         body.put("ok", ok);
         if (!ok) body.put("reason", reason.toString());
         return ResponseEntity.ok(body);
+    }
+
+    // ==============================
+    // 유저 전체 hold 조회 API
+    // ==============================
+    @GetMapping("/held")
+    public ResponseEntity<Map<String, Object>> held(@RequestParam int gno) {
+        int mno = membersService.getLoginMember().getMno();
+        Set<Integer> heldSnos = seatService.getUserHoldSnapshot(mno, gno);
+        return ResponseEntity.ok(Map.of("heldSnos", heldSnos));
+    }
+
+    // ==============================
+    // 유저 전체 hold 결제 API
+    // ==============================
+    @PostMapping("/confirm/all")
+    public ResponseEntity<Map<String, Object>> confirmAll(@RequestBody Map<String, Integer> req) {
+        int mno = membersService.getLoginMember().getMno();
+        int gno = req.get("gno");
+        Set<Integer> held = seatService.getUserHoldSnapshot(mno, gno);
+        List<Integer> snos = new ArrayList<>(held);
+        StringBuilder reason = new StringBuilder();
+        boolean ok = seatService.confirmSeats(mno, gno, snos, reason);
+        return ResponseEntity.ok(Map.of(
+                "ok", ok,
+                "count", snos.size(),
+                "reason", reason.toString()
+        ));
     }
 
     /**

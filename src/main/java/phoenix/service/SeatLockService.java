@@ -274,6 +274,14 @@ public class SeatLockService {
         // TTL 갱신(필요 시 프로젝트 규칙에 맞춰 조정: 예시 7일)
         counter.expire(7, TimeUnit.DAYS);
     }
+    public Set<Integer> getUserHoldSnapshot(int mno, int gno) {
+        try {
+            return new HashSet<>(userHoldSet(mno, gno).readAll());
+        } catch (Exception e) {
+            System.out.println("[SeatLockService] getUserHoldSnapshot error: " + e.getMessage());
+            return Set.of();
+        }
+    }
 
     // =========================
     // (부분) 상태 조회

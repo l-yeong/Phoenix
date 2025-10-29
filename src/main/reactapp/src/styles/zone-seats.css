@@ -24,7 +24,7 @@
   font-size: 13px;
   cursor: pointer;
 }
-.btn:hover { background: #f9fafb; }
+.btn:hover { background: #00478d; }
 .btn--primary {
   background: #1d4ed8; color: #fff; border-color: #1d4ed8;
 }
@@ -147,7 +147,7 @@
   background: #f3f4f6;
   color: #111827;
   border: 1px solid #e5e7eb;
-  padding: 2px 6px;
+  padding: 10px 8px;
   border-radius: 999px;
 }
 .gate-ttl-mini.warn { background:#fee2e2; color:#991b1b; border-color:#fecaca; }
