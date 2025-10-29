@@ -108,17 +108,21 @@ export default function SeniorSeatAuto() {
             console.log("🎤 인식 종료됨");
             setListening(false);
 
-            // 자동예매 안내 중 끊겼을 때만 복구하되, 
-            // TTS(onend) 이벤트보다 늦게 실행되게 1.5초 이상 딜레이 줌
+            // 자동예매 안내 중이면 STT 자동 복구 시도 (테스트용 무한대기)
             if (guideStep === 2) {
-                setTimeout(() => {
+                let retryCount = 0;
+                const retry = setInterval(() => {
                     try {
-                        recognition.start(); // recog 대신 recognition (state에 저장된 최신 객체)
-                        console.log("🎤 자동예매 단계에서 STT 안정 복구됨");
+                        recognition.start();
+                        console.log("🎤 자동예매 단계 STT 재시작 성공 (테스트용)");
+                        clearInterval(retry);
                     } catch (err) {
-                        console.warn("STT 복구 실패:", err);
+                        retryCount++;
+                        console.warn(`🎤 STT 재시작 실패 ${retryCount}회:`, err);
+                        // 3회 이상 실패 시 중단
+                        if (retryCount >= 3) clearInterval(retry);
                     }
-                }, 1800); // 기존 1000 → 1800ms로 변경 (TTS 충돌 방지)
+                }, 1500);
             }
         };
 
@@ -158,11 +162,42 @@ export default function SeniorSeatAuto() {
             normalized.includes("예매") ||
             normalized.includes("시작")
         ) {
-            speak("자동 예매를 진행합니다.");
-            setTimeout(() => handleAutoReserve(), 1000);
+            // ① 먼저 STT 완전히 멈추고
+            if (recognition) {
+                try {
+                    recognition.stop();
+                    console.log("자동예매 음성 명령 감지 → STT 종료 요청");
+                } catch (err) {
+                    console.warn("STT 종료 중 오류:", err);
+                }
+            }
+
+            // ② TTS를 바로 시작하지 말고, 약 2초 정도 기다렸다가 실행
+            setTimeout(() => {
+                speak("자동 예매를 진행합니다.", false);
+
+                // ③ 안내가 끝난 뒤 예매 처리
+                setTimeout(() => {
+                    handleAutoReserve();
+
+                    // ④ 안내가 끝난 후 STT 재시작 (테스트용)
+                    setTimeout(() => {
+                        if (recognition && !listening) {
+                            try {
+                                recognition.start();
+                                console.log("🎤 자동예매 후 STT 재시작됨");
+                            } catch (err) {
+                                console.warn("🎤 STT 재시작 실패:", err);
+                            }
+                        }
+                    }, 3000);
+                }, 1500);
+            }, 2000); // TTS 시작을 2초 늦춤 (마이크 안정화 시간)
+
         } else if (normalized.includes("종료") || normalized.includes("나가기")) {
             speak("시니어 예매를 종료합니다.");
             if (recognition) recognition.stop();
+
         } else {
             speak("죄송합니다. 다시 말씀해주세요. 예를 들어 한 장 또는 두 장이라고 말해주세요.");
         }
