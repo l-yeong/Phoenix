@@ -32,6 +32,14 @@ export default function GatePage() {
   const pollTimerRef = useRef(null);
   const tickTimerRef = useRef(null);
   const goingMacroRef = useRef(false);
+
+  // 🔒 시니어 차단 상태
+  const seniorBlockedRef = useRef(false);   // 로직 가드용 ref
+  const [isSeniorBlocked, setIsSeniorBlocked] = useState(false); // UI 반영용 state
+  const leaveOnceRef = useRef(false);
+  const countdownTimerRef = useRef(null);
+  const [countdownSec, setCountdownSec] = useState(5);
+
   const [ahead, setAhead] = useState(0);
 
   const fmt = (s) =>
@@ -81,7 +89,10 @@ export default function GatePage() {
     return () => {
       clearTimeout(pollTimerRef.current);
       clearInterval(tickTimerRef.current);
-      if (!goingMacroRef.current && gno) {
+      clearInterval(countdownTimerRef.current);
+      clearTimeout(toastTimer.current);
+
+      if (!goingMacroRef.current && gno && !leaveOnceRef.current) {
         fetch(`${API}/gate/leave?gno=${encodeURIComponent(gno)}`, {
           method: "POST",
           credentials: "include",
@@ -93,38 +104,87 @@ export default function GatePage() {
     };
   }, [gno, authHeaders]);
 
-  // ====================== 🟢 신규: 시니어 예매자 차단 ======================
+  // ====================== 🟢 시니어 예매자 차단 with 5s countdown toast ======================
   useEffect(() => {
     if (!gno) return;
+    let cancelled = false;
+
     (async () => {
       try {
         const { data } = await api.get(`/seat/check/senior?gno=${encodeURIComponent(gno)}`, {
           headers: { ...authHeaders },
         });
+
+        // 이미 다른 페이지로 이동 중이면 무시
+        if (cancelled || goingMacroRef.current) return;
+
         if (data?.senior) {
-          showToast("시니어 예매 회원은 일반 예매 대기열에 입장할 수 없습니다.", "warn", 5000);
+          // 차단 시작
+          seniorBlockedRef.current = true;
+          setIsSeniorBlocked(true);
 
-          // leave 호출
-          try {
-            await fetch(`${API}/gate/leave?gno=${encodeURIComponent(gno)}`, {
-              method: "POST",
-              credentials: "include",
-              keepalive: true,
-              headers: { "Content-Type": "application/json", ...authHeaders },
-              body: JSON.stringify(gno),
+          // 대기 메시지/토스트 표기
+          setMessage("");
+          clearTimeout(toastTimer.current);
+          setCountdownSec(5);
+          setToast({
+            open: true,
+            type: "warn",
+            msg: "시니어 예매 회원은 일반 예매 대기열에 입장할 수 없습니다. 5초 후 홈으로 이동합니다. (5)",
+          });
+
+          // 이미 큐에 들어갔을 가능성 대비 → leave는 1회만
+          const leaveOnce = async () => {
+            if (leaveOnceRef.current) return;
+            leaveOnceRef.current = true;
+            try {
+              await fetch(`${API}/gate/leave?gno=${encodeURIComponent(gno)}`, {
+                method: "POST",
+                credentials: "include",
+                keepalive: true,
+                headers: { "Content-Type": "application/json", ...authHeaders },
+                body: JSON.stringify(gno),
+              });
+            } catch {}
+          };
+          leaveOnce();
+
+          // 폴링/타이머 정리
+          clearTimeout(pollTimerRef.current);
+          clearInterval(tickTimerRef.current);
+
+          // 5초 카운트다운 with 토스트 업데이트
+          clearInterval(countdownTimerRef.current);
+          countdownTimerRef.current = setInterval(() => {
+            if (cancelled) return;
+            setCountdownSec((prev) => {
+              const next = Math.max(prev - 1, 0);
+              setToast({
+                open: true,
+                type: "warn",
+                msg:  `시니어 예매 후 일반 예매는 이용할 수 없습니다.\n5초 후 홈으로 이동합니다. (${next}초 남음)`,
+              });
+              if (next <= 0) {
+                clearInterval(countdownTimerRef.current);
+                // 아직 매크로로 이동 안 했으면 홈으로
+                if (!goingMacroRef.current) {
+                  navigate("/home", { replace: true });
+                }
+              }
+              return next;
             });
-          } catch {}
-
-          // 5초 후 홈으로 이동
-          setTimeout(() => {
-            navigate("/home", { replace: true });
-          }, 5000);
+          }, 1000);
         }
       } catch {
-        // ignore network error
+        // ignore
       }
     })();
-  }, [gno, api, authHeaders, navigate, showToast]);
+
+    return () => {
+      cancelled = true;
+      clearInterval(countdownTimerRef.current);
+    };
+  }, [gno, api, authHeaders, navigate]);
   // ========================================================================
 
   // querystring hints
@@ -136,7 +196,7 @@ export default function GatePage() {
 
   // enqueue
   const enqueue = useCallback(async () => {
-    if (!gno) return;
+    if (!gno || seniorBlockedRef.current) return; // 🔒 차단 시 enqueue 중지
     setLoading(true);
     setError("");
     try {
@@ -168,7 +228,7 @@ export default function GatePage() {
 
   // polling
   useEffect(() => {
-    if (!queued || !gno) return;
+    if (!queued || !gno || seniorBlockedRef.current) return; // 🔒 차단 시 폴링 시작 안 함
     let fail = 0;
     const tick = async () => {
       try {
@@ -199,13 +259,13 @@ export default function GatePage() {
     };
   }, [queued, gno, api, authHeaders]);
 
-  // ready → macro
+  // ready → macro (차단 시 진입 금지)
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || isSeniorBlocked) return;
     goingMacroRef.current = true;
     sessionStorage.setItem("gate_gno", String(gno));
     navigate("/macro", { replace: true, state: { gno } });
-  }, [ready, gno, navigate]);
+  }, [ready, isSeniorBlocked, gno, navigate]);
 
   const progress = useMemo(() => {
     if (position === 0) return 100;
@@ -219,6 +279,7 @@ export default function GatePage() {
       await api.post(`/gate/leave?gno=${encodeURIComponent(gno)}`, null, {
         headers: { ...authHeaders },
       });
+      leaveOnceRef.current = true;
     } catch {}
     navigate("/home", { replace: true });
   };
@@ -240,6 +301,13 @@ export default function GatePage() {
           <h1 className="card__title">좌석 선택 대기</h1>
           {message && <p className="card__msg">{message}</p>}
           {error && <p className="card__error">{error}</p>}
+
+          {isSeniorBlocked && (
+            <div className="banner banner--warn" role="alert">
+              시니어 예매 후 일반 예매 이용이 불가능합니다. 시니어 예매를 모두 취소 후 이용 가능합니다. <br/>
+              <b>{countdownSec}</b>초 후 홈으로 이동합니다.
+            </div>
+          )}
 
           <section className="queue">
             <div className="queue__circle">
@@ -269,7 +337,9 @@ export default function GatePage() {
               다른 경기
             </button>
             <div className="grow" />
-            <button className="btn btn--danger" onClick={cancelQueue}>대기 취소</button>
+            <button className="btn btn--danger" onClick={cancelQueue} disabled={isSeniorBlocked}>
+              대기 취소
+            </button>
             <button className="btn btn--primary" disabled>
               대기 중…
             </button>
