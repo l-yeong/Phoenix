@@ -50,13 +50,6 @@ public class SeatLockService {
         boolean legacy = redisson.getBucket(RedisKeys.SESSION_PREFIX + mno).isExists();
         return scoped || legacy;
     }
-    private boolean hasUserAlreadyBooked(int mno, int gno) {
-        RBucket<Boolean> b = redisson.getBucket("user_booking:" + mno + ":" + gno);
-        return Boolean.TRUE.equals(b.get());
-    }
-    private void markUserAsBooked(int mno, int gno) {
-        redisson.getBucket("user_booking:" + mno + ":" + gno).set(true, 6, TimeUnit.HOURS);
-    }
 
     // =========================
     // 서버 기동 시 SOLD 복구 (변경 없음)
@@ -64,6 +57,7 @@ public class SeatLockService {
     @PostConstruct
     public void initSoldFromDb() {
         try {
+            // 1️⃣ SOLD 복구 (기존 로직)
             List<Integer> gnos = seatsMapper.findAllGnosHavingReserved();
             if (gnos == null || gnos.isEmpty()) {
                 System.out.println("[SeatLockService] SOLD 복구: reserved 데이터 없음");
@@ -79,11 +73,26 @@ public class SeatLockService {
                     seats += snos.size();
                 }
             }
-            System.out.println("[SeatLockService] SOLD 복구 완료 (sets=" + sets + ", seats=" + seats + ")");
+
+            // 2️⃣ 유저별 예매 카운터 복구 (신규)
+            List<ReservationsDto> userSummary = seatsMapper.findUserReservedCountSummary();
+            int restoredUsers = 0;
+            for (ReservationsDto dto : userSummary) {
+                String key = "user_booking_count:" + dto.getMno() + ":" + dto.getGno();
+                RAtomicLong counter = redisson.getAtomicLong(key);
+                counter.set(dto.getCount());
+                counter.expire(6, TimeUnit.HOURS);
+                restoredUsers++;
+            }
+
+            System.out.printf("[SeatLockService] SOLD 복구 완료 (sets=%d, seats=%d, userCounts=%d)%n",
+                    sets, seats, restoredUsers);
+
         } catch (Exception e) {
             System.out.println("[SeatLockService] SOLD 복구 실패: " + e.getMessage());
         }
     }
+
 
     // =========================
     // ⏰ 일반예매용 시니어석 오픈 판정 (D-2)
@@ -109,7 +118,6 @@ public class SeatLockService {
      * @return
      *   1  : OK
      *  -1  : 세션 없음
-     *  -2  : 이미 해당 gno 결제완료
      *  -3  : 매진/락선점 실패
      *  -4  : 한도(4개) 초과
      *  -5  : INVALID_SEAT (sno가 zno에 속하지 않음)
@@ -117,29 +125,29 @@ public class SeatLockService {
      */
     public int tryLockSeat(int mno, int gno, int zno, int sno) throws InterruptedException {
 
-        // 1) 세션/중복 가드
         if (!hasActiveSession(mno, gno)) return -1;
-        if (hasUserAlreadyBooked(mno, gno)) return -2;
-
-        // 2) 무결성: sno ∈ zno
         if (!seatCsvService.existsSeatInZone(zno, sno)) return -5;
-
-        // 3) ⛔ 시니어석 일반예매 D-2 제한
         if (seatCsvService.isSeniorSeat(sno) && !isSeniorOpenForGeneral(gno)) return -6;
-
-        // 4) 매진/한도/락
         if (soldSet(gno).contains(sno)) return -3;
+
         RSetCache<Integer> myHolds = userHoldSet(mno, gno);
-        if (myHolds.size() >= MAX_SEATS_PER_USER) return -4;
+        int holdCount = myHolds.size();
+
+        // ✅ Redis에서 예매완료 좌석 수 읽기
+        RAtomicLong bookedCount = redisson.getAtomicLong("user_booking_count:" + mno + ":" + gno);
+        int confirmedCount = (int) bookedCount.get();
+
+        // ✅ (확정 + 홀드) ≥ 4 → 제한
+        if (confirmedCount + holdCount >= MAX_SEATS_PER_USER) return -4;
 
         RLock lock = seatLock(gno, sno);
         if (!lock.tryLock(0, HOLD_TTL_SECONDS, TimeUnit.SECONDS)) return -3;
 
-        // 5) 홀드 등록
         holdMap().put(seatKey(gno, sno), String.valueOf(mno), HOLD_TTL_SECONDS, TimeUnit.SECONDS);
         myHolds.add(sno, HOLD_TTL_SECONDS, TimeUnit.SECONDS);
         return 1;
     }
+
 
     // =========================
     // 좌석 해제 (변경 없음)
@@ -167,7 +175,6 @@ public class SeatLockService {
      */
     public boolean confirmSeats(int mno, int gno, List<Integer> snos, StringBuilder failReason) {
         if (!hasActiveSession(mno, gno)) { failReason.append("no session"); return false; }
-        if (hasUserAlreadyBooked(mno, gno)) { failReason.append("already booked"); return false; }
         if (snos == null || snos.isEmpty()) { failReason.append("empty"); return false; }
 
         RSet<Integer> sold = soldSet(gno);
@@ -189,13 +196,28 @@ public class SeatLockService {
             userHoldSet(mno, gno).remove(sno);
             try { seatLock(gno, sno).forceUnlock(); } catch (Exception ignore) {}
         }
-        markUserAsBooked(mno, gno);
-        // db 추가 호출
-        persistReservationsOrThrow(mno, gno, snos);
 
+        // ✅ Redis 카운터 추가/갱신
+        incrementUserBookedCount(mno, gno, snos.size());
+
+        persistReservationsOrThrow(mno, gno, snos);
         return true;
+
+    }   // func end
+
+    private void incrementUserBookedCount(int mno, int gno, int addCount) {
+        String key = "user_booking_count:" + mno + ":" + gno;
+        RAtomicLong counter = redisson.getAtomicLong(key);
+        counter.addAndGet(addCount);
+        counter.expire(7, TimeUnit.DAYS); // TTL은 예매 TTL과 동일하게 6시간
     }
 
+    // 프론트에서 잔여석 표시 기능
+    public int remainingSelectableSeats(int mno, int gno) {
+        int confirmed = (int) redisson.getAtomicLong("user_booking_count:" + mno + ":" + gno).get();
+        int holds = userHoldSet(mno, gno).size();
+        return Math.max(0, MAX_SEATS_PER_USER - (confirmed + holds));
+    }
 
     // DB에 reservations insert (트랜잭션)
     @Transactional(rollbackFor = Exception.class)
@@ -222,6 +244,36 @@ public class SeatLockService {
         }   // for end
     }   // func end
 
+    // 예매 취소시 로직
+    // SeatLockService.java (추가)
+    public void onReservationCancelled(int mno, int gno, int sno) {
+        try {
+            // 1) SOLD 해제
+            soldSet(gno).remove(sno);
+
+            // 2) 유저 예매 카운터 디크리먼트 (하한 0)
+            decrementUserBookedCount(mno, gno, 1);
+
+            // 3) 안전 차원에서 락도 강제 해제(있다면)
+            try { seatLock(gno, sno).forceUnlock(); } catch (Exception ignore) {}
+        } catch (Exception e) {
+            System.out.println("[SeatLockService] onReservationCancelled error: " + e.getMessage());
+        }
+    }
+
+    private void decrementUserBookedCount(int mno, int gno, int dec) {
+        String key = "user_booking_count:" + mno + ":" + gno;
+        RAtomicLong counter = redisson.getAtomicLong(key);
+        // CAS 루프 (0 미만 방지)
+        while (true) {
+            long cur = counter.get();
+            if (cur <= 0) break;
+            long next = Math.max(0, cur - dec);
+            if (counter.compareAndSet(cur, next)) break;
+        }
+        // TTL 갱신(필요 시 프로젝트 규칙에 맞춰 조정: 예시 7일)
+        counter.expire(7, TimeUnit.DAYS);
+    }
 
     // =========================
     // (부분) 상태 조회
@@ -243,14 +295,18 @@ public class SeatLockService {
             // 1) 무결성
             if (!seatCsvService.existsSeatBySno(sno)) { res.put(sno, "INVALID"); continue; }
 
-            // 2) 시니어석 블록 표시
+            // 1️⃣ SOLD 먼저 검사 (시니어 예매로 이미 매진된 경우)
+            if (sold.contains(sno)) {
+                res.put(sno, "SOLD");
+                continue;
+            }
+
+            // 2️⃣ 그 다음에 시니어 예매 D-2 체크
             if (seatCsvService.isSeniorSeat(sno) && !seniorOpen) {
                 res.put(sno, "BLOCKED");
                 continue;
             }
 
-            // 3) SOLD/HELD/AVAILABLE
-            if (sold.contains(sno)) { res.put(sno, "SOLD"); continue; }
             String holder = holds.get(seatKey(gno, sno));
             if (holder != null) {
                 res.put(sno, holder.equals(String.valueOf(mno)) ? "HELD_BY_ME" : "HELD");

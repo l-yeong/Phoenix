@@ -5,7 +5,7 @@ import { useAuth } from "../../api/loginstate";
 import {
     Button, Box, Card, CardContent, CardActions, Checkbox, Divider,
     FormControl, FormLabel, Input, Sheet, Stack, Table as JoyTable,
-    Typography, Chip, Alert
+    Typography, Chip, Alert , Select , Option
 } from "@mui/joy";
 
 export default function Mypage() {
@@ -32,6 +32,22 @@ export default function Mypage() {
 
     const [deleteForm, setDeleteForm] = useState({ password_hash: "" });
     const navigate = useNavigate();
+
+    const [players, setPlayers] = useState([]);
+
+    useEffect(() => {
+        const fetchPlayers = async () => {
+            try {
+                const res = await axios.get("http://localhost:8080/members/signup/players");
+                if (res.data.success) {
+                    setPlayers(res.data.data);
+                }
+            } catch (e) {
+                console.error("선수 목록 로드 실패:", e);
+            }
+        };
+        fetchPlayers();
+    }, []);
 
     /* ===============================
        예매내역 조회
@@ -70,7 +86,7 @@ export default function Mypage() {
         e.preventDefault();
         try {
 
-            const payload = { ...form };
+            const payload = { ...form , pno : Number(form.pno) }; // 숫자로 변환해서 주기
             // 소셜 회원인 경우 이메일, 전화번호 수정 불가
             if (provider) {
                 delete payload.password_hash;
@@ -81,9 +97,10 @@ export default function Mypage() {
                 payload,
                 { withCredentials: true }
             );
-            if (res.data.success){ alert("회원정보가 성공적으로 수정되었습니다!");
-            navigate("/");
-            }else{ alert(res.data.message);}
+            if (res.data.success) {
+                alert("회원정보가 성공적으로 수정되었습니다!");
+                navigate("/");
+            } else { alert(res.data.message); }
         } catch (e) {
             console.error("회원정보 수정 실패:", e);
             alert("서버 오류가 발생했습니다.");
@@ -311,13 +328,18 @@ export default function Mypage() {
                                 </FormControl>
 
                                 <FormControl>
-                                    <FormLabel>선호 선수 번호(pno)</FormLabel>
-                                    <Input
-                                        name="pno"
+                                    <FormLabel>선호 선수</FormLabel>
+                                    <Select
+                                        placeholder="선호 선수를 선택하세요"
                                         value={form.pno || ""}
-                                        onChange={(e) => setForm({ ...form, pno: e.target.value })}
-                                        placeholder="예: 7"
-                                    />
+                                        onChange={(e, newValue) => setForm({ ...form, pno: newValue })}
+                                    >
+                                        {players.map((p) => (
+                                            <Option key={p.pno} value={p.pno}>
+                                                {p.name} ({p.teamName} / {p.position})
+                                            </Option>
+                                        ))}
+                                    </Select>
                                 </FormControl>
 
                                 <FormControl orientation="horizontal" sx={{ alignItems: "center" }}>

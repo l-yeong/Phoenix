@@ -18,7 +18,6 @@ public class GameDto {
     private String result;
     private String score;
 
-
     // ✅ 예매 가능 여부 계산
     public boolean isReservable() {
         LocalDateTime gameDateTime = LocalDateTime.of(date, time);

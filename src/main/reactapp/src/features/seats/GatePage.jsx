@@ -1,3 +1,4 @@
+
 // src/pages/GatePage.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
@@ -21,7 +22,7 @@ export default function GatePage() {
     0;
 
   const [queued, setQueued] = useState(false);
-  const [waitingCount, setWaitingCount] = useState(0);   // ← 현재 대기 인원(실시간)
+  const [waitingCount, setWaitingCount] = useState(0);
   const [position, setPosition] = useState(-1);
   const [ready, setReady] = useState(false);
   const [ttlSec, setTtlSec] = useState(null);
@@ -32,22 +33,18 @@ export default function GatePage() {
   const pollTimerRef = useRef(null);
   const tickTimerRef = useRef(null);
 
-  // 매크로로 이동할 땐 언마운트 leave 금지
   const goingMacroRef = useRef(false);
-
-  // 앞에 남은 인원
   const [ahead, setAhead] = useState(0);
 
   const fmt = (s) =>
     s == null ? "--:--" : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
-  // JWT
   const authHeaders = useMemo(() => {
     const t = localStorage.getItem("jwt");
     return t ? { Authorization: `Bearer ${t}` } : {};
   }, []);
 
-  // beforeunload/pagehide 때만 leave (새로고침/닫기)
+  // beforeunload/pagehide → leave
   useEffect(() => {
     if (!gno) return;
     const onUnload = () => {
@@ -69,7 +66,7 @@ export default function GatePage() {
     };
   }, [gno, authHeaders]);
 
-  // 다른 경로로 떠날 때만 leave (매크로 이동 제외)
+  // other-route unmount → leave (macro 이동 제외)
   useEffect(() => {
     return () => {
       clearTimeout(pollTimerRef.current);
@@ -86,7 +83,7 @@ export default function GatePage() {
     };
   }, [gno, authHeaders]);
 
-  // 토스트
+  // toast
   const [toast, setToast] = useState({ open: false, msg: "", type: "info" });
   const toastTimer = useRef(null);
   const showToast = useCallback((msg, type = "info", ms = 2200) => {
@@ -98,14 +95,14 @@ export default function GatePage() {
     );
   }, []);
 
-  // ?expired=1 | ?requeue=1 안내
+  // querystring hints
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
     if (p.get("expired") === "1") showToast("세션이 만료되어 대기열에 재등록합니다.", "warn", 2200);
     if (p.get("requeue") === "1") showToast("다시 대기열에 등록합니다.", "info", 1800);
   }, [showToast]);
 
-  // 대기열 등록
+  // ★ Enqueue: "이미 예매" 차단 제거 (이제 입장 가능)
   const enqueue = useCallback(async () => {
     if (!gno) return;
     setLoading(true);
@@ -115,11 +112,9 @@ export default function GatePage() {
         headers: { "Content-Type": "application/json", ...authHeaders },
       });
 
-      if (data.waiting === -1 || data.msg === "이미 예매 완료된 사용자입니다.") {
-        showToast("이미 예매한 경기입니다. 마이페이지에서 확인해 주세요.", "warn", 2600);
-setTimeout(() => navigate("/home", { replace: true }), 2200);
-        return;
-      }
+      // 이전 로직: waiting === -1 → 차단
+      // 새 로직: 예매완료해도 입장 허용, 선택은 4매 한도로 백엔드가 제어
+
       if (!data.queued) {
         showToast("대기열 등록 실패 — 예약이 불가능합니다.", "error");
         navigate("/home", { replace: true });
@@ -127,24 +122,28 @@ setTimeout(() => navigate("/home", { replace: true }), 2200);
       }
 
       setQueued(true);
-      setWaitingCount(Number(data?.waiting ?? 0)); // 최초 값
+      setWaitingCount(Number(data?.waiting ?? 0));
       setMessage("안정적인 운영을 위해 대기 순서대로 입장합니다.");
     } catch {
       setError("로그인이 필요합니다.");
       showToast("로그인 후 이용해 주세요.", "error");
-      navigate("/home", { replace: true });
+
+      // ★ 요구사항: 1초 후 네비게이트
+      setTimeout(() => {
+        navigate("/home", { replace: true });
+      }, 1000);
     } finally {
       setLoading(false);
     }
   }, [api, gno, authHeaders, navigate, showToast]);
 
-  // 최초 진입: 바로 enqueue
+  // first mount → enqueue
   useEffect(() => {
     if (!gno) { navigate("/home", { replace: true }); return; }
     enqueue();
   }, [gno, enqueue, navigate]);
 
-  // 폴링: check & position  ← 여기서 대기열/앞사람 수 실시간 업데이트
+  // polling: check & position
   useEffect(() => {
     if (!queued || !gno) return;
 
@@ -158,8 +157,6 @@ setTimeout(() => navigate("/home", { replace: true }), 2200);
 
         setReady(!!check?.ready);
         setTtlSec(Number(check?.ttlSec ?? 0));
-
-        // 현재 대기열(큐) 길이도 매 틱 갱신
         setWaitingCount(Number(check?.waiting ?? 0));
 
         const p = typeof pos?.position === "number" ? pos.position : -1;
@@ -185,7 +182,7 @@ setTimeout(() => navigate("/home", { replace: true }), 2200);
     };
   }, [queued, gno, api, authHeaders]);
 
-  // ready → 매크로 이동 (leave 금지 플래그)
+  // ready → macro
   useEffect(() => {
     if (!ready) return;
     goingMacroRef.current = true;
@@ -239,7 +236,6 @@ setTimeout(() => navigate("/home", { replace: true }), 2200);
                 <span className="meta">
                   <span className="dot dot--live" /> 실시간 대기 중
                 </span>
-                {/* ⬇️ 실시간 반영되는 두 줄 */}
                 <span className="meta">앞에 남은 인원: <b>{ahead}</b>명</span>
                 <span className="meta">현재 대기 인원: <b>{waitingCount}</b>명</span>
               </div>

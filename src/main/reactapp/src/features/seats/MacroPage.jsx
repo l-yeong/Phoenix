@@ -1,3 +1,5 @@
+
+// src/pages/MacroPage.jsx
 import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "../../styles/macro.css";
@@ -14,7 +16,6 @@ export default function MacroPage() {
     Number(sessionStorage.getItem("gate_gno")) ||
     0;
 
-  // JWT
   const authHeaders = useMemo(() => {
     const t = localStorage.getItem("jwt");
     return t ? { Authorization: `Bearer ${t}` } : {};
@@ -29,10 +30,8 @@ export default function MacroPage() {
   const [ttlSec, setTtlSec] = useState(null);
   const [ready, setReady] = useState(false);
 
-  // 좌석으로 이동할 때만 게이트 유지
   const keepGateRef = useRef(false);
 
-  // 토스트
   const [toast, setToast] = useState({ open: false, msg: "", type: "error" });
   const toastTimer = useRef(null);
   const showToast = useCallback((msg, type = "error", ms = 2200) => {
@@ -47,7 +46,6 @@ export default function MacroPage() {
   const fmt = (s) =>
     s == null ? "--:--" : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
-  // 게이트 체크 1회
   const checkGate = useCallback(async () => {
     if (!gno) return { ok: false, ttl: 0 };
     try {
@@ -57,7 +55,9 @@ export default function MacroPage() {
       });
       if (res.status === 401) {
         showToast("로그인이 만료되었습니다. 다시 로그인해 주세요.", "error");
-        navigate("/home", { replace: true });
+        setTimeout(() => {
+        navigate("/login", { replace: true });
+        }, 1500);
         return { ok: false, ttl: 0 };
       }
       const data = await res.json();
@@ -71,7 +71,6 @@ export default function MacroPage() {
     }
   }, [gno, authHeaders, navigate, showToast]);
 
-  // TTL 카운트다운
   useEffect(() => {
     if (ttlSec == null) return;
     const t = setInterval(() => setTtlSec((v) => (v == null ? v : Math.max(0, v - 1))), 1000);
@@ -85,7 +84,6 @@ export default function MacroPage() {
     }
   }, [ready, ttlSec, gno, navigate]);
 
-  // 캡차 로드 (★ gno는 쿼리스트링으로!)
   const loadCaptcha = useCallback(async () => {
     if (!gno) return;
     setLoading(true);
@@ -95,7 +93,6 @@ export default function MacroPage() {
         headers: { ...authHeaders },
       });
       if (res.status === 401) {
-        // 게이트 미입장/만료 or 로그인 만료
         sessionStorage.removeItem("gate_gno");
         navigate(`/gate?requeue=1&gno=${encodeURIComponent(gno)}`, { replace: true, state: { gno } });
         return;
@@ -115,7 +112,6 @@ export default function MacroPage() {
     }
   }, [gno, authHeaders, navigate, showToast]);
 
-  // 최초 진입
   useEffect(() => {
     if (!gno) { navigate("/gate", { replace: true }); return; }
     sessionStorage.setItem("gate_gno", String(gno));
@@ -130,7 +126,6 @@ export default function MacroPage() {
       await loadCaptcha();
     })();
 
-    // 새로고침/닫기 시 leave
     const onUnload = () => {
       try {
         fetch(`${API}/gate/leave?gno=${encodeURIComponent(gno)}`, {
@@ -145,7 +140,6 @@ export default function MacroPage() {
     window.addEventListener("beforeunload", onUnload);
     window.addEventListener("pagehide", onUnload);
 
-    // 언마운트: 좌석으로 가는 경우만 게이트 유지
     return () => {
       window.removeEventListener("beforeunload", onUnload);
       window.removeEventListener("pagehide", onUnload);
@@ -153,7 +147,6 @@ export default function MacroPage() {
     };
   }, [gno, authHeaders, checkGate, loadCaptcha, navigate]);
 
-  // 검증 (★ gno는 쿼리스트링으로!)
   const handleVerify = async () => {
     if (!captchaToken) { showToast("캡차가 준비되지 않았습니다. 새로고침 후 다시 시도해 주세요."); return; }
     if (!answer.trim()) { showToast("이미지의 문자를 입력해 주세요."); return; }
@@ -173,12 +166,12 @@ export default function MacroPage() {
         return;
       }
 
-      const data = await res.json(); // { ok: -1|0|1 }
+      const data = await res.json();
       const result = data?.ok;
 
       if (res.ok) {
         if (result === 1) {
-          keepGateRef.current = true; // 좌석으로 이동 → 게이트 유지
+          keepGateRef.current = true;
           showToast("✅ 인증 완료! 좌석 페이지로 이동합니다.", "success", 900);
           setTimeout(() => navigate("/seats", { replace: true, state: { gno } }), 250);
         } else if (result === 0) {
