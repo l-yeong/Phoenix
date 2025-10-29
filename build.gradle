@@ -78,7 +78,7 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
     // 파이어베이스(QR사용여부 메시지)
-
+    implementation("com.google.firebase:firebase-admin:9.5.0")
 
 }
 
