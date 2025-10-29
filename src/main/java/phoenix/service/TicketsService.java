@@ -162,9 +162,8 @@ public class TicketsService {
         List<Integer> expired = fileService.getExpiredGames(); // game.csv 호출
         if (expired ==null || expired.isEmpty()) return 0 ;
 
-        //중복제거
-        String gnoListStr = expired.stream() //파이프형 라인
-                .map(String::valueOf)
+        String gnoListStr = expired.stream() //파이프형 라인(ex:[1,2,3,4,5]
+                .map(String::valueOf)   // 문자열변환
                 .collect(Collectors.joining(","));
         return ticketsMapper.formerGame(gnoListStr);
     }//func end
