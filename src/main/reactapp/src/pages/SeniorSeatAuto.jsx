@@ -105,7 +105,7 @@ export default function SeniorSeatAuto() {
     useEffect(() => {
         const fetchGame = async () => {
             try {
-                const res = await axios.get(`http://localhost:8080/senior/games${gameId} `,
+                const res = await axios.get(`http://192.168.40.190:8080/senior/games${gameId} `,
                     { withCredentials: true });
                 if (res.data.success) {
                     setGame(res.data.data);

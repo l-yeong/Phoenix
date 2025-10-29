@@ -84,6 +84,7 @@ export default function SeniorReserve() {
   };
 
   const navigateToGame = (index) => {
+      speak("선택한경기"+index)
     if (games[index]) {
       speak(`${games[index].homeTeam} 대 ${games[index].awayTeam} 경기를 선택하셨습니다.`);
       setTimeout(() => {
@@ -98,7 +99,7 @@ export default function SeniorReserve() {
   useEffect(() => {
     const fetchGames = async () => {
       try {
-        const res = await axios.get(`http://localhost:8080/senior/games`, {
+        const res = await axios.get(`http://192.168.40.190:8080/senior/games`, {
           withCredentials: true,
         });
         if (res.data.success) {

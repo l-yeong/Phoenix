@@ -88,7 +88,7 @@ public class TicketsService {
      * - DB의 ticket_code 컬럼 값은 통계/로그 분석을 위해 유지.
      * - 하루 최대 1,000개의 파일을 삭제하며, 예외 발생 시 개별 로그 출력.
      */
-//    @Scheduled(cron = "0 * * * * *", zone = "Asia/Seoul")
+    @Scheduled(cron = "0 * * * * *", zone = "Asia/Seoul")
     public void QRImgDelete() {
         final int DeleteCount = 1000; // 하루에 최대 1000개까지 QR이미지 삭제
         while (true) {
@@ -137,7 +137,7 @@ public class TicketsService {
      * - 내부적으로 formerGameCSV()를 호출하여 처리
      */
 
-//    @Scheduled(cron = "0 */5 9-23 * * *", zone = "Asia/Seoul")
+    //@Scheduled(cron = "0 */5 9-23 * * *", zone = "Asia/Seoul")
     public void formerGame() {
         try {
             int updated = formerGameCSV();
