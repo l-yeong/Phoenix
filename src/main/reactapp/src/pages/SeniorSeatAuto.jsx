@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
     Box,
     Typography,
@@ -20,6 +20,7 @@ export default function SeniorSeatAuto() {
     const [guideStep, setGuideStep] = useState(0);
     const [recognition, setRecognition] = useState(null);
     const [listening, setListening] = useState(false);
+    const firstStart = useRef(true);
 
     const gameId = searchParams.get("gameId");
 
@@ -63,7 +64,12 @@ export default function SeniorSeatAuto() {
         recog.onstart = () => {
             console.log("🎤 음성 인식 시작됨");
             setListening(true);
-            speak("매수를 선택하시려면 한 장 또는 두 장이라고 말씀해주세요.");
+
+            // 처음 한번만 안내
+            if (firstStart.current) {
+                speak("매수를 선택하시려면 한 장 또는 두 장이라고 말씀해주세요.");
+                firstStart.current = false;
+            }
         };
 
         recog.onresult = (event) => {
@@ -91,13 +97,28 @@ export default function SeniorSeatAuto() {
         const normalized = text.replace(/\s/g, "");
 
         if (normalized.includes("한") || normalized.includes("1")) {
+
             setTicketCount(1);
+
+            // STT 자동 재시작 막기( false )
             speak("1매로 선택하셨습니다.");
-            setTimeout(() => setGuideStep(2), 1500);
+
+            // 약간의 텀을 두고 다음 안내 STT 다시 활성화
+            setTimeout(() => {
+                setGuideStep(2);
+                speak("이제 자동 예매 버튼을 눌러보세요.", true); // 다음 TTS 끝나면 STT 재시작
+            }, 2000);
+
         } else if (normalized.includes("두") || normalized.includes("2")) {
             setTicketCount(2);
             speak("2매로 선택하셨습니다.");
-            setTimeout(() => setGuideStep(2), 1500);
+
+            // 여기도 약간 텀 두고 다음 안내 STT 다시 활성화
+            setTimeout(() => {
+                setGuideStep(2);
+                speak("이제 자동 예매 버튼을 눌러보세요.", true);
+            }, 2000);
+
         } else if (
             normalized.includes("자동") ||
             normalized.includes("예매") ||
