@@ -21,6 +21,7 @@ export default function SeniorSeatAuto() {
     const [recognition, setRecognition] = useState(null);
     const [listening, setListening] = useState(false);
     const firstStart = useRef(true);
+    const sttRestarting = useRef(false); // STT 중복 재시작 방지용 플래그
 
     const gameId = searchParams.get("gameId");
 
@@ -33,22 +34,26 @@ export default function SeniorSeatAuto() {
         utter.pitch = 1.0;
         utter.volume = 1.0;
 
-        // 음성 안내가 끝나면 자동으로 STT 시작
         utter.onend = () => {
             console.log("🎤 안내 종료됨, 음성 인식 시작 준비");
-            if (autoListen && recognition && !listening) {
 
-                // 약간의 딜레이 추가 (Chrome 전환 타이밍 안정화)
+            if (autoListen && recognition && !listening && !sttRestarting.current) {
+                sttRestarting.current = true; // 재시작 중 플래그 ON
+
+                // Chrome/Android에서 TTS→STT 전환은 최소 2초 권장
                 setTimeout(() => {
                     try {
                         recognition.start();
                         console.log("🎤 음성 인식 재시작됨");
                     } catch (err) {
                         console.error("음성 인식 재시작 오류:", err);
+                    } finally {
+                        sttRestarting.current = false; // 재시작 끝나면 플래그 해제
                     }
-                }, 400); // 400~500ms가 가장 안정적
+                }, 2200);
             }
         };
+
         window.speechSynthesis.speak(utter);
     };
 
@@ -89,8 +94,21 @@ export default function SeniorSeatAuto() {
         };
 
         recog.onend = () => {
-            console.log("인식 종료됨");
+            console.log("🎤 인식 종료됨");
             setListening(false);
+
+            // 자동예매 안내 중 끊겼을 때만 복구하되, 
+            // TTS(onend) 이벤트보다 늦게 실행되게 1.5초 이상 딜레이 줌
+            if (guideStep === 2) {
+                setTimeout(() => {
+                    try {
+                        recognition.start(); // recog 대신 recognition (state에 저장된 최신 객체)
+                        console.log("🎤 자동예매 단계에서 STT 안정 복구됨");
+                    } catch (err) {
+                        console.warn("STT 복구 실패:", err);
+                    }
+                }, 1800); // 기존 1000 → 1800ms로 변경 (TTS 충돌 방지)
+            }
         };
 
         setRecognition(recog);
@@ -182,18 +200,30 @@ export default function SeniorSeatAuto() {
         window.speechSynthesis.cancel();
 
         // 음성 인식 중단 (인식 중이면)
-        if (recognition) recognition.stop();
+        if (recognition) {
+            try {
+                recognition.stop();
+                console.log("🎤 기존 음성 인식 중단 요청");
+            } catch (e) {
+                console.warn("STT 중단 중 오류:", e);
+            }
+        }
 
-        // 음성 중단 후 약간의 딜레이
+        // stop() 완료될 시간을 조금 기다렸다가 다음 안내 실행
         setTimeout(() => {
-            // 안내 후 예매 진행
-            speak(`🎟️ ${ticketCount}매 자동 예매를 진행합니다.`);
+            // 안내 (이때는 autoListen = false 로 지정)
+            speak(`🎟️ ${ticketCount}매 자동 예매를 진행합니다.`, false);
 
+            // 안내가 끝난 뒤 약간 쉬었다가 STT 재시작
             setTimeout(() => {
-                alert(`🎟️ ${ticketCount}매 자동 예매를 진행합니다.`);
-                // 추후 실제 API 연동
+                try {
+                    recognition.start();
+                    console.log("🎤 자동예매 안내 후 STT 재시작됨");
+                } catch (err) {
+                    console.error("자동예매 단계 재시작 오류:", err);
+                }
             }, 1200);
-        }, 300); // cancel 후 딜레이 추가로 확실히 끊김 보장
+        }, 500); // stop() 후 안정적으로 종료될 시간 확보
     };
 
     return (
