@@ -282,6 +282,8 @@ public class SeatLockService {
         }
     }
 
+
+
     // ===== Snapshot for /seat/held & /seat/confirm/all =====
     public Set<Integer> getUserHoldSnapshot(int mno, int gno) {
         RSetCache<Integer> set = userHoldSet(mno, gno);
