@@ -1,4 +1,3 @@
-
 // src/pages/GatePage.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
@@ -32,7 +31,6 @@ export default function GatePage() {
 
   const pollTimerRef = useRef(null);
   const tickTimerRef = useRef(null);
-
   const goingMacroRef = useRef(false);
   const [ahead, setAhead] = useState(0);
 
@@ -42,6 +40,18 @@ export default function GatePage() {
   const authHeaders = useMemo(() => {
     const t = localStorage.getItem("jwt");
     return t ? { Authorization: `Bearer ${t}` } : {};
+  }, []);
+
+  // toast
+  const [toast, setToast] = useState({ open: false, msg: "", type: "info" });
+  const toastTimer = useRef(null);
+  const showToast = useCallback((msg, type = "info", ms = 2200) => {
+    clearTimeout(toastTimer.current);
+    setToast({ open: true, msg, type });
+    toastTimer.current = setTimeout(
+      () => setToast((t) => ({ ...t, open: false })),
+      ms
+    );
   }, []);
 
   // beforeunload/pagehide → leave
@@ -83,17 +93,39 @@ export default function GatePage() {
     };
   }, [gno, authHeaders]);
 
-  // toast
-  const [toast, setToast] = useState({ open: false, msg: "", type: "info" });
-  const toastTimer = useRef(null);
-  const showToast = useCallback((msg, type = "info", ms = 2200) => {
-    clearTimeout(toastTimer.current);
-    setToast({ open: true, msg, type });
-    toastTimer.current = setTimeout(
-      () => setToast((t) => ({ ...t, open: false })),
-      ms
-    );
-  }, []);
+  // ====================== 🟢 신규: 시니어 예매자 차단 ======================
+  useEffect(() => {
+    if (!gno) return;
+    (async () => {
+      try {
+        const { data } = await api.get(`/seat/check/senior?gno=${encodeURIComponent(gno)}`, {
+          headers: { ...authHeaders },
+        });
+        if (data?.senior) {
+          showToast("시니어 예매 회원은 일반 예매 대기열에 입장할 수 없습니다.", "warn", 5000);
+
+          // leave 호출
+          try {
+            await fetch(`${API}/gate/leave?gno=${encodeURIComponent(gno)}`, {
+              method: "POST",
+              credentials: "include",
+              keepalive: true,
+              headers: { "Content-Type": "application/json", ...authHeaders },
+              body: JSON.stringify(gno),
+            });
+          } catch {}
+
+          // 5초 후 홈으로 이동
+          setTimeout(() => {
+            navigate("/home", { replace: true });
+          }, 5000);
+        }
+      } catch {
+        // ignore network error
+      }
+    })();
+  }, [gno, api, authHeaders, navigate, showToast]);
+  // ========================================================================
 
   // querystring hints
   useEffect(() => {
@@ -102,7 +134,7 @@ export default function GatePage() {
     if (p.get("requeue") === "1") showToast("다시 대기열에 등록합니다.", "info", 1800);
   }, [showToast]);
 
-  // ★ Enqueue: "이미 예매" 차단 제거 (이제 입장 가능)
+  // enqueue
   const enqueue = useCallback(async () => {
     if (!gno) return;
     setLoading(true);
@@ -111,42 +143,32 @@ export default function GatePage() {
       const { data } = await api.post("/gate/enqueue", gno, {
         headers: { "Content-Type": "application/json", ...authHeaders },
       });
-
-      // 이전 로직: waiting === -1 → 차단
-      // 새 로직: 예매완료해도 입장 허용, 선택은 4매 한도로 백엔드가 제어
-
       if (!data.queued) {
         showToast("대기열 등록 실패 — 예약이 불가능합니다.", "error");
         navigate("/home", { replace: true });
         return;
       }
-
       setQueued(true);
       setWaitingCount(Number(data?.waiting ?? 0));
       setMessage("안정적인 운영을 위해 대기 순서대로 입장합니다.");
     } catch {
       setError("로그인이 필요합니다.");
       showToast("로그인 후 이용해 주세요.", "error");
-
-      // ★ 요구사항: 1초 후 네비게이트
-      setTimeout(() => {
-        navigate("/home", { replace: true });
-      }, 1000);
+      setTimeout(() => navigate("/home", { replace: true }), 1000);
     } finally {
       setLoading(false);
     }
   }, [api, gno, authHeaders, navigate, showToast]);
 
-  // first mount → enqueue
+  // mount → enqueue
   useEffect(() => {
     if (!gno) { navigate("/home", { replace: true }); return; }
     enqueue();
   }, [gno, enqueue, navigate]);
 
-  // polling: check & position
+  // polling
   useEffect(() => {
     if (!queued || !gno) return;
-
     let fail = 0;
     const tick = async () => {
       try {
@@ -154,15 +176,12 @@ export default function GatePage() {
           api.get(`/gate/check/${gno}`, { headers: { ...authHeaders } }),
           api.get(`/gate/position/${gno}`, { headers: { ...authHeaders } }),
         ]);
-
         setReady(!!check?.ready);
         setTtlSec(Number(check?.ttlSec ?? 0));
         setWaitingCount(Number(check?.waiting ?? 0));
-
         const p = typeof pos?.position === "number" ? pos.position : -1;
         setPosition(p);
         setAhead(p > 0 ? p - 1 : 0);
-
         fail = 0;
         pollTimerRef.current = setTimeout(tick, 1000);
       } catch {
@@ -170,12 +189,10 @@ export default function GatePage() {
         pollTimerRef.current = setTimeout(tick, 800 + 200 * fail);
       }
     };
-
     tick();
     tickTimerRef.current = setInterval(() => {
       setTtlSec((v) => (v == null ? v : Math.max(0, v - 1)));
     }, 1000);
-
     return () => {
       clearTimeout(pollTimerRef.current);
       clearInterval(tickTimerRef.current);
@@ -244,7 +261,7 @@ export default function GatePage() {
 
           <div className="hints">
             <span className="hint">새로고침하면 대기열이 밀리니 조심해주세요.</span>
-            <span className="hint">대기열 - 매크로 인증 - 존 선택 - 좌석 선택 </span>
+            <span className="hint">대기열 → 매크로 인증 → 존 선택 → 좌석 선택</span>
           </div>
 
           <div className="actions">

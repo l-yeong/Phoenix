@@ -79,6 +79,9 @@ dependencies {
 
     // 파이어베이스(QR사용여부 메시지)
     implementation("com.google.firebase:firebase-admin:9.5.0")
+    // [17] GEMINI AI
+    implementation("com.google.genai:google-genai:1.8.0")
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
 
 }
 

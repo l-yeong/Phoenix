@@ -112,12 +112,13 @@ const Header = () => {
         </Typography>
 
         <Box className={styles.nav}>
-          {["TICKET", "PLAYERS", "GAME", "CONTENTS", "MEMBERSHIP"].map((menu) => (
+          {["TICKET", "PLAYERS", "GAME", "CONTENTS", "CHATBOT"].map((menu) => (
             <Button
               key={menu}
               className={styles.navButton}
               onClick={() => {
                 if (menu === "TICKET") navigate("/tickets/ticketLog");
+                if (menu === "CHATBOT") navigate("/chatbot");
                 else toast.info(`${menu} 페이지는 준비 중입니다.`);
               }}
             >
@@ -185,7 +186,7 @@ const Header = () => {
       </Toolbar>
 
       <ToastContainer
-        position="bottom-right"
+        position="bottom-right" 
         icon={false} // 아이콘 제거
         autoClose={4000}
         hideProgressBar={false}

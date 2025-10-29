@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
     Box,
     Typography,
@@ -7,7 +7,7 @@ import {
     MenuItem,
     Button,
 } from "@mui/material";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import styles from "../styles/SeniorSeatAuto.module.css";
 import TutorialOverlay from "../components/TutorialOverlay";
 import axios from "axios";
@@ -20,20 +20,55 @@ export default function SeniorSeatAuto() {
     const [guideStep, setGuideStep] = useState(0);
     const [recognition, setRecognition] = useState(null);
     const [listening, setListening] = useState(false);
+    const firstStart = useRef(true);
+    const sttRestarting = useRef(false); // STT 중복 재시작 방지용 플래그
+    const ttsActive = useRef(false); // 현재 TTS가 동작 중인지 추적
+    const navigate = useNavigate();
 
     const gameId = searchParams.get("gameId");
 
-    // 음성 안내 (TTS)
-    const speak = (text) => {
+    // TTS 함수
+    const speak = (text, autoListen = true) => {
+        // 현재 재생 중인 음성 중단
         window.speechSynthesis.cancel();
+
         const utter = new SpeechSynthesisUtterance(text);
         utter.lang = "ko-KR";
         utter.rate = 0.9;
         utter.pitch = 1.0;
         utter.volume = 1.0;
-        window.speechSynthesis.speak(utter);
-    };
 
+        ttsActive.current = true; // 🎙️ TTS 활성화 시작
+        window.speechSynthesis.speak(utter);
+
+        utter.onend = () => {
+            ttsActive.current = false; // 🎙️ TTS 종료 표시
+            console.log("🎤 안내 종료됨 (TTS 완전 종료)");
+
+            // 자동으로 STT 재시작
+            if (autoListen && recognition && !listening && !sttRestarting.current) {
+                sttRestarting.current = true;
+
+                // 완전 종료 후 2.5초 이상 대기 (충돌 방지)
+                setTimeout(() => {
+                    // 혹시 그 사이에 TTS가 다시 시작됐으면 취소
+                    if (ttsActive.current) {
+                        sttRestarting.current = false;
+                        return;
+                    }
+
+                    try {
+                        recognition.start();
+                        console.log("🎤 STT 완전 재시작됨 ");
+                    } catch (err) {
+                        console.error("🎤 STT 재시작 오류:", err);
+                    } finally {
+                        sttRestarting.current = false;
+                    }
+                }, 2500);
+            }
+        };
+    };
     // 음성 인식 (STT) 초기화
     const initSTT = async () => {
         const SpeechRecognition =
@@ -51,7 +86,12 @@ export default function SeniorSeatAuto() {
         recog.onstart = () => {
             console.log("🎤 음성 인식 시작됨");
             setListening(true);
-            speak("매수를 선택하시려면 한 장 또는 두 장이라고 말씀해주세요.");
+
+            // 처음 한번만 안내
+            if (firstStart.current) {
+                speak("매수를 선택하시려면 한 장 또는 두 장이라고 말씀해주세요.");
+                firstStart.current = false;
+            }
         };
 
         recog.onresult = (event) => {
@@ -66,8 +106,25 @@ export default function SeniorSeatAuto() {
         };
 
         recog.onend = () => {
-            console.log("인식 종료됨");
+            console.log("🎤 인식 종료됨");
             setListening(false);
+
+            // 자동예매 안내 중이면 STT 자동 복구 시도 (테스트용 무한대기)
+            if (guideStep === 2) {
+                let retryCount = 0;
+                const retry = setInterval(() => {
+                    try {
+                        recognition.start();
+                        console.log("🎤 자동예매 단계 STT 재시작 성공 (테스트용)");
+                        clearInterval(retry);
+                    } catch (err) {
+                        retryCount++;
+                        console.warn(`🎤 STT 재시작 실패 ${retryCount}회:`, err);
+                        // 3회 이상 실패 시 중단
+                        if (retryCount >= 3) clearInterval(retry);
+                    }
+                }, 1500);
+            }
         };
 
         setRecognition(recog);
@@ -79,23 +136,69 @@ export default function SeniorSeatAuto() {
         const normalized = text.replace(/\s/g, "");
 
         if (normalized.includes("한") || normalized.includes("1")) {
+
             setTicketCount(1);
+
+            // STT 자동 재시작 막기( false )
             speak("1매로 선택하셨습니다.");
-            setTimeout(() => setGuideStep(2), 1500);
+
+            // 약간의 텀을 두고 다음 안내 STT 다시 활성화
+            setTimeout(() => {
+                setGuideStep(2);
+                speak("이제 자동 예매 버튼을 눌러보세요.", true); // 다음 TTS 끝나면 STT 재시작
+            }, 2000);
+
         } else if (normalized.includes("두") || normalized.includes("2")) {
             setTicketCount(2);
             speak("2매로 선택하셨습니다.");
-            setTimeout(() => setGuideStep(2), 1500);
+
+            // 여기도 약간 텀 두고 다음 안내 STT 다시 활성화
+            setTimeout(() => {
+                setGuideStep(2);
+                speak("이제 자동 예매 버튼을 눌러보세요.", true);
+            }, 2000);
+
         } else if (
             normalized.includes("자동") ||
             normalized.includes("예매") ||
             normalized.includes("시작")
         ) {
-            speak("자동 예매를 진행합니다.");
-            setTimeout(() => handleAutoReserve(), 1000);
+            // ① 먼저 STT 완전히 멈추고
+            if (recognition) {
+                try {
+                    recognition.stop();
+                    console.log("자동예매 음성 명령 감지 → STT 종료 요청");
+                } catch (err) {
+                    console.warn("STT 종료 중 오류:", err);
+                }
+            }
+
+            // ② TTS를 바로 시작하지 말고, 약 2초 정도 기다렸다가 실행
+            setTimeout(() => {
+                speak("자동 예매를 진행합니다.", false);
+
+                // ③ 안내가 끝난 뒤 예매 처리
+                setTimeout(() => {
+                    handleAutoReserve();
+
+                    // ④ 안내가 끝난 후 STT 재시작 (테스트용)
+                    setTimeout(() => {
+                        if (recognition && !listening) {
+                            try {
+                                recognition.start();
+                                console.log("🎤 자동예매 후 STT 재시작됨");
+                            } catch (err) {
+                                console.warn("🎤 STT 재시작 실패:", err);
+                            }
+                        }
+                    }, 3000);
+                }, 1500);
+            }, 2000); // TTS 시작을 2초 늦춤 (마이크 안정화 시간)
+
         } else if (normalized.includes("종료") || normalized.includes("나가기")) {
             speak("시니어 예매를 종료합니다.");
             if (recognition) recognition.stop();
+
         } else {
             speak("죄송합니다. 다시 말씀해주세요. 예를 들어 한 장 또는 두 장이라고 말해주세요.");
         }
@@ -111,17 +214,15 @@ export default function SeniorSeatAuto() {
                     setGame(res.data.data);
                     setLoading(false);
 
-                    // 오버레이 표시
+                    // 오버레이 표시 후 약간의 텀 두고 안내
                     setTimeout(() => {
                         setGuideStep(1);
 
-                        // TTS 안내
-                        speak("매수를 선택해주세요. 몇 명이 예매할지 먼저 정해야 합니다.");
+                        // STT 미리 초기화 해두기
+                        initSTT();
 
-                        // TTS 후 STT 시작
-                        setTimeout(() => {
-                            initSTT();
-                        }, 2500);
+                        // TTS 안내 시작 - 안내 끝나면 utter.onend에서 STT 자동 시작
+                        speak("매수를 선택해주세요. 몇 명이 예매할지 먼저 정해야 합니다.");
                     }, 800);
                 } else {
                     alert("경기 정보를 불러오지 못했습니다.");
@@ -141,23 +242,65 @@ export default function SeniorSeatAuto() {
         };
     }, [gameId]);
 
-    const handleAutoReserve = () => {
-        // 현재 재생 중인 음성 종료
+    const handleAutoReserve = async () => {
         window.speechSynthesis.cancel();
 
-        // 음성 인식 중단 (인식 중이면)
-        if (recognition) recognition.stop();
+        if (recognition) {
+            try {
+                recognition.stop();
+                console.log("🎤 기존 음성 인식 중단 요청");
+            } catch (e) {
+                console.warn("STT 중단 중 오류:", e);
+            }
+        }
 
-        // 음성 중단 후 약간의 딜레이
-        setTimeout(() => {
-            // 안내 후 예매 진행
-            speak(`🎟️ ${ticketCount}매 자동 예매를 진행합니다.`);
+        // stop() 후 약간 기다렸다가 예매 진행
+        setTimeout(async () => {
+            speak(`🎟️ ${ticketCount}매 자동 예매를 진행합니다.`, false);
 
+            try {
+                // ✅ 백엔드 DTO에 맞는 요청 데이터
+                const reqData = {
+                    gno: Number(gameId),
+                    qty: ticketCount,
+                };
+
+                const res = await axios.post(
+                    "http://localhost:8080/senior/auto",
+                    reqData,
+                    { withCredentials: true }
+                );
+
+                const result = res.data;
+                console.log("📦 시니어 자동예매 결과:", result);
+
+                if (result.ok) {
+                    const zone = result.bundles?.[0]?.zoneLabel || "좌석 정보 없음";
+                    const seats = result.bundles?.[0]?.seatNames?.join(", ") || "좌석 정보 없음";
+
+                    // 🎙 음성 안내 + 마이페이지 이동
+                    speak(`자동 예매가 완료되었습니다. ${zone}의 ${seats} 좌석이 배정되었습니다. 마이페이지로 이동합니다.`, false);
+
+                    setTimeout(() => navigate("/mypage"), 5000);
+                } else {
+                    const reason = result.reason || "좌석 배정에 실패했습니다.";
+                    speak(`자동 예매에 실패했습니다. 이유: ${reason}`, false);
+                }
+            } catch (err) {
+                console.error("❌ 자동예매 오류:", err);
+                speak("자동 예매 중 오류가 발생했습니다. 네트워크를 확인해주세요.", false);
+            }
+
+            // 🎤 자동예매 후 STT 재시작 (선택)
             setTimeout(() => {
-                alert(`🎟️ ${ticketCount}매 자동 예매를 진행합니다.`);
-                // 추후 실제 API 연동
-            }, 1200);
-        }, 300); // cancel 후 딜레이 추가로 확실히 끊김 보장
+                try {
+                    recognition.start();
+                    console.log("🎤 자동예매 후 STT 재시작됨");
+                } catch (err) {
+                    console.warn("🎤 STT 재시작 실패:", err);
+                }
+            }, 4000);
+        }, 700);
     };
 
     return (
@@ -212,11 +355,11 @@ export default function SeniorSeatAuto() {
                 <TutorialOverlay
                     targetId="ticketSelectBox"
                     message={
-                        <p style={{ textAlign: "center", lineHeight: "1.6" }}>
+                        <div style={{ textAlign: "center", lineHeight: "1.6" }}>
                             👥 <strong style={{ color: "#CA2E26" }}>매수를 선택해주세요.</strong>
                             <br />
                             몇 명이 예매할지 먼저 정해야 합니다.
-                        </p>
+                        </div>
                     }
                     onClose={() => {
                         window.speechSynthesis.cancel();
@@ -234,11 +377,11 @@ export default function SeniorSeatAuto() {
                 <TutorialOverlay
                     targetId="autoReserveButton"
                     message={
-                        <p style={{ textAlign: "center", lineHeight: "1.6" }}>
+                        <div style={{ textAlign: "center", lineHeight: "1.6" }}>
                             🎟️ <strong style={{ color: "#CA2E26" }}>이 버튼을 눌러</strong>
                             <br />
                             자동 예매를 진행해보세요!
-                        </p>
+                        </div>
                     }
                     onClose={() => {
                         window.speechSynthesis.cancel();
