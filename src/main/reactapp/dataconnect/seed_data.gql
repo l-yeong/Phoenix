@@ -1,0 +1,24 @@
+mutation CreateSeedPageContent @transaction @auth(level: PUBLIC, insecureReason: "This operation is safe to expose to the public") {
+  pageContent_insertMany(
+    data: [
+      {
+        contentHtml: "<p>This is the home page content.</p>"
+        lastUpdated: "2024-07-01T12:00:00Z"
+        pageTitle: "Home"
+        path: "/"
+      }
+      {
+        contentHtml: "<p>This is the about page content.</p>"
+        lastUpdated: "2024-07-01T12:00:00Z"
+        pageTitle: "About"
+        path: "/about"
+      }
+      {
+        contentHtml: "<p>This is the contact page content.</p>"
+        lastUpdated: "2024-07-01T12:00:00Z"
+        pageTitle: "Contact"
+        path: "/contact"
+      }
+    ]
+  )
+}
