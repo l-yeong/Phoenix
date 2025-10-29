@@ -21,6 +21,20 @@ export default function SeniorReserve() {
     utter.rate = 0.9;
     utter.pitch = 1.0;
     utter.volume = 1.0;
+
+    // 음성 안내가 끝난 후 자동으로 STT 시작
+    utter.onend = () => {
+      console.log("🎤 안내 종료됨, 음성 인식 시작");
+      if(recognition && !listening) {
+        try{
+          recognition.start();
+          console.log("🎤 음성 인식 시작됨");
+        }catch(err){
+          console.error("음성 인식 시작 오류:", err);
+        }
+      }
+    };
+    
     window.speechSynthesis.speak(utter);
   };
 
@@ -84,7 +98,7 @@ export default function SeniorReserve() {
   };
 
   const navigateToGame = (index) => {
-      speak("선택한경기"+index)
+    speak("경기 선택을 처리 중입니다." + index  );
     if (games[index]) {
       speak(`${games[index].homeTeam} 대 ${games[index].awayTeam} 경기를 선택하셨습니다.`);
       setTimeout(() => {
@@ -99,7 +113,7 @@ export default function SeniorReserve() {
   useEffect(() => {
     const fetchGames = async () => {
       try {
-        const res = await axios.get(`http://192.168.40.190:8080/senior/games`, {
+        const res = await axios.get(`http://localhost:8080/senior/games`, {
           withCredentials: true,
         });
         if (res.data.success) {
@@ -114,7 +128,7 @@ export default function SeniorReserve() {
 
     const checkSeniorAccess = async () => {
       try {
-        const res = await axios.get(`http://192.168.40.190:8080/senior/reserve`, {
+        const res = await axios.get(`http://localhost:8080/senior/reserve`, {
           withCredentials: true,
         });
         if (res.data.success) {

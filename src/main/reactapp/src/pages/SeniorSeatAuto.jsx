@@ -24,13 +24,25 @@ export default function SeniorSeatAuto() {
     const gameId = searchParams.get("gameId");
 
     // 음성 안내 (TTS)
-    const speak = (text) => {
+    const speak = (text, autoListen = true) => {
         window.speechSynthesis.cancel();
         const utter = new SpeechSynthesisUtterance(text);
         utter.lang = "ko-KR";
         utter.rate = 0.9;
         utter.pitch = 1.0;
         utter.volume = 1.0;
+
+        // 음성 안내가 끝나면 자동으로 STT 시작
+        utter.onend = () => {
+            console.log("🎤 안내 종료됨, 음성 인식 시작");
+            if (autoListen && recognition && !listening) {
+                try {
+                    recognition.start();
+                } catch (err) {
+                    console.error("음성 인식 시작 오류:", err);
+                }
+            }
+        };
         window.speechSynthesis.speak(utter);
     };
 
@@ -111,17 +123,15 @@ export default function SeniorSeatAuto() {
                     setGame(res.data.data);
                     setLoading(false);
 
-                    // 오버레이 표시
+                    // 오버레이 표시 후 약간의 텀 두고 안내
                     setTimeout(() => {
                         setGuideStep(1);
 
-                        // TTS 안내
-                        speak("매수를 선택해주세요. 몇 명이 예매할지 먼저 정해야 합니다.");
+                        // STT 미리 초기화 해두기
+                        initSTT();
 
-                        // TTS 후 STT 시작
-                        setTimeout(() => {
-                            initSTT();
-                        }, 2500);
+                        // TTS 안내 시작 - 안내 끝나면 utter.onend에서 STT 자동 시작
+                        speak("매수를 선택해주세요. 몇 명이 예매할지 먼저 정해야 합니다.");
                     }, 800);
                 } else {
                     alert("경기 정보를 불러오지 못했습니다.");
