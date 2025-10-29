@@ -14,7 +14,7 @@ export default function SeniorReserve() {
   const [recognition, setRecognition] = useState(null);
 
   // 음성 안내 함수 (TTS)
-  const speak = (text) => {
+  const speak = (text, autoListen = true) => {
     window.speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(text);
     utter.lang = "ko-KR";
@@ -25,16 +25,16 @@ export default function SeniorReserve() {
     // 음성 안내가 끝난 후 자동으로 STT 시작
     utter.onend = () => {
       console.log("🎤 안내 종료됨, 음성 인식 시작");
-      if(recognition && !listening) {
-        try{
+      if (autoListen && recognition && !listening) {
+        try {
           recognition.start();
           console.log("🎤 음성 인식 시작됨");
-        }catch(err){
+        } catch (err) {
           console.error("음성 인식 시작 오류:", err);
         }
       }
     };
-    
+
     window.speechSynthesis.speak(utter);
   };
 
@@ -82,11 +82,26 @@ export default function SeniorReserve() {
     // "첫 번째 경기", "두번째 경기", "1번 경기", 등 인식 가능하도록
     const normalized = text.replace(/\s/g, "");
 
-    if (normalized.includes("첫") || normalized.includes("1")) {
+    if (
+      normalized.includes("첫") ||
+      normalized.includes("첫번") ||
+      normalized.includes("1") ||
+      normalized.includes("일번")
+    ) {
       navigateToGame(0);
-    } else if (normalized.includes("두") || normalized.includes("2")) {
+    }
+    else if (
+      normalized.includes("두") ||
+      normalized.includes("2") ||
+      normalized.includes("이번")
+    ) {
       navigateToGame(1);
-    } else if (normalized.includes("세") || normalized.includes("3")) {
+    }
+    else if (
+      normalized.includes("세") ||
+      normalized.includes("삼") ||
+      normalized.includes("3")
+    ) {
       navigateToGame(2);
     } else if (normalized.includes("종료") || normalized.includes("나가기")) {
       speak("시니어 예매를 종료합니다.");
@@ -98,7 +113,7 @@ export default function SeniorReserve() {
   };
 
   const navigateToGame = (index) => {
-    speak("경기 선택을 처리 중입니다." + index  );
+    speak("경기 선택을 처리 중입니다." + index);
     if (games[index]) {
       speak(`${games[index].homeTeam} 대 ${games[index].awayTeam} 경기를 선택하셨습니다.`);
       setTimeout(() => {
@@ -139,8 +154,8 @@ export default function SeniorReserve() {
 
           // 약간의 텀을 두고 두 번째 안내 + 음성인식 시작
           setTimeout(() => {
-            speak("음성으로도 경기 선택이 가능합니다. 첫 번째 경기 선택이라고 말씀해보세요.");
             initSTT(); // 음성 인식 기능 시작
+            speak("음성으로도 경기 선택이 가능합니다. 첫 번째 경기 선택이라고 말씀해보세요.");
           }, 3000);
         }
       } catch (err) {
