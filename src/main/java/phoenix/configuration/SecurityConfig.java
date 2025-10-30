@@ -145,19 +145,18 @@ public class SecurityConfig {
                                 "/members/findid/**",
                                 "/members/findpwd/**",
                                 "/oauth2/**",
-                                "/game/**"
+                                "/game/**",
+                                "/seat/**"
                         ).permitAll()
                         .requestMatchers(
                                 "/members/**",
                                 "/oauth2/**",
                                 "/socket/**",
-                                "/seats/**",
                                 "/gate/**",
                                 "/captcha/**",
                                 "/tickets/**",
                                 "/upload/**",
                                 "/reserve/**",
-                                "/seat/**",
                                 "/senior/**",
                                 "/api/chat/**"
                         ).authenticated() //  전부 로그인 필요
