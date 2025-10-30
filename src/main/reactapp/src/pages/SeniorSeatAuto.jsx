@@ -266,7 +266,7 @@ export default function SeniorSeatAuto() {
                 };
 
                 const res = await axios.post(
-                    "http://localhost:8080/senior/auto",
+                    "http://192.168.40.190:8080/senior/auto",
                     reqData,
                     { withCredentials: true }
                 );
