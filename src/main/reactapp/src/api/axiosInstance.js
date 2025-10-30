@@ -42,6 +42,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => config,
   (error) => {
+    console.warn("🔍 401 감지:", err.response?.config?.url);
     // 콘솔 출력 제거 (필요하면 아래 한 줄만 유지)
     // console.error("[Axios] 요청 에러:", error);
     return Promise.reject(error);
