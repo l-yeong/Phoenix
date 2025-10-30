@@ -285,6 +285,20 @@ public class SeatLockService {
         }
     }
 
+    // SeatLockService.java
+    public void releaseAllHoldsForUser(int mno, int gno) {
+        try {
+            RSetCache<Integer> holds = userHoldSet(mno, gno);
+            if (holds.isEmpty()) return;
+            for (Integer sno : holds.readAll()) {
+                holdMap().remove(seatKey(gno, sno));
+                try { seatLock(gno, sno).forceUnlock(); } catch (Exception ignore) {}
+            }
+            holds.clear();
+        } catch (Exception e) {
+            System.out.println("[SeatLockService] releaseAllHoldsForUser error: " + e.getMessage());
+        }
+    }
 
 
     // ===== Snapshot for /seat/held & /seat/confirm/all =====

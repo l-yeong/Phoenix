@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import phoenix.model.dto.GateDto;
 import phoenix.service.GateService;
 import phoenix.service.MembersService;
+import phoenix.service.SeatLockService;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -21,6 +22,7 @@ public class GateController {
 
     private final GateService gateService;
     private final MembersService membersService;
+    private final SeatLockService seatLockService;
 
     // === [1] 대기열 등록: 프론트가 '숫자 gno'를 JSON 바디로 보냄 ===
     @PostMapping(value = "/enqueue", consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -82,6 +84,8 @@ public class GateController {
 
         int mno = membersService.getLoginMember().getMno();
         boolean ok = gateService.leave(mno, gno);
+        if (ok ) seatLockService.releaseAllHoldsForUser(mno, gno);
+
         return ResponseEntity.ok(new GateDto.LeaveResponse(ok));
     }
 }
