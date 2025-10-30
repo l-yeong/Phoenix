@@ -168,7 +168,16 @@ export default function Mypage() {
             );
             if (res.data.success) {
                 alert("회원정보가 성공적으로 수정되었습니다!");
-                navigate("/");
+
+                // ✅ 서버가 수정된 회원정보를 반환한다면
+                if (res.data.data) {
+                    setForm(res.data.data); // form 전체를 서버 응답으로 갱신
+                } else {
+                    // ✅ 서버가 반환 안 하는 경우, 직접 form 그대로 유지
+                    setForm(payload);
+                }
+
+                setMode("reservation"); // 수정 후 다시 기본 모드로 전환할 수도 있음
             } else { alert(res.data.message); }
         } catch (e) {
             console.error("회원정보 수정 실패:", e);
@@ -201,7 +210,7 @@ export default function Mypage() {
             if (res.data.success) {
                 alert("비밀번호가 성공적으로 변경되었습니다!");
                 setPasswordForm({ current_password: "", new_password: "" });
-                navigate("/");
+                logout();
             } else {
                 alert(res.data.message);
             }
