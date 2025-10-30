@@ -21,7 +21,6 @@ export default function TutorialOverlay({ targetId, message, onClose }) {
                     height: r.height,
                     bottom: r.bottom,
                 };
-                console.log("[Overlay Debug] adjusted rect:", adjusted);
                 setRect(adjusted);
             } else if (attempts < 10) {
                 attempts++;

@@ -51,7 +51,6 @@ export const AuthProvider = ({ children }) => {
    * - 추가적으로 fetchUser() 호출하여 서버 세션과 프론트 상태 동기화
    */
   const login = (userData) => {
-    console.log("login() 호출됨:", userData);
     setUser(userData); // 즉시 전역 상태 반영
     fetchUser(); // 서버 세션 상태와 재동기화 시도
   };
@@ -65,15 +64,12 @@ export const AuthProvider = ({ children }) => {
   const fetchUser = async () => {
     try {
       const res = await api.get("/members/info"); // 세션 쿠키 서버로 자동 전송
-      console.log("서버응답", res);
       if (res.data.success) {
         setUser(res.data.data); // 서버 응답에서 회원정보 추출하여 user 상태에 저장
       } else {
-        console.log("[fetchUser] 로그인 상태 아님");
         setUser(null); // 로그인 상태 아니면 user : null 로 설정
       }
     } catch (error) {
-      console.log("회원정보 불러오기 실패:", error);
       setUser(null);
     } finally {
       setLoading(false); // 로딩 완료
@@ -116,7 +112,6 @@ export const AuthProvider = ({ children }) => {
    */
   useEffect(() => {
     const handleSessionExpired = () => {
-      console.warn("세션 만료 이벤트 수신됨 → 로그인 페이지 이동");
       alert("세션이 만료되었습니다. 다시 로그인해주세요.");
       logout(); // 전역 상태 초기화
       navigate("/login"); // 로그인 페이지로 이동
@@ -132,7 +127,6 @@ export const AuthProvider = ({ children }) => {
    * - 현재 로그인한 회원정보 변화를 추적 가능
    */
   useEffect(() => {
-    console.log("AuthContext user 변경:", user);
   }, [user]);
 
   /**

@@ -35,18 +35,16 @@ const api = axios.create({
  * - axios가 요청을 서버로 보내기 전에 호출됨
  * - 공통적으로 헤더 추가, 토큰 삽입, 로깅 등의 처리를 할 수 있음
  */
+
+/* ==============================
+   요청 인터셉터 (Request)
+============================== */
 api.interceptors.request.use(
-  (config) => {
-    return config;
-    // 요청 전 설정(config)을 그대로 반환 -> 요청이 계속 진행됨
-  },
+  (config) => config,
   (error) => {
-    console.error("[Axios] 요청 에러:", error);
-    // 요청을 보내기 전에 발생한 에러 
+    // 콘솔 출력 제거 (필요하면 아래 한 줄만 유지)
+    // console.error("[Axios] 요청 에러:", error);
     return Promise.reject(error);
-    // Promise.reject(error)
-    // - 에러를 axios 호출한 쪽으로 던져서 catch()로 처리되게 함
-    // - 이 인터셉터에서 멈추지 않고 호출부로 에러를 전달하는 역할
   }
 );
 
@@ -63,7 +61,6 @@ api.interceptors.response.use(
   },
   (error) => {
     const { response } = error;
-    console.error("[Axios] 서버 에러:", error);
     // 서버에서 오류 응답을 받았거나, 네트워크 에러가 발생한 경우
 
     /**
@@ -73,7 +70,6 @@ api.interceptors.response.use(
      *   AuthProvider 등에서 감지 후 자동 로그아웃 및 로그인 페이지 이동 처리
      */
     if (response?.status === 401) {
-      console.warn("[Axios] 세션 만료 또는 로그인 필요");
 
       window.dispatchEvent(new Event("sessionExpired"));
       //  window.dispatchEvent()
