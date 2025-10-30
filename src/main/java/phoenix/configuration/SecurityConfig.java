@@ -144,14 +144,15 @@ public class SecurityConfig {
                                 "/members/verify-email",
                                 "/members/findid/**",
                                 "/members/findpwd/**",
+                                "/seat/**",
                                 "/oauth2/**",
-                                "/game/**",
-                                "/seat/**"
+                                "/socket/**",
+                                "/game/**"
                         ).permitAll()
                         .requestMatchers(
                                 "/members/**",
                                 "/oauth2/**",
-                                "/socket/**",
+                                "/seats/**",
                                 "/gate/**",
                                 "/captcha/**",
                                 "/tickets/**",
