@@ -18,7 +18,7 @@ public interface ReservationMapper {
      * @param mno
      * @return List<ReservationsDto>
      */
-    @Select("select * from reservations where mno = #{mno}" )
+    @Select("select * from reservations where mno = #{mno} order by rno desc" )
     public List<ReservationsDto> reservePrint(int mno);
 
     /**
@@ -57,8 +57,9 @@ public interface ReservationMapper {
      * @param rno
      * @return List<ReservationsDto>
      */
-    @Select("select r.* from reservations r inner join seats s on r.sno = s.sno where\n" +
-            "  r.gno = (select gno from reservations where rno = #{rno}) and s.zno = (select s2.zno from reservations r2 inner join seats s2 on r2.sno = s2.sno where r2.rno = #{rno})\n" +
-            "  and r.status = 'reserved' and r.rno != #{rno} and r.mno != #{mno}  ")
+    @Select("select r.* from reservations r inner join seats s on r.sno = s.sno inner join members m on r.mno = m.mno " +
+            " where r.gno = (select gno from reservations where rno = #{rno}) and " +
+            " s.zno = (select s2.zno from reservations r2 inner join seats s2 on r2.sno = s2.sno where r2.rno = #{rno})\n" +
+            "  and r.status = 'reserved' and r.rno != #{rno} and r.mno != #{mno} and m.exchange = true  ")
     List<ReservationsDto> seatPossible(int rno,int mno);
 }//inter end

@@ -5,15 +5,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import phoenix.model.dto.AutoSelectDto;
 import phoenix.model.dto.GameDto;
 import phoenix.model.dto.MembersDto;
 import phoenix.service.GameService;
 import phoenix.service.MembersService;
 import phoenix.util.ApiResponseUtil;
+import phoenix.service.SeniorReservationService;
 
 import java.time.LocalDate;
 import java.time.Period;
@@ -27,6 +26,7 @@ public class SeniorController {
 
     private final MembersService membersService;
     private final GameService gameService;
+    private final SeniorReservationService seniorService;
 
 
     /**
@@ -91,6 +91,18 @@ public class SeniorController {
         }
 
         return ResponseEntity.ok(new ApiResponseUtil<>(true , "경기 조회 성공" , game));
+    }
+
+    /**
+     * 🧓 시니어 자동예매 (즉시 확정)
+     * - DTO는 일반 자동예매와 동일(재사용)
+     * - ok=true면 이미 DB/Redis 반영 완료 상태
+     */
+    @PostMapping("/auto")
+    public ResponseEntity<AutoSelectDto.AutoSelectRes> auto(@RequestBody AutoSelectDto.AutoSelectReq req) {
+        int mno = membersService.getLoginMember().getMno();
+        AutoSelectDto.AutoSelectRes res = seniorService.autoBookAndConfirm(mno, req);
+        return ResponseEntity.ok(res);
     }
 
 

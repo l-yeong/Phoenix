@@ -234,6 +234,13 @@ export default function reservationFind( props ){
                             <Stack spacing={2} mt={2}>
                             <InfoItem label="예매번호" value={reservation.reservation?.rno ?? "-"} />
                             <InfoItem label="좌석번호" value={reservation.reservation?.sno ?? "-"} />
+                            <InfoItem label="좌석등급" value={reservation.reservation?.channel === "general"
+                                ? "일반"
+                                : reservation.reservation?.channel === "senior"
+                                ? "시니어"
+                                : "-"
+                            }
+                            />
                             <InfoItem label="홈팀" value={reservation.game?.homeTeam ?? "-"} />
                             <InfoItem label="홈팀 선발투수" value={reservation.game?.homePitcher ?? "-"} />
                             <InfoItem label="어웨이팀" value={reservation.game?.awayTeam ?? "-"} />

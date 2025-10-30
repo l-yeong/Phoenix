@@ -94,24 +94,6 @@ public class MembersController {
         } // if e
     } // func e
 
-    @GetMapping("/signup/players")
-    public ResponseEntity<ApiResponseUtil<?>> getPlayers(){
-
-        List<Map<String , Object>> list = playerCsvService.findAllPlayers().stream()
-                .map( p -> {
-                    Map<String , Object> map = new HashMap<>();
-                    map.put("pno", p.getPno());
-                    map.put("name", p.getName());
-                    map.put("position", p.getPosition());
-                    map.put("teamName", playerCsvService.findTeamName(p.getTeamNo()));
-                    return map;
-                })
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(new ApiResponseUtil<>(true , "선수 목록 로드 성공" , list));
-
-    } // func e
-
     /**
      *  로그인( JWT 발급) 메소드
      *  탈랜드 테스트용

@@ -136,24 +136,32 @@ public class SecurityConfig {
                 // =============================
                 .authorizeHttpRequests(auth -> auth // URL별 인가 규칙 시작
                         .requestMatchers(HttpMethod.OPTIONS , "/**").permitAll() // 프리플라이트 요청 허용
-                        .requestMatchers("/senior/**").authenticated()
-                        .requestMatchers("/members/email/**").permitAll()
-                        //.requestMatchers("/tickets/ticketLog/**").hasRole("ADMIN")
-                        //.requestMatchers("/tickets/qr/**").hasRole("ADMIN")
                         .requestMatchers(
-                                "/members/**", // 회원 하위 모두
-                                "/oauth2/**",           // 소셜 회원
+                                "/members/signup",
+                                "/members/login",
+                                "/members/logout",
+                                "/members/email/**",
+                                "/members/verify-email",
+                                "/members/findid/**",
+                                "/members/findpwd/**",
+                                "/oauth2/**",
+                                "/game/**"
+                        ).permitAll()
+                        .requestMatchers(
+                                "/members/**",
+                                "/oauth2/**",
                                 "/socket/**",
                                 "/seats/**",
                                 "/gate/**",
                                 "/captcha/**",
-                                "/game/**",
                                 "/tickets/**",
                                 "/upload/**",
                                 "/reserve/**",
-                                "/seat/**"
-                        ).permitAll() // 나중에 싹다 authenticated() 로 바꿔서 인증없이 못들어가게 만들거임
-                        .anyRequest().authenticated() // 나머지는 전부 인증필요(JWT 또는 OAuth2 로그인 성공 상태)
+                                "/seat/**",
+                                "/senior/**",
+                                "/api/chat/**"
+                        ).authenticated() //  전부 로그인 필요
+                        .anyRequest().authenticated() // 위에서 지정 안한 나머지 경로도 전부 인증필요
                 )
                 // =============================
                 // 인증 실패 / 인가 실패 시 JSON 응답으로 변경

@@ -38,7 +38,7 @@ export default function Mypage() {
     useEffect(() => {
         const fetchPlayers = async () => {
             try {
-                const res = await axios.get("http://192.168.40.190:8080/members/signup/players");
+                const res = await axios.get("http://192.168.40.190:8080/game/players");
                 if (res.data.success) {
                     setPlayers(res.data.data);
                 }
