@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import phoenix.model.dto.GameDto;
-import phoenix.model.mapper.ZonesMapper;
 import phoenix.service.FileService;
 import phoenix.service.SeatCsvService;
 import phoenix.service.SeatLockService;
@@ -28,7 +27,6 @@ public class GeminiService {
     private final SeatCsvService seatCsvService;
     private final SeatLockService seatLockService;
     private final WebClient webClient;
-    private final ZonesMapper zonesMapper;
 
     // 날짜 포맷터 정의
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("M월 d일");

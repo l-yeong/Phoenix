@@ -84,7 +84,7 @@ CREATE TABLE tickets (
   issued_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   valid       BOOLEAN   NOT NULL DEFAULT TRUE,
   price       INT       NOT NULL,
-  ticket_uuid VARCHAR(20),
+  ticket_uuid VARCHAR(20) unique not null ,
   CONSTRAINT fk_tickets_rno FOREIGN KEY (rno) REFERENCES reservations(rno)
 );
 CREATE INDEX idx_tickets_rno ON tickets(rno);

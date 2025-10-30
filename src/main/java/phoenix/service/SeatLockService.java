@@ -8,6 +8,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import phoenix.model.dto.ReservationsDto;
+import phoenix.model.dto.SeatDto;
 import phoenix.model.mapper.SeatsMapper;
 import phoenix.util.RedisKeys;
 
@@ -301,4 +302,9 @@ public class SeatLockService {
         }
         return res;
     }
-}
+
+    // 전체좌석 조회
+    public List<SeatDto> seatPrint(int rno){
+        return seatsMapper.seatPrint(rno);
+    }// func end
+}// class end
