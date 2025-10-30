@@ -2,7 +2,6 @@ package phoenix.service;
 
 import lombok.RequiredArgsConstructor;
 import phoenix.model.dto.SeatDto;
-import phoenix.model.dto.SeatsDto;
 import phoenix.model.mapper.SeatsMapper;
 import org.springframework.stereotype.Service;
 

@@ -45,8 +45,6 @@ public class SeatCsvService {
     public void load() {
         loadZonesCsv("static/zones.csv");
         loadSeatsCsv("static/seats.csv");
-        System.out.printf("[SeatCsvService] zones=%d, seats=%d%n",
-                zoneNameByZno.size(), allSeatSnos.size());
     }
 
     // ── 존재/조회 편의 ──────────────────────────────────────────────

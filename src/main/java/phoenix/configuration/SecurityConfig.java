@@ -152,7 +152,6 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/members/**",
                                 "/oauth2/**",
-                                "/seats/**",
                                 "/gate/**",
                                 "/captcha/**",
                                 "/tickets/**",

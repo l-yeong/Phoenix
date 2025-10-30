@@ -29,9 +29,7 @@ const Header = () => {
     wsRef.current = socket;
 
     socket.onopen = () => {
-      console.log("[Header] WebSocket 연결성공");
       socket.send(JSON.stringify({ type: "login", mno: user.mno }));
-      console.log(user);
     };
 
     socket.onmessage = (event) => {
@@ -51,7 +49,6 @@ const Header = () => {
 
     socket.onerror = (e) => console.log("[Header] WebSocket 에러", e);
     socket.onclose = () => {
-      console.log("[Header] WebSocket 연결종료");
       wsRef.current = null;
     };
 
@@ -64,7 +61,6 @@ const Header = () => {
   }, [user?.mno]);
 
   const onLogout = async () => {
-    console.log("[Header] 🚪 로그아웃 시작");
 
     const gno = Number(sessionStorage.getItem("gate_gno"));
     if (gno) {
@@ -73,7 +69,6 @@ const Header = () => {
           withCredentials: true,
           headers: { "Content-Type": "application/json" },
         });
-        console.log("[Header] ✅ gate/leave 성공:", res.data);
       } catch (err) {
         console.error("[Header] ❌ gate/leave 실패:", err);
         alert(`[Header] gate/leave 실패: ${err.response?.status || err.message}`);
@@ -93,7 +88,6 @@ const Header = () => {
     toast.success("로그아웃 되었습니다.", { autoClose: 1000 , onClick: () => navigate("/login") });
 
     setTimeout(() => {
-      console.log("[Header] 🔁 로그아웃 완료 → /login 이동");
       navigate("/login", { replace: true });
     }, 400);
   };

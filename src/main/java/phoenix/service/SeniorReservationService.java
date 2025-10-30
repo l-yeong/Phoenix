@@ -60,7 +60,6 @@ public class SeniorReservationService {
                 c.expire(7, TimeUnit.DAYS);
                 restored++;
             }
-            System.out.printf("[SeniorReservationService] restored senior counters: %d users%n", restored);
         } catch (Exception e) {
             System.out.println("[SeniorReservationService] restore error: " + e.getMessage());
         }

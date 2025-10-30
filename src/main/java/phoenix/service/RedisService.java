@@ -93,8 +93,6 @@ public class RedisService { // class start
         list.add(dto.getFrom_rno());
         requestMap.put(requestKey,dto);
         seatMap.put(seatKey,list);
-        System.out.println("request키 저장 : " + requestMap);
-        System.out.println("seat키 저장 : " + seatMap);
 
         return 1; // 성공
 
@@ -126,8 +124,6 @@ public class RedisService { // class start
      * @return List<ReservationExchangesDto> 요청목록
      */
     public List<ReservationExchangesDto> getAllRequest(int to_rno){
-        System.out.println("request키 저장 : " + requestMap);
-        System.out.println("seat키 저장 : " + seatMap);
         String key = "change:seat:" + to_rno;
         List<Integer> list = seatMap.get(key);
         if (list == null ) return null;
@@ -137,7 +133,6 @@ public class RedisService { // class start
             ReservationExchangesDto reList = (ReservationExchangesDto) requestMap.get(rekey);
             dtoList.add(reList);
         }// for end
-        System.out.println("요청목록" + dtoList);
         return dtoList;
 
         //Map<Object, Object> json = redisTemplate.opsForHash().entries(key);
@@ -185,7 +180,6 @@ public class RedisService { // class start
             String requestKey = "change:request:"+i;
             requestMap.remove(requestKey);
         }// for end
-        System.out.println("fromRnos = " + fromRnos);
     }// func end
 
     /**
@@ -220,7 +214,6 @@ public class RedisService { // class start
         List<String> alarmList = new ArrayList<>();
         alarmList.add(message);
         alarmMap.put(key , alarmList);
-        System.out.println("alarmList = " + alarmList);
     }// func end
 
     /**
@@ -236,9 +229,6 @@ public class RedisService { // class start
         //List<String> messages = list.stream().map(Object::toString).collect(Collectors.toList());
         //System.out.println("messages 알림메시지들 = " + messages);
         List<String> messages = alarmMap.get(key);
-        System.out.println("mno = " + mno);
-        System.out.println("alarmMap"+alarmMap);
-        System.out.println("messages 알림메시지들" + messages);
         return messages;
     }// func end
 

@@ -30,7 +30,6 @@ export default function QRScanner() {
   const handleScan = (detected) => {
     const value = Array.isArray(detected) ? detected[0]?.rawValue : detected;
     if (value) {
-      console.log("QR 결과:", value);
       alert(`QR 내용: ${value}`);
     }
   };

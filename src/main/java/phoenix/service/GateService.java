@@ -50,7 +50,6 @@ public class GateService {
             deleted++;
         }
 
-        System.out.println("🧹 [GateService] 초기화 완료 — 삭제된 키 수: " + deleted);
 
     }
 
@@ -63,7 +62,6 @@ public class GateService {
         if (!sem.isExists()) {
             sem.trySetPermits(MAX_PERMITS);
             boostedFlag.set(true);
-            System.out.printf("🆕 [GateService] gno=%d 세마포어 신규 생성 (permits=%d)%n", gno, MAX_PERMITS);
             return;
         }
 
@@ -85,11 +83,6 @@ public class GateService {
     /** 🟢 대기열 등록 */
     public EnqueueResult enqueue(int mno, int gno) {
         ensureSemaphoreInitialized(gno);
-        System.out.println("[DEBUG] user_booking check: "
-                + redisson.getBucket("user_booking:" + mno + ":" + gno).get());
-        System.out.println("\n🎟️ [enqueue] 호출: mno=" + mno + ", gno=" + gno);
-        System.out.println(" ┣ 세마포어 남은 퍼밋: " + semaphore(gno).availablePermits());
-        System.out.println(" ┣ 현재 activeSet=" + activeSet(gno).size() + ", queue=" + queue(gno).size());
 
         // 🔴 추가: 내 세션이 없는데 activeSet에는 남아있으면 stale → 정리 후 퍼밋 반환
         if (!sessionBucket(gno, mno).isExists() && activeSet(gno).remove(mno)) {
@@ -108,7 +101,6 @@ public class GateService {
         }
 
         queue(gno).add(mno);
-        System.out.println(" ➕ 대기열 등록 완료. 현재 큐 크기=" + queue(gno).size());
 
         assignNextIfPossible(gno);
         return new EnqueueResult(true, queue(gno).size());
@@ -129,10 +121,7 @@ public class GateService {
     public void assignNextIfPossible(int gno) {
 
         try {
-            System.out.println("\n[assignNextIfPossible] 실행 (gno=" + gno + ")");
             int permits = semaphore(gno).availablePermits();
-            System.out.println(" ┣ 세마포어 남은 퍼밋=" + permits);
-            System.out.println(" ┣ 대기열 크기=" + queue(gno).size());
 
             if (permits <= 0) {
                 System.out.println(" ❌ 퍼밋 없음 → 대기 유지");
@@ -161,11 +150,6 @@ public class GateService {
             activeSet(gno).add(nextUser);
             waitingSet(gno).remove(nextUser);
 
-            System.out.println(" ✅ [입장성공] mno=" + nextUser + " / gno=" + gno);
-            System.out.println(" ┣ 세션 TTL=" + SESSION_MINUTES + "분, 퍼밋잔여=" + semaphore(gno).availablePermits());
-            System.out.println(" ┣ activeSet=" + activeSet(gno).readAll());
-            System.out.println(" ┗ queue=" + queue(gno).readAll());
-
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -174,14 +158,11 @@ public class GateService {
     /** 🔍 세션 alive 확인 */
     public boolean isEntered(int mno, int gno) {
         boolean ok = sessionBucket(gno, mno).isExists();
-        System.out.println("[isEntered] mno=" + mno + ", gno=" + gno + " → " + ok);
         return ok;
     }
 
     // 퇴장
     public boolean leave(int mno, int gno) {
-        System.out.println("\n🚪 [leave] mno=" + mno + ", gno=" + gno);
-
         // 세션 제거
         sessionBucket(gno, mno).delete();
 
@@ -199,9 +180,6 @@ public class GateService {
 
         // 다음 사람 입장 시도
         assignNextIfPossible(gno);
-
-        System.out.printf("🧹 [leave] active=%s, waitingSet=%s, queue=%s 제거%n",
-                wasActive, wasQueued1, wasQueued2);
 
         return wasActive || wasQueued1 || wasQueued2;
     }
@@ -242,7 +220,6 @@ public class GateService {
                 for (Integer mno : actives) {
                     boolean alive = sessionBucket(gno, mno).isExists();
                     if (!alive) {
-                        System.out.println("🧹 [스케줄러] 세션 만료됨 mno=" + mno + " gno=" + gno);
                         actives.remove(mno);
                         try { semaphore(gno).release(); } catch (Exception ignore) {}
                         assignNextIfPossible(gno);

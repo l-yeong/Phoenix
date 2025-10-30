@@ -118,7 +118,6 @@ public class SocialAuthService {
         );
 
         if (existingByEmail != null || existingByProvider != null) {
-            System.out.println(" 이미 가입된 회원입니다. 이메일: " + membersDto.getEmail());
             return false; // 중복 방지
         }
 

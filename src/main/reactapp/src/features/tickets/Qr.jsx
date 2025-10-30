@@ -5,7 +5,6 @@ import { useSearchParams } from "react-router-dom";
 import axios from "axios";
 
 export default function Qr() {
-    console.log( "asdasd")
   const [sp] = useSearchParams();
   const qr = sp.get("qr");                 // 예: c745b7
   const [data, setData] = useState(null);  // 서버 응답 데이터

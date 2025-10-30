@@ -49,7 +49,6 @@ export default function Gemini() {
                 requestData, // 두 번째 인자에 데이터 객체 직접 전달
                 { withCredentials: true }
             );
-            console.log(response.data);
             const data = response.data;
             const aiMessage = { sender: 'ai', text: data.response };
             setMessages((prevMessages) => [...prevMessages, aiMessage]);

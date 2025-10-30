@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import phoenix.model.dto.GameDto;
-import phoenix.model.mapper.ZonesMapper;
 import phoenix.service.FileService;
 import phoenix.service.SeatCsvService;
 import phoenix.service.SeatLockService;
@@ -28,7 +27,6 @@ public class GeminiService {
     private final SeatCsvService seatCsvService;
     private final SeatLockService seatLockService;
     private final WebClient webClient;
-    private final ZonesMapper zonesMapper;
 
     // 날짜 포맷터 정의
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("M월 d일");
@@ -170,7 +168,6 @@ public class GeminiService {
      * SeatDto 객체를 Markdown 형식의 문자열로 변환합니다.
      */
     private String formatSeatData(Map<Integer, String> seatStatusMap) {
-        System.out.println("GeminiService.formatSeatData");
         if ( seatStatusMap == null || seatStatusMap.isEmpty()) {
             return "### 잔여 좌석 정보: 현재 조회 가능한 좌석 정보가 없습니다.\n";
         }// if end
@@ -213,7 +210,6 @@ public class GeminiService {
     }// func end
 
     private GeminiRequest createGeminiRequest( String systemInstruction , String userPrompt){
-        System.out.println("GeminiService.createGeminiRequest");
         GeminiRequest request = new GeminiRequest();
         // 시스템 지침 설정
         request.setSystemInstruction(systemInstruction);
