@@ -1,4 +1,5 @@
-import { Box, Grid, Typography, Button } from "@mui/material";
+import { Box, Typography, Button } from "@mui/material";
+import Grid from "@mui/material/Grid";
 import { useNavigate } from "react-router-dom";
 import styles from "../styles/HomeMain.module.css";
 
@@ -27,7 +28,7 @@ const HomeMain = () => {
       {/* 3가지 예매 선택 */}
       <Grid container spacing={5} justifyContent="center" className={styles.menuSection}>
         {/* 일반 예매 */}
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
           <Box className={styles.card}>
             <Typography variant="h4" className={styles.cardTitle}>
               일반 예매
@@ -45,7 +46,7 @@ const HomeMain = () => {
         </Grid>
 
         {/* 시니어 예매 */}
-        <Grid item xs={12} md={3.5}>
+        <Grid size={{ xs: 12, md: 3.5 }}>
           <Box className={styles.card}>
             <Typography variant="h4" className={styles.cardTitle}>
               시니어 예매

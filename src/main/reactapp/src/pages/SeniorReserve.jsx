@@ -126,7 +126,6 @@ export default function SeniorReserve() {
         });
         if (res.data.success) {
           setGames(res.data.data);
-          console.log("경기 목록 불러오기 성공:", res.data.data);
         } else {
           alert("경기 정보를 불러오지 못했습니다.");
         }

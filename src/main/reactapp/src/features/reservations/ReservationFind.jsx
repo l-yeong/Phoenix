@@ -41,7 +41,6 @@ export default function reservationFind( props ){
         try{            
             const response = await axios.get(`http://localhost:8080/reserve/info` , {params : {rno} , withCredentials : true });
             setReservation(response.data);
-            console.log(response.data);
             // 경기날짜+시간
             const gameDate = reservation?.game ? new Date(`${reservation.game.date}T${reservation.game.time}`) : null;
             // 취소 여부 체크
@@ -55,7 +54,6 @@ export default function reservationFind( props ){
     const reserveCancle = async () => {
         try {
             const response = await axios.put(`http://localhost:8080/reserve/cancle`, {}, { params : {rno}, withCredentials: true });
-            console.log(response.data);
             if (response.data) {
                 alert('예매를 취소 하였습니다');
                 await getAllRequest();
@@ -76,7 +74,6 @@ export default function reservationFind( props ){
                 return;
             }else{
                 setExchange(response.data);
-                console.log(response.data);
             }// if end
         }catch(e){
             console.log(e);
@@ -87,7 +84,6 @@ export default function reservationFind( props ){
     const acceptChange = async (from_rno) => {
         try{
             const response = await axios.post(`http://localhost:8080/seat/accept`,{} , { params : {rno : from_rno}, withCredentials: true });
-            console.log(response.data);
             if(response.data){
                 alert('좌석이 교환되었습니다');
                 await getAllRequest();
@@ -104,7 +100,6 @@ export default function reservationFind( props ){
     const rejectChange = async ( from_rno ) => {
         try{
             const response = await axios.delete(`http://localhost:8080/seat/reject` , {params : {rno : from_rno} , withCredentials: true });
-            console.log(response.data);
             if(response.data){
                 alert('좌석교환을 거절하였습니다.');
                 await getAllRequest();
@@ -123,9 +118,7 @@ export default function reservationFind( props ){
         if(check){
             try{
                 const obj = { from_rno : Number(rno) , to_rno : to_rno , toSno : toSno }
-                console.log(obj);
                 const response = await axios.post(`http://localhost:8080/seat/change`,obj , { withCredentials: true });
-                console.log(response.data);
                 if(response.data == 1){
                     alert('좌석교환 신청을 완료하였습니다.');
                 }else if(response.data == 2){
