@@ -40,7 +40,6 @@ public class ReservationExchangesService {
         dto.setStatus("PENDING"); // 상태 : 대기
         String nowTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         dto.setRequested_at(nowTime); // 요청시간 저장
-        System.out.println("dto = " + dto);
         ReservationsDto fromDto = (ReservationsDto) reservationsService.reserveInfo(dto.getFrom_rno()).get("reservation");
         int fromSeat = fromDto.getSno();
         dto.setFromSeat(fromSeat);
@@ -53,14 +52,10 @@ public class ReservationExchangesService {
             // 쓰레드풀에서 후속처리
             executor.execute(() -> { // 여기에 푸시알림 보낼메시지 작성해서 웹소켓에 보내기
                 HashMap<String, Object> map = (HashMap<String, Object>) reservationsService.reserveInfo(dto.getTo_rno());
-                System.out.println("map = " + map);
                 ReservationsDto toDto = (ReservationsDto) map.get("reservation");
-                System.out.println("toDto = " + toDto);
                 int mno = toDto.getMno();
-                System.out.println("mno = " + mno);
                 WebSocketSession session = baseballSocketHandler.getSession(mno);
                 String msg = fromSeat + "번 좌석에서 좌석 교환 요청을 보냈습니다.";
-                System.out.println("msg = " + msg);
                 if (session != null && session.isOpen()) {
                     try {
                         String alarmMsg = objectMapper.writeValueAsString(Map.of("message",msg));

@@ -23,7 +23,7 @@ const Header = () => {
    * ✅ WebSocket 연결 (로그인 상태에서만)
    */
   useEffect(() => {
-    if (!user) return;
+    if (!user?.mno) return;
     if (wsRef.current) return;
 
     const socket = new WebSocket("ws://localhost:8080/socket");
@@ -62,7 +62,7 @@ const Header = () => {
       } catch { }
       wsRef.current = null;
     };
-  }, [user]);
+  }, [user?.mno]);
 
   const onLogout = async () => {
     console.log("[Header] 🚪 로그아웃 시작");
