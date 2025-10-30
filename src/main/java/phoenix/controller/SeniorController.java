@@ -1,10 +1,10 @@
 package phoenix.controller;
 
-import jakarta.servlet.http.HttpServletRequest;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+
 import org.springframework.web.bind.annotation.*;
 import phoenix.model.dto.AutoSelectDto;
 import phoenix.model.dto.GameDto;
@@ -80,7 +80,7 @@ public class SeniorController {
     /**
      * 시니어 예매 두번째 페이지 경기제목 가져오기
      */
-    @GetMapping("/games{gno}")
+    @GetMapping("/games/{gno}")
     public ResponseEntity<ApiResponseUtil<?>> getGame(@PathVariable int gno){
         GameDto game = gameService.findByGno(gno);
 
