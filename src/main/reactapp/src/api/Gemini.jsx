@@ -12,7 +12,7 @@ export default function Gemini() {
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef(null); // 스크롤을 맨 아래로 이동시키기 위한 Ref
 
-    const API_BASE_URL = 'http://localhost:8080/api/chat'; // Spring Boot 백엔드 주소
+    const API_BASE_URL = 'http://192.168.40.190:8080/api/chat'; // Spring Boot 백엔드 주소
     const { user } = useAuth();          // 현재 로그인 상태 가져오기
     const navigate = useNavigate();
 
