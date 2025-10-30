@@ -236,6 +236,8 @@ public class RedisService { // class start
         //List<String> messages = list.stream().map(Object::toString).collect(Collectors.toList());
         //System.out.println("messages 알림메시지들 = " + messages);
         List<String> messages = alarmMap.get(key);
+        System.out.println("mno = " + mno);
+        System.out.println("alarmMap"+alarmMap);
         System.out.println("messages 알림메시지들" + messages);
         return messages;
     }// func end

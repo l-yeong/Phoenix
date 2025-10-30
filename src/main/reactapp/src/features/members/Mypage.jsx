@@ -5,7 +5,7 @@ import { useAuth } from "../../api/loginstate";
 import {
     Button, Box, Card, CardContent, CardActions, Checkbox, Divider,
     FormControl, FormLabel, Input, Sheet, Stack, Table as JoyTable,
-    Typography, Chip, Alert , Select , Option
+    Typography, Chip, Alert, Select, Option
 } from "@mui/joy";
 
 export default function Mypage() {
@@ -18,7 +18,16 @@ export default function Mypage() {
         birthdate: "",
         pno: "",
         exchange: false,
-    })
+    });
+
+    // 유효성 오류 상태
+    const [errors, setErrors] = useState({
+        mname: "",
+        mphone: "",
+        email: "",
+        current_password: "",
+        new_password: "",
+    });
 
     const [provider, setProvider] = useState(null); // 소셜 회원 여부 저장
 
@@ -79,14 +88,74 @@ export default function Mypage() {
         }
     };
 
+    // ===============================
+    // 입력값 유효성 검사 함수
+    // ===============================
+    const validateField = (name, value) => {
+        let error = "";
+
+        switch (name) {
+            case "mname":
+                if (!value.trim()) {
+                    error = "이름을 입력하세요.";
+                } else if (value.trim().length < 2) {
+                    error = "이름은 2자 이상이어야 합니다.";
+                } else if (!/^[가-힣a-zA-Z]+$/.test(value)) {
+                    error = "이름에는 숫자나 특수문자를 포함할 수 없습니다.";
+                }
+                break;
+
+            case "mphone":
+                if (!/^010-\d{4}-\d{4}$/.test(value))
+                    error = "전화번호 형식이 올바르지 않습니다. (예: 010-1234-5678)";
+                break;
+
+            case "email":
+                if (!/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.(com|net|org|co\.kr|kr|ac\.kr)$/.test(value)) {
+                    error = "이메일 형식이 올바르지 않습니다. (예: example@gmail.com)";
+                }
+                break;
+
+            case "current_password":
+                if (!value) error = "현재 비밀번호를 입력하세요.";
+                break;
+
+            case "new_password":
+                if (
+                    !/^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/.test(
+                        value
+                    )
+                )
+                    error = "비밀번호는 8자 이상, 영문/숫자/특수문자를 포함해야 합니다.";
+                break;
+
+            default:
+                break;
+        }
+
+        setErrors((prev) => ({ ...prev, [name]: error }));
+        return error === "";
+    };
+
     /* ===============================
        회원정보 수정
     =============================== */
     const handleInfoUpdate = async (e) => {
         e.preventDefault();
+
+        // 유효성 검사 (이름 , 전화번호 , 이메일)
+        const valid =
+            validateField("mname", form.mname) &
+            validateField("mphone", form.mphone) &
+            validateField("email", form.email);
+        if (!valid) {
+            alert("입력한 정보를 다시 확인해주세요.");
+            return;
+        }
+
         try {
 
-            const payload = { ...form , pno : Number(form.pno) }; // 숫자로 변환해서 주기
+            const payload = { ...form, pno: Number(form.pno) }; // 숫자로 변환해서 주기
             // 소셜 회원인 경우 이메일, 전화번호 수정 불가
             if (provider) {
                 delete payload.password_hash;
@@ -112,6 +181,17 @@ export default function Mypage() {
     =============================== */
     const handlePasswordUpdate = async (e) => {
         e.preventDefault();
+
+        // 유효성 검사 (현재 비밀번호 , 새 비밀번호)
+        const valid =
+            validateField("current_password", passwordForm.current_password) &
+            validateField("new_password", passwordForm.new_password);
+
+        if (!valid) {
+            alert("입력한 정보를 다시 확인해주세요.");
+            return;
+        }
+
         try {
             const res = await axios.put(
                 "http://192.168.40.190:8080/members/pwdupdate",
@@ -293,8 +373,14 @@ export default function Mypage() {
                                         name="mname"
                                         value={form.mname || ""}
                                         onChange={(e) => setForm({ ...form, mname: e.target.value })}
+                                        onBlur={(e) => validateField("mname", e.target.value)}
                                         placeholder="이름을 입력하세요"
                                     />
+                                    {errors.mname && (
+                                        <Typography level="body-sm" color="danger" sx={{ mt: 0.5 }}>
+                                            {errors.mname}
+                                        </Typography>
+                                    )}
                                 </FormControl>
 
                                 <FormControl>
@@ -303,8 +389,14 @@ export default function Mypage() {
                                         name="mphone"
                                         value={form.mphone || ""}
                                         onChange={(e) => setForm({ ...form, mphone: e.target.value })}
+                                        onBlur={(e) => validateField("mphone", e.target.value)}
                                         placeholder="010-0000-0000"
                                     />
+                                    {errors.mphone && (
+                                        <Typography level="body-sm" color="danger" sx={{ mt: 0.5 }}>
+                                            {errors.mphone}
+                                        </Typography>
+                                    )}
                                 </FormControl>
 
                                 <FormControl>
@@ -313,6 +405,7 @@ export default function Mypage() {
                                         name="email"
                                         value={form.email || ""}
                                         onChange={(e) => setForm({ ...form, email: e.target.value })}
+                                        onBlur={(e) => validateField("email", e.target.value)}
                                         placeholder="example@mail.com"
                                         disabled={provider} // 소셜회원은 이메일 변경 불가
                                     />
@@ -321,9 +414,19 @@ export default function Mypage() {
                                             ※ 소셜 회원은 이메일 변경이 제한됩니다.
                                         </Typography>
                                     ) : (
-                                        <Typography level="body-sm" sx={{ mt: 0.5, color: "neutral.500" }}>
-                                            연락 가능한 이메일을 입력하세요.
-                                        </Typography>
+                                        <>
+                                            {/* 안내 문구 */}
+                                            <Typography level="body-sm" sx={{ mt: 0.5, color: "neutral.500" }}>
+                                                연락 가능한 이메일을 입력하세요.
+                                            </Typography>
+
+                                            {/* 이메일 형식 오류 시 경고 문구 */}
+                                            {errors.email && (
+                                                <Typography level="body-sm" sx={{ mt: 0.5, color: "danger.500" }}>
+                                                    {errors.email}
+                                                </Typography>
+                                            )}
+                                        </>
                                     )}
                                 </FormControl>
 
@@ -383,6 +486,12 @@ export default function Mypage() {
                                         }
                                         placeholder="현재 비밀번호를 입력하세요"
                                     />
+                                    {errors.current_password && (
+                                        <Typography level="body-sm" color="danger" sx={{ mt: 0.5 }}>
+                                            {errors.current_password}
+                                        </Typography>
+                                    )}
+
                                 </FormControl>
 
                                 <FormControl>
@@ -394,10 +503,11 @@ export default function Mypage() {
                                         onChange={(e) =>
                                             setPasswordForm({ ...passwordForm, new_password: e.target.value })
                                         }
-                                        placeholder="영문/숫자/특수문자 조합 권장"
+                                        onBlur={(e) => validateField("new_password", e.target.value)}
+                                        placeholder="비밀번호는 8자 이상, 영문/숫자/특수문자를 포함해야 합니다."
                                     />
-                                    <Typography level="body-sm" sx={{ mt: 0.5, color: "primary.500" }}>
-                                        보안 강화를 위해 주기적으로 비밀번호를 변경해 주세요.
+                                    <Typography level="body-sm" sx={{ mt: 0.5, color: "danger.500" }}>
+                                        {errors.new_password}
                                     </Typography>
                                 </FormControl>
                             </Stack>

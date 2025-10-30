@@ -8,14 +8,13 @@ import styles from "../styles/Header.module.css";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../api/loginstate.jsx";
 
-const API = import.meta.env.VITE_API_BASE_URL || "http://192.168.40.190:8080";
+const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
 const Header = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   // 여기서 AuthContext에서 제공하는 전역 상태(user)와 함수(logout) 를
   // Header 컴포넌트 안에서 꺼내 쓰는 부분
-
   const wsRef = useRef(null);
   const [message, setMessage] = useState([]);
 
@@ -23,10 +22,10 @@ const Header = () => {
    * ✅ WebSocket 연결 (로그인 상태에서만)
    */
   useEffect(() => {
-    if (!user) return;
+    if (!user?.mno) return;
     if (wsRef.current) return;
 
-    const socket = new WebSocket("ws://192.168.40.190:8080/socket");
+    const socket = new WebSocket("ws://localhost:8080/socket");
     wsRef.current = socket;
 
     socket.onopen = () => {
@@ -38,12 +37,12 @@ const Header = () => {
     socket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log(event.data);
         setMessage((prev) => [...prev, data]);
         toast.info(`${typeof data === "string" ? data : data.message}`, {
           position: "bottom-right",
           autoClose: 5000,
           theme: "colored",
+          onClick: () => navigate("/mypage")
         });
       } catch (e) {
         console.log("수신 파싱 오류", e);
@@ -62,7 +61,7 @@ const Header = () => {
       } catch { }
       wsRef.current = null;
     };
-  }, [user]);
+  }, [user?.mno]);
 
   const onLogout = async () => {
     console.log("[Header] 🚪 로그아웃 시작");
@@ -91,7 +90,7 @@ const Header = () => {
 
     await logout?.();
 
-    toast.success("로그아웃 되었습니다.", { autoClose: 1000 });
+    toast.success("로그아웃 되었습니다.", { autoClose: 1000 , onClick: () => navigate("/login") });
 
     setTimeout(() => {
       console.log("[Header] 🔁 로그아웃 완료 → /login 이동");
@@ -117,10 +116,8 @@ const Header = () => {
               key={menu}
               className={styles.navButton}
               onClick={() => {
-                if (menu === "TICKET"){
-                    navigate("/tickets/ticketLog");
-                    } else if(menu === "CHATBOT"){
-                    navigate("/chatbot");}
+                if (menu === "TICKET"){navigate("/tickets/ticketLog");}
+                else if (menu === "CHATBOT"){navigate("/chatbot");}
                 else toast.info(`${menu} 페이지는 준비 중입니다.`);
               }}
             >
@@ -195,7 +192,6 @@ const Header = () => {
         newestOnTop
         closeOnClick
         pauseOnHover
-        onClick={() => navigate("/mypage")}
         theme="colored"
         style={{
           fontSize: "14px",
