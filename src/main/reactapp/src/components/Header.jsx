@@ -128,7 +128,7 @@ const Header = () => {
         </Box>
 
         <Box className={styles.auth}>
-          {user && user?.role !== "ROLE_WITHDRAWN" ? (
+          {user && user?.status !== "withdrawn" ? (
             <>
               <Typography
                 variant="body1"

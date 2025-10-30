@@ -208,7 +208,7 @@ const SignUpPage = () => {
   useEffect(() => {
     const fetchPlayers = async () => {
       try {
-        const res = await api.get("/members/signup/players");
+        const res = await api.get("/game/players");
         if (res.data.success) {
           setPlayerList(res.data.data);
         } else {

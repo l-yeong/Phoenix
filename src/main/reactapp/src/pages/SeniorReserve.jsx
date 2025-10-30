@@ -242,15 +242,6 @@ export default function SeniorReserve() {
         )}
       </Box>
 
-      {/* STT 수동 시작용 버튼 (디버그용) */}
-      <Button
-        onClick={startListening}
-        variant="outlined"
-        sx={{ mt: 3 }}
-      >
-        음성인식 {listening ? "진행 중..." : "시작하기"}
-      </Button>
-
       {showGuide && games.length > 0 && (
         <TutorialOverlay
           targetId="firstGameButton"

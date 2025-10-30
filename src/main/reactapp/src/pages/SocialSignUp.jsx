@@ -1,52 +1,81 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { TextField, Button, MenuItem, Typography, FormControlLabel, Switch } from "@mui/material";
+import { TextField, Button, MenuItem, Typography, FormControlLabel, Switch, CircularProgress } from "@mui/material";
 import api from "../api/axiosInstance";
 
 const SocialSignUp = () => {
   const [params] = useSearchParams();
   const [email, setEmail] = useState("");
-  const [favoritePlayer, setFavoritePlayer] = useState("");
+  const [favoritePlayer, setFavoritePlayer] = useState(0);
   const [exchangeEligible, setExchangeEligible] = useState(false);
+  const [players, setPlayers] = useState([]);         // [{pno, pname}, ...]
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+
   const navigate = useNavigate();
 
   useEffect(() => {
     setEmail(params.get("email") || "");
   }, [params]);
 
-  const playerList = [
-    { id: 1, name: "박찬호" },
-    { id: 2, name: "류현진" },
-    { id: 3, name: "이정후" },
-    { id: 4, name: "오타니 쇼헤이" },
-    { id: 5, name: "추신수" },
-    { id: 6, name: "김하성" },
-  ];
+  // /game/players 로드
+  useEffect(() => {
+    let ignore = false;
+    (async () => {
+      setLoading(true); setErr("");
+      try {
+        const res = await api.get("/game/players");
+        const raw = Array.isArray(res.data?.data) ? res.data.data : [];
+        const normalized = raw.map(row => ({
+          pno: Number(row.pno),
+          pname: row.name,           // 서버 필드명이 name
+          teamName: row.teamName,
+          position: row.position,
+        }));
+        if (!ignore) setPlayers(normalized);
+      } catch (e) {
+        if (!ignore) setErr("선수 목록을 불러오지 못했습니다.");
+        console.error("GET /game/players 실패:", e);
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    })();
+    return () => { ignore = true; };
+  }, []);
+
+  const provider = useMemo(() => params.get("provider") || "", [params]);
+  const provider_id = useMemo(() => params.get("provider_id") || "", [params]);
 
   const handleSubmit = async () => {
     if (!favoritePlayer) {
       alert("선호 선수를 선택해주세요.");
       return;
     }
-
     try {
-      //  DTO 구조에 맞게 JSON 전송
       const res = await api.post("/members/social/signup", {
         email,
-        provider: params.get("provider"),
-        provider_id: params.get("provider_id"),
-        pno: favoritePlayer,
+        provider,
+        provider_id,
+        pno: Number(favoritePlayer),   // 서버가 숫자 기대 시 변환
         exchange: exchangeEligible,
       });
-
-      if (res.data.success) {
-        alert(res.data.message || "회원가입 완료!");
-        navigate("/login"); // 로그인 페이지나 메인으로 이동
+      if (res.data?.success) {
+        alert(res.data?.message || "회원가입 완료!");
+        navigate("/login");
       } else {
-        alert(res.data.message || "회원가입 실패");
+        alert(res.data?.message || "회원가입 실패");
       }
     } catch (err) {
-      console.error(err);
+      console.error("소셜 회원가입 오류:", err);
+      const status = err?.response?.status;
+
+      // 이미 가입된 회원 처리
+      if (status === 400) {
+        alert("이미 가입된 회원입니다. 로그인 페이지로 이동합니다.");
+        navigate("/login");
+        return;
+      }
+
       alert("서버 요청 중 오류가 발생했습니다.");
     }
   };
@@ -73,20 +102,26 @@ const SocialSignUp = () => {
         sx={{ maxWidth: "400px", mb: 2 }}
       />
 
-      <TextField
-        select
-        label="선호 선수"
-        value={favoritePlayer}
-        onChange={(e) => setFavoritePlayer(e.target.value)}
-        fullWidth
-        sx={{ maxWidth: "400px", mb: 3 }}
-      >
-        {playerList.map((player) => (
-          <MenuItem key={player.id} value={player.id}>
-            {player.name}
-          </MenuItem>
-        ))}
-      </TextField>
+      <div style={{ width: "100%", maxWidth: 400 }}>
+        {loading ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "12px 0" }}>
+            <CircularProgress size={20} />
+            <span>선수 목록 불러오는 중…</span>
+          </div>
+        ) : (
+          <TextField select label="선호 선수" value={favoritePlayer}
+            onChange={(e) => setFavoritePlayer(Number(e.target.value))}
+            fullWidth sx={{ mb: 3 }}>
+            {players.length === 0 && <MenuItem value="" disabled>선수 데이터가 없습니다</MenuItem>}
+            {players.map(p => (
+              <MenuItem key={p.pno} value={p.pno}>
+                {p.pname} ({p.teamName} / {p.position})
+              </MenuItem>
+            ))}
+          </TextField>
+        )}
+        {err && <Typography color="error" sx={{ mb: 1 }}>{err}</Typography>}
+      </div>
 
       <FormControlLabel
         control={
@@ -103,6 +138,7 @@ const SocialSignUp = () => {
       <Button
         variant="contained"
         onClick={handleSubmit}
+        disabled={loading || players.length === 0}
         sx={{
           bgcolor: "#CA2E26",
           color: "white",
