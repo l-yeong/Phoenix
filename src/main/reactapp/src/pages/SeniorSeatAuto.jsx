@@ -27,6 +27,17 @@ export default function SeniorSeatAuto() {
 
     const gameId = searchParams.get("gameId");
 
+    // ===== 실패 코드별 안내문 =====
+    const autoBookMessages = {
+        INVALID_REQUEST: "요청이 올바르지 않습니다.",
+        OUT_OF_SENIOR_PHASE: "시니어 예매 기간이 아닙니다.",
+        BLOCKED_BY_GENERAL_BOOKING: "이미 일반 예매를 보유 중입니다.",
+        LIMIT_2_PER_GAME: "경기당 최대 2매까지만 예매할 수 있습니다.",
+        NO_SENIOR_ZONES: "시니어 좌석 구역이 없습니다.",
+        NO_SEATS_AVAILABLE: "남은 좌석이 없습니다.",
+        UNKNOWN_ERROR: "좌석 배정에 실패했습니다. 잠시 후 다시 시도해주세요.",
+    };
+
     // TTS 함수
     const speak = (text, autoListen = true) => {
         // 현재 재생 중인 음성 중단
@@ -259,7 +270,7 @@ export default function SeniorSeatAuto() {
             speak(`🎟️ ${ticketCount}매 자동 예매를 진행합니다.`, false);
 
             try {
-                // ✅ 백엔드 DTO에 맞는 요청 데이터
+                // 백엔드 DTO에 맞는 요청 데이터
                 const reqData = {
                     gno: Number(gameId),
                     qty: ticketCount,
@@ -272,22 +283,32 @@ export default function SeniorSeatAuto() {
                 );
 
                 const result = res.data;
-                console.log("📦 시니어 자동예매 결과:", result);
+                console.log("시니어 자동예매 결과:", result);
 
                 if (result.ok) {
                     const zone = result.bundles?.[0]?.zoneLabel || "좌석 정보 없음";
                     const seats = result.bundles?.[0]?.seatNames?.join(", ") || "좌석 정보 없음";
 
-                    // 🎙 음성 안내 + 마이페이지 이동
-                    speak(`자동 예매가 완료되었습니다. ${zone}의 ${seats} 좌석이 배정되었습니다. 마이페이지로 이동합니다.`, false);
+                    // 시각적 안내 추가
+                    alert(`자동 예매가 완료되었습니다!\n\n📍 구역: ${zone}\n💺 좌석: ${seats}`);
+
+                    // 음성 안내 + 마이페이지 이동
+                    speak(
+                        `자동 예매가 완료되었습니다. ${zone}의 ${seats} 좌석이 배정되었습니다. 마이페이지로 이동합니다.`,
+                        false
+                    );
 
                     setTimeout(() => navigate("/mypage"), 5000);
                 } else {
-                    const reason = result.reason || "좌석 배정에 실패했습니다.";
-                    speak(`자동 예매에 실패했습니다. 이유: ${reason}`, false);
+                    // 실패 코드별 통일된 메시지 처리
+                    const reason = result.reason;
+                    const msg = autoBookMessages[reason] || autoBookMessages.UNKNOWN_ERROR;
+
+                    alert(msg);
+                    speak(`자동 예매에 실패했습니다. ${msg}`, false);
                 }
             } catch (err) {
-                console.error("❌ 자동예매 오류:", err);
+                console.error("자동예매 오류:", err);
                 speak("자동 예매 중 오류가 발생했습니다. 네트워크를 확인해주세요.", false);
             }
 
