@@ -8,6 +8,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import phoenix.model.dto.ReservationsDto;
+import phoenix.model.dto.SeatDto;
 import phoenix.model.mapper.SeatsMapper;
 import phoenix.util.RedisKeys;
 
@@ -67,7 +68,6 @@ public class SeatLockService {
                         sets++; seats += snos.size();
                     }
                 }
-                System.out.printf("[SeatLockService] SOLD 복구 완료 (sets=%d, seats=%d)%n", sets, seats);
             } else {
                 System.out.println("[SeatLockService] SOLD 복구: reserved 데이터 없음");
             }
@@ -82,7 +82,6 @@ public class SeatLockService {
                 counter.expire(7, TimeUnit.DAYS);
                 restoredUsers++;
             }
-            System.out.printf("[SeatLockService] 일반 카운터 복구 (users=%d)%n", restoredUsers);
 
         } catch (Exception e) {
             System.out.println("[SeatLockService] 복구 실패: " + e.getMessage());
@@ -315,4 +314,9 @@ public class SeatLockService {
         }
         return res;
     }
-}
+
+    // 전체좌석 조회
+    public List<SeatDto> seatPrint(int rno){
+        return seatsMapper.seatPrint(rno);
+    }// func end
+}// class end

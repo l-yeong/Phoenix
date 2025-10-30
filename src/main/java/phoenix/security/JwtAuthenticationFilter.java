@@ -65,14 +65,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 }
             }
-            System.out.println("Authorization 헤더: " + authHeader);
-            System.out.println("토큰 추출: " + token);
-            System.out.println("토큰 유효성: " + jwtUtil.validateToken(token));
-            System.out.println("토큰 주체(mid): " + jwtUtil.getMid(token));
 
         } // if e
-        System.out.println("Authorization 헤더 = " + request.getHeader("Authorization"));
-        System.out.println("SecurityContext 인증 객체 = " + SecurityContextHolder.getContext().getAuthentication());
 
         // [4] 다음 필터로 요청 전달
         filterChain.doFilter(request , response);

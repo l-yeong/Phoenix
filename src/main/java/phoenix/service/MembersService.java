@@ -83,12 +83,6 @@ public class MembersService {
     @Transactional
     public String login( String mid , String rawPassword ){
         MembersDto member = membersMapper.findByMid(mid);
-        System.out.println("[LOGIN-DEBUG] member = " + member);
-
-        if (member != null) {
-            System.out.println("[LOGIN-DEBUG] email_verified = " + member.getEmail_verified());
-            System.out.println("[LOGIN-DEBUG] password matches = " + PasswordUtil.matches(rawPassword, member.getPassword_hash()));
-        }
 
         if("withdrawn".equalsIgnoreCase(member.getStatus())){
             throw new IllegalStateException("withdrawn"); // 로그인 차단 + 안내페이지로 이동용

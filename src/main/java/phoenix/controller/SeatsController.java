@@ -11,7 +11,6 @@ import phoenix.model.dto.SeatsDto;
 import phoenix.service.AutoSeatsService;
 import phoenix.service.MembersService;
 import phoenix.service.SeatLockService;
-import phoenix.service.SeatsService;
 import phoenix.util.RedisKeys;
 
 import java.util.*;
@@ -36,7 +35,6 @@ public class SeatsController {
 
     private final SeatLockService seatService;
     private final MembersService membersService;
-    private final SeatsService sService;
     private final AutoSeatsService autoSeatsService;
     private final RedissonClient redisson;
 
@@ -149,7 +147,7 @@ public class SeatsController {
     /** rno 기준 동일 존 좌석 프린트(기존 유지) */
     @GetMapping("/print")
     public ResponseEntity<?> seatPrint(@RequestParam int rno){
-        List<SeatDto> result = sService.seatPrint(rno);
+        List<SeatDto> result = seatService.seatPrint(rno);
         return ResponseEntity.ok(result);
     }
     @GetMapping("/check/senior")

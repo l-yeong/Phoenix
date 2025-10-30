@@ -59,13 +59,11 @@ public class AuthController {
      */
     @PostMapping("/logout")
     public ResponseEntity<ApiResponseUtil<?>> logout(HttpServletRequest request) {
-        System.out.println("[LogoutController] 세션 기반 로그아웃 진입");
 
         // 현재 세션 조회
         HttpSession session = request.getSession(false);
         if (session != null) {
             session.invalidate(); // 세션 무효화
-            System.out.println(" 세션 무효화 완료");
         }
 
         // SecurityContext도 명시적으로 초기화 (권장)
