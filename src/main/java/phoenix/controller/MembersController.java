@@ -107,6 +107,11 @@ public class MembersController {
                                                     HttpServletRequest httpRequest) {
         String mid = request.get("mid");
         String password = request.get("password_hash");
+        String fcmToken = request.get("fcmToken"); //FCM 알림
+
+        // 여기서 membersService.login(mid, password, fcmToken) 호출 //문제있을시 삭제
+        String accessToken = membersService.login(mid, password, fcmToken);
+
 
         // 1. 기존 membersService.login() 은 JWT 발급 로직이지만, 비밀번호 검증은 그대로 사용
         MembersDto member = membersService.findByMid(mid);
@@ -455,5 +460,13 @@ public class MembersController {
                 .body(new ApiResponseUtil<>(false, "비밀번호 재설정 실패 (인증 필요 또는 회원 없음).", null));
     } // func e
 
+    /*===================FireBase Ticket_Token=============================*/
+    @PostMapping("/fcm/messaging")
+    public ResponseEntity<?>ticketMessaging(@RequestParam String mid,
+                                            @RequestParam String title,
+                                            @RequestParam String body){
+        String result = membersService.ticketMessaging(mid,title,body);
+        return ResponseEntity.ok(result);
+    }//func end
 
 } // class e

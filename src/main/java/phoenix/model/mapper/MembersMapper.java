@@ -114,5 +114,18 @@ public interface MembersMapper {
                                   @Param("mname") String mname,
                                   @Param("email") String email);
 
+    /*===================FireBase Ticket_Token=============================*/
+
+    /** Ticket_Token 발급 */
+    @Update("UPDATE members SET ticket_Token = #{token} WHERE mid = #{mid}")
+    int ticketTokenWrite(@Param("mid") String mid, @Param("token") String token);
+
+    /** Ticket_Token 조회 */
+    @Select("SELECT ticket_token FROM members WHERE mid=#{mid}")
+    String ticketTokenPrint(@Param("mid") String mid);
+
+
+
+
 
 } // class e

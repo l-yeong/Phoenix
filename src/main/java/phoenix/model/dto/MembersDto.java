@@ -54,5 +54,7 @@ public class MembersDto {
     private Boolean exchange;        // 교환 신청 가능
     private Boolean email_verified; // 이메일 인증 여부
     private LocalDateTime last_status_change; // 마지막 상태변경 날짜
+    private String ticketToken;     // 티켓사용시알람메시지
+
 
 }//func end

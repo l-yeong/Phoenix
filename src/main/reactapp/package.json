@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@dataconnect/generated": "file:src/dataconnect-generated",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.4",
@@ -20,6 +21,7 @@
     "@yudiel/react-qr-scanner": "^2.4.0",
     "axios": "^1.12.2",
     "dayjs": "^1.11.18",
+    "firebase": "^12.4.0",
     "persist": "^0.2.7",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.0",
