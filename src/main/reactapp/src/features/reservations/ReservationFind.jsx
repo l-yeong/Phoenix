@@ -234,7 +234,7 @@ export default function reservationFind( props ){
                             <Stack spacing={2} mt={2}>
                             <InfoItem label="예매번호" value={reservation.reservation?.rno ?? "-"} />
                             <InfoItem label="좌석번호" value={reservation.reservation?.sno ?? "-"} />
-                            <InfoItem label="좌석등급" value={reservation.reservation?.channel === "general"
+                            <InfoItem label="예매유형" value={reservation.reservation?.channel === "general"
                                 ? "일반"
                                 : reservation.reservation?.channel === "senior"
                                 ? "시니어"
