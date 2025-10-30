@@ -36,7 +36,6 @@ public class BaseballSocketHandler extends TextWebSocketHandler { // class start
         if (userId != null) {
             int mno = (int) userId;
             sessions.remove(userId);
-            System.out.println("세션 목록에서 제거, userId=" + mno);
         }// if end
     }// func end
 
@@ -44,7 +43,6 @@ public class BaseballSocketHandler extends TextWebSocketHandler { // class start
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         System.out.println("클라이언트로부터 메시지 수신");
-        System.out.println(" message = " + message);
         // 메시지 json 으로 파싱
         ObjectMapper objectMapper = new ObjectMapper();
         Map<String , Object> msg = objectMapper.readValue(message.getPayload(),Map.class);

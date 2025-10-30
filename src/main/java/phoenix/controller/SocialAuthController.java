@@ -43,8 +43,6 @@ public class SocialAuthController {
         String provider = req.get("provider");
         String providerId = req.get("provider_id");
 
-        System.out.println("[SocialLoginController] provider=" + provider + ", providerId=" + providerId);
-
         // 소셜 로그인 시도
         MembersDto member = socialAuthService.findMemberByProvider(provider, providerId);
 

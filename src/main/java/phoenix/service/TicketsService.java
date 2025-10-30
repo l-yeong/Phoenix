@@ -42,14 +42,12 @@ public class TicketsService {
 
         String status = String.valueOf(info.get("reservation_status"));
         if (!"reserved".equalsIgnoreCase(status)) {
-            System.out.println("[ticketWrite] 상태가 reserved 아님 ->false");
             return false;
         }//func end
 
         // rno 중복 QR발급 방지
         String existingCode = ticketsMapper.findTicketdedupe(rno);
         if (existingCode != null && !existingCode.isEmpty()) {
-            System.out.println("[ticketWrite] 이미 QR 존재 → false");
             return false;
         }//if end
 

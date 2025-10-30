@@ -133,10 +133,8 @@ public class ReservationExchangesService {
                 if (session != null && session.isOpen()){
                     String alarmMsg = objectMapper.writeValueAsString(Map.of("message",msg));
                     session.sendMessage(new TextMessage(alarmMsg));
-                    System.out.println("접속 = " + msg);
                 }else { // 요청자가 접속 안되어 있을때 redis에 메시지 저장
                     redisService.saveMessage(mno , msg);
-                    System.out.println("미접속 = " + msg);
                 }// if end
             } catch (Exception e) {
                 e.printStackTrace();

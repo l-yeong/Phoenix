@@ -68,7 +68,6 @@ public class SeatLockService {
                         sets++; seats += snos.size();
                     }
                 }
-                System.out.printf("[SeatLockService] SOLD 복구 완료 (sets=%d, seats=%d)%n", sets, seats);
             } else {
                 System.out.println("[SeatLockService] SOLD 복구: reserved 데이터 없음");
             }
@@ -83,7 +82,6 @@ public class SeatLockService {
                 counter.expire(7, TimeUnit.DAYS);
                 restoredUsers++;
             }
-            System.out.printf("[SeatLockService] 일반 카운터 복구 (users=%d)%n", restoredUsers);
 
         } catch (Exception e) {
             System.out.println("[SeatLockService] 복구 실패: " + e.getMessage());

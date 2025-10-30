@@ -229,8 +229,6 @@ public class FileService {
                     System.out.println("[CSV] 파싱 오류로 스킵: " + line + " | err=" + e.getMessage());
                 }
             }
-
-            System.out.println("[CSV] 파일로드 완료: " + games.size() + "건");
         } catch (IOException e) {
             System.out.println("[CSV] 파일 예외: " + e.getMessage());
         }

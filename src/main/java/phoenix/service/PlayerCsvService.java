@@ -40,7 +40,6 @@ public class PlayerCsvService {
     public void load() {
         loadTeams("static/team.csv");
         loadPlayers("static/player.csv");
-        System.out.println("[PlayerCsv] loaded: teams=" + teamNameByNo.size() + ", players=" + playerByPno.size());
     }
 
     // ───────────────────────────────────────────────────────────
