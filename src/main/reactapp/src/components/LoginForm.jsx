@@ -52,7 +52,7 @@ const LoginForm = () => {
       // ROLE_WITHDRAWN 회원은 자동 이동하지 않음
       if (resData.role === "ROLE_WITHDRAWN") {
         alert("탈퇴한 계정입니다. 복구 페이지로 이동합니다.");
-        window.location.href = `http://localhost:5173/changestatus?mid=${resData.member.mid}`;
+        window.location.href = `http://192.168.40.190:5173/changestatus?mid=${resData.member.mid}`;
         return;
       }
 
@@ -76,7 +76,7 @@ const LoginForm = () => {
 
   /** 소셜 로그인 리디렉션 */
   const handleSocialLogin = (provider) => {
-    window.location.href = `http://localhost:8080/oauth2/authorization/${provider}`;
+    window.location.href = `http://192.168.40.190:8080/oauth2/authorization/${provider}`;
   };
 
   const RedButton = styled(Button)({
