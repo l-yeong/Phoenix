@@ -144,6 +144,7 @@ public class SecurityConfig {
                                 "/members/verify-email",
                                 "/members/findid/**",
                                 "/members/findpwd/**",
+                                "/senior/**",
                                 "/seat/**",
                                 "/oauth2/**",
                                 "/socket/**",

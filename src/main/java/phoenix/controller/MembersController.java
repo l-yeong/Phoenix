@@ -145,7 +145,7 @@ public class MembersController {
                     session1.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
                     // ChangeStatus 페이지로 이동하도록 URL 전달
                     String redirectUrl = String.format(
-                            "http://localhost:5173/changestatus?mid=%s",
+                            "http://192.168.40.190:5173/changestatus?mid=%s",
                             URLEncoder.encode(member.getMid() , StandardCharsets.UTF_8)
                     );
                     return ResponseEntity

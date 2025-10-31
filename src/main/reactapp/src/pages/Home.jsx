@@ -129,7 +129,7 @@ export default function Home() {
       />
 
       <Divider sx={{ my: 4 }} />
-      <Typography textAlign="center" color="text.secondary">— 추가 콘텐츠 자리 —</Typography>
+{/*       <Typography textAlign="center" color="text.secondary">— 추가 콘텐츠 자리 —</Typography> */}
     </Box>
   );
 }

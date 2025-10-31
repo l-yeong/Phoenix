@@ -85,7 +85,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         // [7] 신규 회원이면 → 추가 정보 입력 페이지로 이동
         if (jwt == null) {
             String redirectUrl = String.format(
-                    "http://localhost:5173/social/signup?email=%s&provider=%s&provider_id=%s",
+                    "http://192.168.40.190:5173/social/signup?email=%s&provider=%s&provider_id=%s",
                     URLEncoder.encode(email , StandardCharsets.UTF_8),
                     URLEncoder.encode(provider , StandardCharsets.UTF_8),
                     URLEncoder.encode(providerId , StandardCharsets.UTF_8)
@@ -100,14 +100,14 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             if( member == null ){
                 // db 동기화 오류 방지
                 getRedirectStrategy().sendRedirect(request , response ,
-                        "http://localhost:5173/social/signup");
+                        "http://192.168.40.190:5173/social/signup");
                 return;
             }
 
             // 탈퇴 상태라면 복구 안내 페이지로 리다이렉트
             if("withdrawn".equalsIgnoreCase(member.getStatus())){
                 String redirect = String.format(
-                        "http://localhost:5173/changestatus?mid=%s&provider=%s",
+                        "http://192.168.40.190:5173/changestatus?mid=%s&provider=%s",
                         URLEncoder.encode(member.getMid() , StandardCharsets.UTF_8),
                         URLEncoder.encode(provider , StandardCharsets.UTF_8)
                 );
@@ -120,7 +120,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             SecurityContextHolder.getContext().setAuthentication(authentication1);
 
             String redirectUrl = String.format(
-                    "http://localhost:5173/social/success?token=%s&mid=%s&mno=%d",
+                    "http://192.168.40.190:5173/social/success?token=%s&mid=%s&mno=%d",
                     URLEncoder.encode(jwt , StandardCharsets.UTF_8),
                     URLEncoder.encode(member.getMid() , StandardCharsets.UTF_8),
                     member.getMno()
