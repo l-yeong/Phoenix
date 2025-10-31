@@ -27,7 +27,7 @@ public class GateService {
     private final GameService gameService;
     private final RedissonClient redisson;
 
-    private static final int MAX_PERMITS = 1; // 동시 입장 허용 인원
+    private static final int MAX_PERMITS = 2; // 동시 입장 허용 인원
     private static final long SESSION_MINUTES = 5; // 세션 TTL (분)
 
     // ===== Redis Accessors =====
