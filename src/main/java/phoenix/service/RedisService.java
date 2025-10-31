@@ -15,6 +15,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -28,12 +29,13 @@ public class RedisService { // class start
     private final RedissonClient redissonClient;
     private final ObjectMapper objectMapper;
 
-
-
-
-    public static Map< String , Object > requestMap = new HashMap<>();
-    public static Map< String , List<Integer>> seatMap = new HashMap<>();
-    public static Map<String,List<String>> alarmMap = new HashMap<>();
+    private static final String SEAT_KEY_PREFIX = "change:seat:";
+    private static final String ALARM_KEY_PREFIX = "alarm:";
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    // 교환요청 및 알림 저장 Map
+    public static final Map<String, Object> requestMap = new ConcurrentHashMap<>();
+    public static final Map<String, List<Integer>> seatMap = new ConcurrentHashMap<>();
+    public static final Map<String, List<String>> alarmMap = new ConcurrentHashMap<>();
 
 
     /**
@@ -248,31 +250,57 @@ public class RedisService { // class start
      */
     @Scheduled(cron = "0 0 0 * * ?")
     public void cleanUpMap(){
-        LocalDateTime today = LocalDateTime.now();
-        String seatKey = "change:seat:";
-        String alarm = "alarm:";
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LocalDateTime now = LocalDateTime.now();
+
+        int removedCount = 0;
         Iterator<Map.Entry<String, Object>> iterator = requestMap.entrySet().iterator();
+
         while (iterator.hasNext()) {
             Map.Entry<String, Object> entry = iterator.next();
             ReservationExchangesDto dto = (ReservationExchangesDto) entry.getValue();
-            LocalDateTime saveTime = LocalDateTime.parse(dto.getRequested_at(), formatter);
 
-            if (saveTime.plusDays(1).isBefore(today)) {
-                // seatMap에서 삭제
-                List<Integer> seatList = seatMap.get(seatKey + dto.getTo_rno());
-                if (seatList != null) {
-                    seatList.remove(Integer.valueOf(dto.getFrom_rno()));
-                }// if end
-                // alarmMap 에서 삭제
-                List<String> strList = alarmMap.get(alarm+dto.getTo_rno());
-                if (strList != null) {
-                    strList.removeIf(str -> str.contains(String.valueOf(dto.getFromSeat())));
-                }// if end
-                // requestMap에서 안전하게 삭제
+            if (isExpired(dto, now)) {
+                removeFromSeatMap(dto);
+                removeFromAlarmMap(dto);
                 iterator.remove();
+                removedCount++;
             }// if end
         }// while end
+    }// func end
+
+    /**
+     * 요청이 24시간 이상 지난 경우 true 반환
+     */
+    private boolean isExpired(ReservationExchangesDto dto, LocalDateTime now) {
+        try {
+            LocalDateTime requestedAt = LocalDateTime.parse(dto.getRequested_at(), FORMATTER);
+            return Duration.between(requestedAt, now).toHours() >= 24;
+        } catch (Exception e) {
+            System.err.println(e);
+            return false;
+        }
+    }// func end
+
+    /**
+     * seatMap에서 만료된 요청 제거
+     */
+    private void removeFromSeatMap(ReservationExchangesDto dto) {
+        String key = SEAT_KEY_PREFIX + dto.getTo_rno();
+        seatMap.computeIfPresent(key, (k, list) -> {
+            list.remove(Integer.valueOf(dto.getFrom_rno()));
+            return list.isEmpty() ? null : list;
+        });
+    }// func end
+
+    /**
+     * alarmMap에서 관련 알림 제거
+     */
+    private void removeFromAlarmMap(ReservationExchangesDto dto) {
+        String key = ALARM_KEY_PREFIX + dto.getTo_rno();
+        alarmMap.computeIfPresent(key, (k, list) -> {
+            list.removeIf(str -> str.contains(String.valueOf(dto.getFromSeat())));
+            return list.isEmpty() ? null : list;
+        });
     }// func end
 
 }// class end

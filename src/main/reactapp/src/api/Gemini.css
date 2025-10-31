@@ -140,7 +140,7 @@ h1 {
     padding: 10px 15px;
     border: none;
     border-radius: 8px;
-    background-color: #1a73e8; /* Google Blue */
+    background-color: #dc2626; /* Red */
     color: white;
     font-weight: bold;
     cursor: pointer;
@@ -150,10 +150,10 @@ h1 {
 }
 
 .chat-input-area button:hover:not(:disabled) {
-    background-color: #155bb5;
+    background-color: #b91c1c;
 }
 
 .chat-input-area button:disabled {
-    background-color: #99c2f5;
+    background-color: #b91c1c;
     cursor: not-allowed;
 }
