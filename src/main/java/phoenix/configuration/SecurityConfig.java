@@ -127,7 +127,7 @@ public class SecurityConfig {
                 // 세션 관리 정책
                 // =============================
                 .sessionManagement( session ->
-                            session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                            session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED) // SessionCreationPolicy.ALWAYS 로 바꿔야함
                             // 로그인 시 SecurityContextHolder 세션 자동 생성 허용
                         )
 

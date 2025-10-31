@@ -20,6 +20,7 @@ import TicketQRInfo from "./features/tickets/TicketQRInfo.jsx";
 import TicketLog from "./features/tickets/TicketLog";
 import QRScanner from "./features/tickets/QRScanner";
 import Gemini from "./api/gemini.jsx";
+import "./App.css";
 
 import { AuthProvider } from "./api/loginstate.jsx";
 import Mypage from "./features/members/Mypage.jsx";

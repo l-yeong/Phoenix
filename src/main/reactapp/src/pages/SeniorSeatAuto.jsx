@@ -320,7 +320,7 @@ export default function SeniorSeatAuto() {
                 } catch (err) {
                     console.warn("🎤 STT 재시작 실패:", err);
                 }
-            }, 4000);
+            }, 2000);
         }, 700);
     };
 
