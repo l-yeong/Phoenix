@@ -1,4 +1,3 @@
-<img width="1037" height="190" alt="image" src="https://github.com/user-attachments/assets/f8e7e206-3858-4fb7-b94e-215409bab59c" /># Phoenix
 
 ## 주제
 
