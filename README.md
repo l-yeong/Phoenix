@@ -50,7 +50,9 @@ Spring Boot,React 기반 “야구 예매 사이트” 웹 구현
 - QR코드 발급
 - QR코드 관리 페이지
 
-![팀소개](사진 넣기)
+![팀소개]
+<img width="1037" height="190" alt="스크린샷 2025-11-12 095541-Photoroom" src="https://github.com/user-attachments/assets/2f3d1dac-1292-40d4-8895-6c2dd04733d8" />
+
 
 
 ## 개발환경
