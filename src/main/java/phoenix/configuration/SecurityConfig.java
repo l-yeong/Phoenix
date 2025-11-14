@@ -107,11 +107,11 @@ public class SecurityConfig {
                 // =============================
                 // 기본 보안 설정 비활성화 (REST용)
                 // =============================
-                .securityMatcher("/**") // 모든 요청은 이 체인에서만 처리
-                .csrf(csrf -> csrf.disable()) // CSRF 보호 비활성화 , 세션-폼 기반이 아닌 REST(JWT)
-                .formLogin(form -> form.disable()) // 스프링 기본 로그인 폼 비활성화(프론트/REST로만 로그인 처리하겠다는 뜻)
-                .httpBasic(basic -> basic.disable()) // Basic 인증 비활성화(아이디/비번을 Base64로 보내는 방식 금지
-                .logout(logout -> logout.disable()) // 로그아웃 비활성화 추가
+                .securityMatcher("/**")                                                // 모든 요청은 이 체인에서만 처리
+                .csrf(csrf -> csrf.disable())                          // CSRF 보호 비활성화 , 세션-폼 기반이 아닌 REST(JWT)
+                .formLogin(form -> form.disable())                // 스프링 기본 로그인 폼 비활성화(프론트/REST로만 로그인 처리하겠다는 뜻)
+                .httpBasic(basic -> basic.disable())              // Basic 인증 비활성화(아이디/비번을 Base64로 보내는 방식 금지
+                .logout(logout -> logout.disable())                 // 로그아웃 비활성화 추가
 
                 // OAuth2 요청까지 포함해 CORS 허용
                 .cors(cors -> cors.configurationSource(request -> {
@@ -127,15 +127,15 @@ public class SecurityConfig {
                 // 세션 관리 정책
                 // =============================
                 .sessionManagement( session ->
-                            session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED) // SessionCreationPolicy.ALWAYS 로 바꿔야함
+                            session.sessionCreationPolicy(SessionCreationPolicy.ALWAYS)            // SessionCreationPolicy.ALWAYS 로 바꿔야함
                             // 로그인 시 SecurityContextHolder 세션 자동 생성 허용
                         )
 
                 // =============================
                 // URL 접근 제어
                 // =============================
-                .authorizeHttpRequests(auth -> auth // URL별 인가 규칙 시작
-                        .requestMatchers(HttpMethod.OPTIONS , "/**").permitAll() // 프리플라이트 요청 허용
+                .authorizeHttpRequests(auth -> auth                 // URL별 인가 규칙 시작
+                        .requestMatchers(HttpMethod.OPTIONS , "/**").permitAll()        // 프리플라이트 요청 허용
                         .requestMatchers(
                                 "/members/signup",
                                 "/members/login",
@@ -184,9 +184,9 @@ public class SecurityConfig {
                 // =============================
                 // OAuth2 로그인 설정
                 // =============================
-                .oauth2Login(oauth2 -> oauth2 // oauth2Login : OAuth2 클라이언트 로그인 활성화
-                        .userInfoEndpoint(user -> user.userService(customOAuth2UserService)) // provider(gogle, git , facebook)에서 받아온 사용자 프로필 커스텀 로직으로 가공
-                        .successHandler(oAuth2SuccessHandler) // 로그인 성공 시 직접 토큰 발급/리다이렉트 등 후처리 , 이 핸들러가 우선 응답 완료하면 defaultSuccessUrl은 실행되지 않을 수 있음
+                .oauth2Login(oauth2 -> oauth2                                       // oauth2Login : OAuth2 클라이언트 로그인 활성화
+                        .userInfoEndpoint(user -> user.userService(customOAuth2UserService))    // provider(gogle, git , facebook)에서 받아온 사용자 프로필 커스텀 로직으로 가공
+                        .successHandler(oAuth2SuccessHandler)                                                       // 로그인 성공 시 직접 토큰 발급/리다이렉트 등 후처리 , 이 핸들러가 우선 응답 완료하면 defaultSuccessUrl은 실행되지 않을 수 있음
                         .failureUrl("/oauth2/failure") // 실패 시 이동경로
                 );
 
